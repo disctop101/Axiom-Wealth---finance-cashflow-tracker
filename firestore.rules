@@ -1,0 +1,66 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128;
+    }
+
+    // Default deny all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Test connection endpoint for initial boot validation
+    match /test/connection {
+      allow read: if true;
+    }
+
+    // User profile document and user data hierarchy
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create, update: if isOwner(userId);
+      allow delete: if false;
+
+      // Assets subcollection
+      match /assets/{assetId} {
+        allow read: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidId(assetId);
+        allow delete: if isOwner(userId) && isValidId(assetId);
+      }
+
+      // Liabilities subcollection
+      match /liabilities/{liabilityId} {
+        allow read: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidId(liabilityId);
+        allow delete: if isOwner(userId) && isValidId(liabilityId);
+      }
+
+      // Transactions subcollection
+      match /transactions/{transactionId} {
+        allow read: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidId(transactionId);
+        allow delete: if isOwner(userId) && isValidId(transactionId);
+      }
+
+      // Settings subcollection
+      match /settings/{settingId} {
+        allow read: if isOwner(userId);
+        allow write: if isOwner(userId) && isValidId(settingId);
+      }
+
+      // Catch-all for any user-scoped nested collections
+      match /{allSubcollections=**} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+  }
+}

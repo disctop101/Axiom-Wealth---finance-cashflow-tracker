@@ -1,0 +1,120 @@
+@import "tailwindcss";
+
+/* Responsive Mobile & Desktop Layout Rules */
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+  width: 100%;
+}
+
+/* Safe area padding helper for modern mobile devices */
+.safe-pb {
+  padding-bottom: env(safe-area-inset-bottom, 1rem);
+}
+
+/* Google Sign-In Material Button Styling */
+.gsi-material-button {
+  background-color: #ffffff;
+  background-image: none;
+  border: 1px solid #747775;
+  border-radius: 4px;
+  box-sizing: border-box;
+  color: #1f1f1f;
+  cursor: pointer;
+  font-family: 'Roboto', arial, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  height: 32px;
+  letter-spacing: 0.25px;
+  outline: none;
+  overflow: hidden;
+  padding: 0 10px;
+  position: relative;
+  text-align: center;
+  vertical-align: middle;
+  white-space: nowrap;
+  width: auto;
+  transition: background-color 0.2s, box-shadow 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gsi-material-button:hover {
+  box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+  background-color: #f8fafd;
+}
+
+.gsi-material-button:active {
+  background-color: #eeeeee;
+}
+
+/* Print-Ready Financial Statement Styles */
+@media print {
+  /* Hide navigation, toolbars, buttons, inputs and modals */
+  header,
+  nav,
+  .print\:hidden,
+  .no-print,
+  button,
+  input,
+  select,
+  [role="dialog"] {
+    display: none !important;
+  }
+
+  body {
+    background-color: #ffffff !important;
+    color: #111827 !important;
+    font-size: 10.5pt !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  .printable-statement {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+  }
+
+  /* Prevent page breaks inside critical financial cards and tables */
+  .break-inside-avoid,
+  .printable-statement > div,
+  table,
+  tr {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Preserve high-contrast colors and borders when printed */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+
+/* Forced wide desktop layout mode for PDF export */
+.pdf-export-mode {
+  width: 1200px !important;
+  min-width: 1200px !important;
+  max-width: 1200px !important;
+  background-color: #ffffff !important;
+  color: #111827 !important;
+  padding: 0.5rem !important;
+}
+
+.pdf-export-mode * {
+  box-sizing: border-box !important;
+}
+

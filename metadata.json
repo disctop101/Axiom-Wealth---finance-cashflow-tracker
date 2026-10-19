@@ -1,0 +1,6 @@
+{
+  "name": "Finance & Cashflow Tracker",
+  "description": "Personal finance and cashflow tracker with income statements, cash flow, balance sheets, assets and liabilities management, and Google Sheets integration.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

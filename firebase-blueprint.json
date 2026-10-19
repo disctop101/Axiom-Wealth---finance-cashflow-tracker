@@ -1,0 +1,276 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique user ID matching auth UID",
+          "maxLength": 128
+        },
+        "email": {
+          "type": "string",
+          "description": "User email address",
+          "maxLength": 256
+        },
+        "displayName": {
+          "type": "string",
+          "description": "User full name or display alias",
+          "maxLength": 100
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp of last update"
+        }
+      },
+      "required": ["id", "email"]
+    },
+    "Asset": {
+      "title": "Asset",
+      "description": "User personal asset entry",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the asset",
+          "maxLength": 128
+        },
+        "userId": {
+          "type": "string",
+          "description": "Owner user ID",
+          "maxLength": 128
+        },
+        "name": {
+          "type": "string",
+          "description": "Name or title of asset",
+          "maxLength": 120
+        },
+        "category": {
+          "type": "string",
+          "description": "Asset category matching balance sheet",
+          "enum": [
+            "Cash and cash equivalents",
+            "Retirement accounts",
+            "Investment accounts",
+            "Real estate",
+            "Vehicles",
+            "Other assets"
+          ]
+        },
+        "initialValue": {
+          "type": "number",
+          "description": "Base initial value in currency"
+        },
+        "institution": {
+          "type": "string",
+          "description": "Financial institution or bank",
+          "maxLength": 120
+        },
+        "notes": {
+          "type": "string",
+          "description": "Additional notes",
+          "maxLength": 500
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Last update timestamp"
+        }
+      },
+      "required": ["id", "userId", "name", "category", "initialValue"]
+    },
+    "Liability": {
+      "title": "Liability",
+      "description": "User loan or debt entry",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the liability",
+          "maxLength": 128
+        },
+        "userId": {
+          "type": "string",
+          "description": "Owner user ID",
+          "maxLength": 128
+        },
+        "name": {
+          "type": "string",
+          "description": "Title or description of liability",
+          "maxLength": 120
+        },
+        "category": {
+          "type": "string",
+          "description": "Liability category matching balance sheet",
+          "enum": [
+            "Mortgage balance",
+            "Car loan",
+            "Student loan",
+            "Credit card balances",
+            "Other debts"
+          ]
+        },
+        "initialAmount": {
+          "type": "number",
+          "description": "Original principal or balance in currency"
+        },
+        "interestRate": {
+          "type": "number",
+          "description": "Annual interest rate percentage"
+        },
+        "monthlyPayment": {
+          "type": "number",
+          "description": "Monthly amortization or payment"
+        },
+        "lender": {
+          "type": "string",
+          "description": "Lender or bank name",
+          "maxLength": 120
+        },
+        "notes": {
+          "type": "string",
+          "description": "Additional notes",
+          "maxLength": 500
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Last update timestamp"
+        }
+      },
+      "required": ["id", "userId", "name", "category", "initialAmount"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "Period income or expense entry",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for transaction",
+          "maxLength": 128
+        },
+        "userId": {
+          "type": "string",
+          "description": "Owner user ID",
+          "maxLength": 128
+        },
+        "type": {
+          "type": "string",
+          "description": "Income or expense",
+          "enum": ["income", "expense"]
+        },
+        "category": {
+          "type": "string",
+          "description": "Line item category name",
+          "maxLength": 80
+        },
+        "subCategory": {
+          "type": "string",
+          "description": "Income or expense classification",
+          "enum": ["earned", "passive", "other", "fixed", "variable"]
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of item",
+          "maxLength": 200
+        },
+        "amount": {
+          "type": "number",
+          "description": "Monetary amount in Philippine Peso"
+        },
+        "date": {
+          "type": "string",
+          "description": "Date of transaction YYYY-MM-DD",
+          "maxLength": 10
+        },
+        "month": {
+          "type": "number",
+          "description": "Month index 1-12"
+        },
+        "year": {
+          "type": "number",
+          "description": "Year of transaction"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Last update timestamp"
+        }
+      },
+      "required": ["id", "userId", "type", "category", "subCategory", "amount", "month", "year"]
+    },
+    "PeriodSetting": {
+      "title": "PeriodSetting",
+      "description": "User preferences for active dashboard period and beginning balance",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Owner user ID",
+          "maxLength": 128
+        },
+        "startMonth": {
+          "type": "string",
+          "description": "Active start month",
+          "maxLength": 20
+        },
+        "startYear": {
+          "type": "number",
+          "description": "Active start year"
+        },
+        "endMonth": {
+          "type": "string",
+          "description": "Active end month",
+          "maxLength": 20
+        },
+        "endYear": {
+          "type": "number",
+          "description": "Active end year"
+        },
+        "beginningBalance": {
+          "type": "number",
+          "description": "Beginning cash balance for period"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Last update timestamp"
+        }
+      },
+      "required": ["userId", "startMonth", "startYear", "endMonth", "endYear", "beginningBalance"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile document"
+    },
+    "/users/{userId}/assets/{assetId}": {
+      "schema": "Asset",
+      "description": "User assets list"
+    },
+    "/users/{userId}/liabilities/{liabilityId}": {
+      "schema": "Liability",
+      "description": "User debts and loans"
+    },
+    "/users/{userId}/transactions/{transactionId}": {
+      "schema": "Transaction",
+      "description": "Income and expense transactions"
+    },
+    "/users/{userId}/settings/period": {
+      "schema": "PeriodSetting",
+      "description": "Active period settings"
+    }
+  }
+}
