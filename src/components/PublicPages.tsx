@@ -45,9 +45,11 @@ const PublicShell: React.FC<{ children: React.ReactNode }> = ({ children }) => (
     <header className="border-b border-neutral-800 px-4 py-3">
       <div className="max-w-4xl mx-auto flex items-center justify-between">
         <a href="/" className="flex items-center gap-2 font-black uppercase tracking-wider text-sm">
-          <span className="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
-            <Sparkles className="w-4 h-4" />
-          </span>
+          <img
+            src="/logo.png"
+            alt="Axiom Wealth Logo"
+            className="w-8 h-8 rounded-lg object-contain bg-emerald-950/40 border border-emerald-500/40 p-0.5"
+          />
           {APP_NAME}
         </a>
         <nav className="flex items-center gap-4 text-xs text-neutral-400">

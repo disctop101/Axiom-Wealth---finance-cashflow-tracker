@@ -48,9 +48,18 @@ const STORAGE_KEYS = {
   SIMULATE_TRIAL_EXPIRED: 'axiom_wealth_sim_trial_expired',
 };
 
-// Owner/admin email is supplied via environment config (VITE_OWNER_EMAIL), never hardcoded.
-export const DEFAULT_OWNER_EMAIL: string = ((import.meta as any).env?.VITE_OWNER_EMAIL as string | undefined) || '';
-export const PRIMARY_OWNER_EMAILS: string[] = DEFAULT_OWNER_EMAIL ? [DEFAULT_OWNER_EMAIL.toLowerCase()] : [];
+// Developer & owner emails that always receive Pro/Apex access bypass
+export const DEVELOPER_PREMIUM_EMAILS = [
+  'emmanuelfajutagana@gmail.com',
+  'fajutaganaemmanuel@gmail.com',
+];
+
+// Owner/admin email can also be supplied via environment config (VITE_OWNER_EMAIL)
+export const DEFAULT_OWNER_EMAIL: string = ((import.meta as any).env?.VITE_OWNER_EMAIL as string | undefined) || 'emmanuelfajutagana@gmail.com';
+export const PRIMARY_OWNER_EMAILS: string[] = [
+  ...DEVELOPER_PREMIUM_EMAILS,
+  ...(DEFAULT_OWNER_EMAIL ? [DEFAULT_OWNER_EMAIL.toLowerCase()] : []),
+];
 
 /**
  * Returns the configured owner email address (case-insensitive).
@@ -81,7 +90,8 @@ export function isOwnerUser(user: User | null | undefined): boolean {
   const ownerEmail = getOwnerEmail();
   return (
     (!!ownerEmail && userEmail === ownerEmail) ||
-    PRIMARY_OWNER_EMAILS.includes(userEmail)
+    PRIMARY_OWNER_EMAILS.includes(userEmail) ||
+    DEVELOPER_PREMIUM_EMAILS.includes(userEmail)
   );
 }
 
@@ -289,9 +299,31 @@ export function computeUserAccess(
   user: User | null | undefined,
   previewAsCustomer: boolean
 ): UserAccessInfo {
-  const isAdmin = isOwnerUser(user);
+  const userEmail = user?.email?.trim().toLowerCase() || '';
+  const isDeveloperUser = DEVELOPER_PREMIUM_EMAILS.includes(userEmail);
+  const isAdmin = isDeveloperUser || isOwnerUser(user);
   const localSub = getLocalSubscriptionStatus();
   const trial = getTrialStatus();
+
+  // Explicit Developer Override:
+  // When logged in as emmanuelfajutagana@gmail.com, automatically grant full Apex/Pro access,
+  // bypassing all paywalls, trial expirations, and locked tiers.
+  if (isDeveloperUser && !previewAsCustomer) {
+    return {
+      tier: 'apex',
+      hasApexAccess: true,
+      hasFullAccess: true,
+      isAdmin: true,
+      isAdminBypassActive: true,
+      isSubscribed: true,
+      plan: 'lifetime',
+      statusLabel: 'Developer Pro / Apex Override (Full Access)',
+      isTrialActivated: true,
+      isTrialActive: true,
+      isTrialExpired: false,
+      trialDaysRemaining: 15,
+    };
+  }
 
   // 1. Simulation Override: When "Simulate Trial Expired" is triggered in Developer Settings,
   // it immediately forces the Essential tier across all permissions, overriding any admin bypass

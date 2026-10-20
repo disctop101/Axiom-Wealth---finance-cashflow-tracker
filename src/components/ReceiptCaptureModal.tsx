@@ -279,15 +279,18 @@ export const ReceiptCaptureModal: React.FC<ReceiptCaptureModalProps> = ({
         throw new Error('Webcam API is not supported in this browser.');
       }
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } },
+        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } },
         audio: false,
       });
       mediaStreamRef.current = stream;
       setIsWebcamActive(true);
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.play().catch((e) => console.warn('Video play error:', e));
-      }
+      // Small timeout or microtask to ensure video element is rendered if it was unmounted
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.play().catch((e) => console.warn('Video play error:', e));
+        }
+      }, 50);
     } catch (err: any) {
       console.error('Webcam access error:', err);
       setWebcamError(
@@ -298,6 +301,14 @@ export const ReceiptCaptureModal: React.FC<ReceiptCaptureModalProps> = ({
       stopWebcam();
     }
   };
+
+  // Sync video element when isWebcamActive becomes true
+  useEffect(() => {
+    if (isWebcamActive && mediaStreamRef.current && videoRef.current) {
+      videoRef.current.srcObject = mediaStreamRef.current;
+      videoRef.current.play().catch((e) => console.warn('Video play error:', e));
+    }
+  }, [isWebcamActive]);
 
   // Capture snapshot from active video stream
   const handleCaptureSnapshot = () => {
@@ -626,33 +637,44 @@ export const ReceiptCaptureModal: React.FC<ReceiptCaptureModalProps> = ({
 
           {/* ================= STATE 2: ACTIVE LIVE WEBCAM FEED ================= */}
           {isWebcamActive && (
-            <div className="flex-1 flex flex-col items-center justify-center space-y-4">
-              <div className="relative rounded-2xl overflow-hidden border-2 border-emerald-500 shadow-2xl bg-black max-w-3xl max-h-[60vh] flex items-center justify-center">
+            <div className="flex-1 flex flex-col items-center justify-between min-h-0 w-full p-2 space-y-3">
+              <div className="relative rounded-2xl overflow-hidden border-2 border-emerald-500 shadow-2xl bg-black w-full flex-1 min-h-[300px] sm:min-h-[420px] max-h-[72vh] flex items-center justify-center">
                 <video
                   ref={videoRef}
                   autoPlay
                   playsInline
                   muted
-                  className="max-h-[60vh] w-auto object-contain block"
+                  className="w-full h-full object-contain bg-black block"
                 />
-                <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/80 to-transparent flex items-center justify-center">
-                  <span className="text-xs text-emerald-300 font-mono">Live Camera Feed Active</span>
+                <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/80 to-transparent flex items-center justify-center pointer-events-none">
+                  <span className="text-xs text-emerald-300 font-mono flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    Live Camera Feed Active
+                  </span>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center justify-center gap-3 w-full py-1 shrink-0">
                 <button
                   type="button"
                   onClick={handleCaptureSnapshot}
-                  className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 shadow-lg transition cursor-pointer"
+                  className="min-h-[44px] px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg transition cursor-pointer w-full sm:w-auto"
                 >
-                  <Camera className="w-4 h-4" />
+                  <Camera className="w-5 h-5" />
                   <span>Take Snapshot</span>
                 </button>
                 <button
                   type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="min-h-[44px] px-4 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-600 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition cursor-pointer w-full sm:w-auto"
+                >
+                  <Upload className="w-4 h-4 text-emerald-400" />
+                  <span>Upload Instead</span>
+                </button>
+                <button
+                  type="button"
                   onClick={stopWebcam}
-                  className="px-4 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded-xl text-xs font-semibold transition cursor-pointer"
+                  className="min-h-[44px] px-4 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-neutral-400 hover:text-white border border-neutral-700 rounded-xl text-xs font-semibold transition cursor-pointer w-full sm:w-auto"
                 >
                   Cancel
                 </button>

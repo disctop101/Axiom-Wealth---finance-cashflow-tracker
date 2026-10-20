@@ -1206,7 +1206,7 @@ export default function App() {
     );
   }
   return (
-    <div className="min-h-screen bg-[#f4f6f8] dark:bg-[#121416] text-neutral-900 dark:text-neutral-100 font-sans antialiased flex flex-col transition-colors duration-150">
+    <div className="min-h-screen bg-[#f4f6f8] dark:bg-[#121416] text-neutral-900 dark:text-neutral-100 font-sans antialiased flex flex-col transition-colors duration-150 overflow-x-hidden">
       {/* Floating Button to restore navigation if hidden (Distraction-Free Mode) */}
       {isNavHidden && (
         <aside aria-label="Quick Actions" className="fixed top-3 right-4 z-50 print:hidden">

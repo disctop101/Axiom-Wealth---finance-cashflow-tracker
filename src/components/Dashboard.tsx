@@ -1666,77 +1666,81 @@ export const Dashboard: React.FC<DashboardProps> = ({
         {/* Date Filter Inputs & Action Buttons */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 text-xs">
           {/* Start and End Selectors */}
-          <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full lg:w-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full lg:w-auto">
             {/* Start Month & Year */}
-            <div className={`flex items-center justify-between sm:justify-start bg-[#282d30] px-2.5 py-1.5 rounded border transition ${filterByPeriod ? 'border-neutral-600' : 'border-neutral-700 opacity-60'}`}>
-              <span className="text-neutral-400 font-semibold mr-1.5 uppercase text-[10px]">
+            <div className={`flex items-center justify-between bg-[#282d30] px-2.5 py-2 rounded border transition min-h-[42px] ${filterByPeriod ? 'border-neutral-600' : 'border-neutral-700 opacity-60'}`}>
+              <span className="text-neutral-400 font-semibold mr-1.5 uppercase text-[10px] shrink-0">
                 Start:
               </span>
-              <select
-                value={period.startMonth}
-                onChange={(e) => {
-                  setFilterByPeriod(true);
-                  setPeriod((prev) => ({ ...prev, startMonth: e.target.value }));
-                }}
-                className="bg-transparent text-white font-medium focus:outline-hidden cursor-pointer"
-              >
-                {MONTH_NAMES.map((m) => (
-                  <option key={m} value={m} className="bg-neutral-800 text-white">
-                    {m}
-                  </option>
-                ))}
-              </select>
-              <input
-                type="number"
-                value={period.startYear}
-                onChange={(e) => {
-                  setFilterByPeriod(true);
-                  setPeriod((prev) => ({ ...prev, startYear: parseInt(e.target.value) || new Date().getFullYear() }));
-                }}
-                className="w-14 bg-transparent text-white text-right font-medium focus:outline-hidden ml-1 border-l border-neutral-700 pl-1"
-              />
+              <div className="flex items-center gap-1.5 flex-1 justify-end min-w-0">
+                <select
+                  value={period.startMonth}
+                  onChange={(e) => {
+                    setFilterByPeriod(true);
+                    setPeriod((prev) => ({ ...prev, startMonth: e.target.value }));
+                  }}
+                  className="bg-transparent text-white font-medium focus:outline-hidden cursor-pointer text-xs truncate max-w-[110px]"
+                >
+                  {MONTH_NAMES.map((m) => (
+                    <option key={m} value={m} className="bg-neutral-800 text-white">
+                      {m}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="number"
+                  value={period.startYear}
+                  onChange={(e) => {
+                    setFilterByPeriod(true);
+                    setPeriod((prev) => ({ ...prev, startYear: parseInt(e.target.value) || new Date().getFullYear() }));
+                  }}
+                  className="w-16 bg-transparent text-white text-right font-medium focus:outline-hidden border-l border-neutral-700 pl-1.5 shrink-0"
+                />
+              </div>
             </div>
 
             {/* End Month & Year */}
-            <div className={`flex items-center justify-between sm:justify-start bg-[#282d30] px-2.5 py-1.5 rounded border transition ${filterByPeriod ? 'border-neutral-600' : 'border-neutral-700 opacity-60'}`}>
-              <span className="text-neutral-400 font-semibold mr-1.5 uppercase text-[10px]">
+            <div className={`flex items-center justify-between bg-[#282d30] px-2.5 py-2 rounded border transition min-h-[42px] ${filterByPeriod ? 'border-neutral-600' : 'border-neutral-700 opacity-60'}`}>
+              <span className="text-neutral-400 font-semibold mr-1.5 uppercase text-[10px] shrink-0">
                 End:
               </span>
-              <select
-                value={period.endMonth}
-                onChange={(e) => {
-                  setFilterByPeriod(true);
-                  setPeriod((prev) => ({ ...prev, endMonth: e.target.value }));
-                }}
-                className="bg-transparent text-white font-medium focus:outline-hidden cursor-pointer"
-              >
-                {MONTH_NAMES.map((m) => (
-                  <option key={m} value={m} className="bg-neutral-800 text-white">
-                    {m}
-                  </option>
-                ))}
-              </select>
-              <input
-                type="number"
-                value={period.endYear}
-                onChange={(e) => {
-                  setFilterByPeriod(true);
-                  setPeriod((prev) => ({ ...prev, endYear: parseInt(e.target.value) || new Date().getFullYear() }));
-                }}
-                className="w-14 bg-transparent text-white text-right font-medium focus:outline-hidden ml-1 border-l border-neutral-700 pl-1"
-              />
+              <div className="flex items-center gap-1.5 flex-1 justify-end min-w-0">
+                <select
+                  value={period.endMonth}
+                  onChange={(e) => {
+                    setFilterByPeriod(true);
+                    setPeriod((prev) => ({ ...prev, endMonth: e.target.value }));
+                  }}
+                  className="bg-transparent text-white font-medium focus:outline-hidden cursor-pointer text-xs truncate max-w-[110px]"
+                >
+                  {MONTH_NAMES.map((m) => (
+                    <option key={m} value={m} className="bg-neutral-800 text-white">
+                      {m}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="number"
+                  value={period.endYear}
+                  onChange={(e) => {
+                    setFilterByPeriod(true);
+                    setPeriod((prev) => ({ ...prev, endYear: parseInt(e.target.value) || new Date().getFullYear() }));
+                  }}
+                  className="w-16 bg-transparent text-white text-right font-medium focus:outline-hidden border-l border-neutral-700 pl-1.5 shrink-0"
+                />
+              </div>
             </div>
           </div>
 
           {/* Action Buttons in a responsive grid for mobile, flex for desktop */}
-          <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:items-center gap-1.5 w-full lg:w-auto">
+          <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
             {/* Contextual Guide Popup Button */}
             {onOpenHelp && (
               <Tooltip content="Open operational guide and button explanations for Financial Statements" position="bottom">
                 <button
                   type="button"
                   onClick={onOpenHelp}
-                  className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white rounded text-xs font-semibold transition border border-neutral-600 shadow-xs cursor-pointer"
+                  className="flex-1 sm:flex-initial min-h-[40px] flex items-center justify-center gap-1.5 px-3 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white rounded text-xs font-semibold transition border border-neutral-600 shadow-xs cursor-pointer"
                   title="Open operational guide"
                 >
                   <BookOpen className="w-3.5 h-3.5 text-emerald-400" />
@@ -1750,7 +1754,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <button
                 type="button"
                 onClick={handleSetCurrentMonth}
-                className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-neutral-700 hover:bg-neutral-600 text-white rounded text-xs font-semibold transition border border-neutral-500 shadow-xs cursor-pointer"
+                className="flex-1 sm:flex-initial min-h-[40px] flex items-center justify-center gap-1.5 px-3 py-2 bg-neutral-700 hover:bg-neutral-600 text-white rounded text-xs font-semibold transition border border-neutral-500 shadow-xs cursor-pointer"
                 title="Set period filter to the current system month and year"
               >
                 <Calendar className="w-3.5 h-3.5 text-emerald-400" />
@@ -1764,7 +1768,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 type="button"
                 onClick={handleExportPdf}
                 disabled={isExportingPdf}
-                className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-emerald-800 hover:bg-emerald-700 disabled:opacity-60 text-white rounded text-xs font-semibold transition shadow-xs border border-emerald-600 cursor-pointer"
+                className="w-full sm:w-auto min-h-[40px] flex items-center justify-center gap-1.5 px-3.5 py-2 bg-emerald-800 hover:bg-emerald-700 disabled:opacity-60 text-white rounded text-xs font-semibold transition shadow-xs border border-emerald-600 cursor-pointer"
                 title="Export statement as PDF document"
               >
                 {isExportingPdf ? (
