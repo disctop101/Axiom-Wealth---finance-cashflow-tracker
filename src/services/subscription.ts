@@ -41,6 +41,7 @@ export const TRIAL_DURATION_MS = TRIAL_DURATION_DAYS * 24 * 60 * 60 * 1000;
 const STORAGE_KEYS = {
   OWNER_EMAIL: 'axiom_wealth_owner_email',
   PREVIEW_AS_CUSTOMER: 'axiom_wealth_preview_as_customer',
+  DEVELOPER_PRO_OVERRIDE: 'axiom_wealth_dev_pro_override',
   IS_SUBSCRIBED: 'axiom_wealth_is_subscribed',
   SUBSCRIPTION_PLAN: 'axiom_wealth_sub_plan',
   TRIAL_ACTIVATED: 'axiom_wealth_trial_activated',
@@ -93,6 +94,34 @@ export function isOwnerUser(user: User | null | undefined): boolean {
     PRIMARY_OWNER_EMAILS.includes(userEmail) ||
     DEVELOPER_PREMIUM_EMAILS.includes(userEmail)
   );
+}
+
+/**
+ * Checks if the developer pro / apex override toggle is enabled.
+ * Defaults to true for emmanuelfajutagana@gmail.com and developer emails if not explicitly set to 'false'.
+ */
+export function getDeveloperProOverride(userEmail?: string | null): boolean {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEYS.DEVELOPER_PRO_OVERRIDE);
+    if (saved !== null) {
+      return saved === 'true';
+    }
+  } catch {}
+  if (userEmail) {
+    const normalized = userEmail.trim().toLowerCase();
+    if (DEVELOPER_PREMIUM_EMAILS.includes(normalized)) return true;
+  }
+  return false;
+}
+
+/**
+ * Updates the 'Developer Pro / Apex Mode' toggle state.
+ */
+export function setDeveloperProOverride(enabled: boolean) {
+  try {
+    localStorage.setItem(STORAGE_KEYS.DEVELOPER_PRO_OVERRIDE, String(enabled));
+    window.dispatchEvent(new Event('axiom_trial_change'));
+  } catch {}
 }
 
 /**
@@ -302,13 +331,14 @@ export function computeUserAccess(
   const userEmail = user?.email?.trim().toLowerCase() || '';
   const isDeveloperUser = DEVELOPER_PREMIUM_EMAILS.includes(userEmail);
   const isAdmin = isDeveloperUser || isOwnerUser(user);
+  const isDevProActive = getDeveloperProOverride(userEmail);
   const localSub = getLocalSubscriptionStatus();
   const trial = getTrialStatus();
 
   // Explicit Developer Override:
-  // When logged in as emmanuelfajutagana@gmail.com, automatically grant full Apex/Pro access,
-  // bypassing all paywalls, trial expirations, and locked tiers.
-  if (isDeveloperUser && !previewAsCustomer) {
+  // When Developer Pro / Apex Mode is active, automatically grant full Apex/Pro access unconditionally,
+  // bypassing all paywalls, trial countdowns, upgrade prompts, and restricted tool flags.
+  if ((isDevProActive || (isDeveloperUser && !previewAsCustomer)) && !previewAsCustomer) {
     return {
       tier: 'apex',
       hasApexAccess: true,
@@ -317,9 +347,9 @@ export function computeUserAccess(
       isAdminBypassActive: true,
       isSubscribed: true,
       plan: 'lifetime',
-      statusLabel: 'Developer Pro / Apex Override (Full Access)',
+      statusLabel: 'Developer Pro / Apex Mode (Unconditional Full Access)',
       isTrialActivated: true,
-      isTrialActive: true,
+      isTrialActive: false, // Not in trial mode, fully unlocked
       isTrialExpired: false,
       trialDaysRemaining: 15,
     };

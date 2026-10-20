@@ -1248,7 +1248,7 @@ export default function App() {
 
       {/* Main Page Content */}
       <main className={`flex-1 p-3 sm:p-5 pb-24 md:pb-6 max-w-7xl w-full mx-auto ${!isNavHidden ? 'pt-16 sm:pt-18 md:pt-20' : ''}`}>
-        {/* Customer Preview / 15-Day Trial / Tier Status Header Alert Banner */}
+        {/* Customer Preview / 15-Day Trial / Tier Status Header Alert Banner (Hidden when Apex/Pro is active) */}
         {userAccess.isAdmin && previewAsCustomer ? (
           <div className="mb-4 p-3 bg-gradient-to-r from-amber-950/90 via-neutral-900 to-amber-950/90 border border-amber-500/70 text-amber-200 rounded-lg shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
             <div className="flex items-center gap-2.5">
@@ -1280,33 +1280,7 @@ export default function App() {
               </button>
             </div>
           </div>
-        ) : userAccess.isTrialActive ? (
-          <div className="mb-4 p-3 bg-gradient-to-r from-emerald-950/90 via-neutral-900 to-emerald-950/90 border border-emerald-500/70 text-emerald-200 rounded-lg shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-            <div className="flex items-center gap-2.5">
-              <span className="flex h-2 w-2 relative">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-              </span>
-              <div>
-                <span className="font-bold text-white">
-                  Axiom Wealth Apex &bull; 15-Day Free Trial Active ({userAccess.trialDaysRemaining} {userAccess.trialDaysRemaining === 1 ? 'day' : 'days'} remaining)
-                </span>
-                <span className="text-neutral-300 ml-1.5">
-                  Full Apex access enabled: encrypted cloud sync, real-time ledger automations, advanced analytics, and PDF/sheets export.
-                </span>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => handleOpenGrowthCheckpoint('general')}
-                className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-neutral-950 font-bold rounded shadow-xs transition cursor-pointer shrink-0"
-              >
-                Upgrade to Apex
-              </button>
-            </div>
-          </div>
-        ) : userAccess.isTrialExpired ? (
+        ) : !userAccess.hasApexAccess && userAccess.isTrialExpired ? (
           <div className="mb-4 p-3 bg-gradient-to-r from-red-950/90 via-neutral-900 to-amber-950/90 border border-red-500/70 text-amber-200 rounded-lg shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
             <div className="flex items-center gap-2.5">
               <span className="flex h-2 w-2 relative">

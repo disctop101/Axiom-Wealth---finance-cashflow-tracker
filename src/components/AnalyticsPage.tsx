@@ -910,9 +910,9 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({
         </div>
 
         {/* Global Controls: Presets + Current Jump + Date Pickers */}
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Time Filter Presets (Day, Week, Month, Year, All Time) */}
-          <div className="flex items-center gap-1 bg-neutral-900/90 p-1 rounded-lg border border-neutral-700 text-xs">
+        <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+          {/* Time Filter Presets (Day, Week, Month, Year, All Time) with smooth horizontal scroll on narrow mobile */}
+          <div className="flex items-center gap-1 bg-neutral-900/90 p-1 rounded-lg border border-neutral-700 text-xs overflow-x-auto max-w-full scrollbar-none shrink-0">
             {(['day', 'weekly', 'monthly', 'yearly', 'all'] as const).map((r) => {
               const labels = {
                 day: 'Day',
@@ -928,7 +928,7 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({
                   key={r}
                   type="button"
                   onClick={() => handleSelectTimeRange(r)}
-                  className={`px-3 py-1.5 rounded font-semibold transition cursor-pointer ${
+                  className={`px-3 py-1.5 rounded font-semibold transition cursor-pointer whitespace-nowrap ${
                     isSelected
                       ? 'bg-emerald-600 text-white shadow-xs'
                       : 'text-neutral-400 hover:text-white hover:bg-neutral-800'
@@ -943,7 +943,7 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({
             <button
               type="button"
               onClick={handleJumpToCurrent}
-              className="flex items-center gap-1 px-3 py-1.5 rounded font-bold bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white shadow-xs transition cursor-pointer ml-0.5"
+              className="flex items-center gap-1 px-3 py-1.5 rounded font-bold bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white shadow-xs transition cursor-pointer ml-0.5 whitespace-nowrap shrink-0"
               title="Jump to present active period (Today / Current Week / Current Month / Current Year)"
             >
               <Clock className="w-3.5 h-3.5" />
@@ -952,24 +952,28 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({
           </div>
 
           {/* Date Picker Selection Interface */}
-          <div className="flex items-center gap-2 bg-neutral-900/90 px-3 py-1.5 rounded-lg border border-neutral-700 text-xs text-neutral-300">
-            <Calendar className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-            <span className="text-[11px] text-neutral-400 hidden sm:inline">From:</span>
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="bg-neutral-800 text-white border border-neutral-700 rounded px-2 py-0.5 text-xs font-mono focus:outline-hidden focus:border-emerald-500 cursor-pointer"
-              title="Start Date"
-            />
-            <span className="text-[11px] text-neutral-400 hidden sm:inline">To:</span>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="bg-neutral-800 text-white border border-neutral-700 rounded px-2 py-0.5 text-xs font-mono focus:outline-hidden focus:border-emerald-500 cursor-pointer"
-              title="End Date"
-            />
+          <div className="flex flex-wrap items-center gap-2 bg-neutral-900/90 px-3 py-1.5 rounded-lg border border-neutral-700 text-xs text-neutral-300">
+            <div className="flex items-center gap-1.5">
+              <Calendar className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+              <span className="text-[11px] text-neutral-400">From:</span>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="bg-neutral-800 text-white border border-neutral-700 rounded px-2 py-0.5 text-xs font-mono focus:outline-hidden focus:border-emerald-500 cursor-pointer"
+                title="Start Date"
+              />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] text-neutral-400">To:</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="bg-neutral-800 text-white border border-neutral-700 rounded px-2 py-0.5 text-xs font-mono focus:outline-hidden focus:border-emerald-500 cursor-pointer"
+                title="End Date"
+              />
+            </div>
           </div>
 
           {/* Contextual Guide Button */}

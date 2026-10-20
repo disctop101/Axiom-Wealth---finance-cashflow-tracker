@@ -147,14 +147,14 @@ export const PurchaseCheckerPage: React.FC<PurchaseCheckerPageProps> = ({
           <div className="w-8 h-8 rounded-lg bg-emerald-950/80 border border-emerald-500/80 flex items-center justify-center text-emerald-400">
             <Calculator className="w-5 h-5" />
           </div>
-          <div>
-            <h1 className="text-base sm:text-lg font-black tracking-wide uppercase text-white flex items-center gap-2">
-              Purchase Affordability Checker
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800 font-mono font-bold tracking-normal">
+          <div className="min-w-0">
+            <h1 className="text-base sm:text-lg font-black tracking-wide uppercase text-white flex flex-wrap items-center gap-2">
+              <span>Purchase Affordability Checker</span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800 font-mono font-bold tracking-normal shrink-0">
                 10X WEALTH RULE
               </span>
             </h1>
-            <p className="text-xs text-neutral-400">
+            <p className="text-xs text-neutral-400 mt-0.5 leading-relaxed">
               Verify if an expense is truly affordable before you buy, without jeopardizing your financial safety buffer
             </p>
           </div>

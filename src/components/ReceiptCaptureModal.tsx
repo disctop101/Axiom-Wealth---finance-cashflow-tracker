@@ -526,75 +526,44 @@ export const ReceiptCaptureModal: React.FC<ReceiptCaptureModalProps> = ({
       {/* Maximum Available Screen Real Estate on Desktop */}
       <div className="bg-[#181a1b] text-white w-full max-w-[96vw] xl:max-w-7xl h-[94vh] max-h-[94vh] rounded-2xl shadow-2xl border border-neutral-700 overflow-hidden flex flex-col animate-in zoom-in-95 duration-150">
         {/* Top Header Bar */}
-        <div className="px-5 py-3.5 bg-[#212529] text-white flex items-center justify-between border-b border-neutral-700 shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-emerald-950 border border-emerald-600 flex items-center justify-center text-emerald-400 shrink-0">
+        <div className="px-4 py-3 bg-[#212529] text-white flex items-center justify-between border-b border-neutral-700 shrink-0">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-7 h-7 rounded-lg bg-emerald-950 border border-emerald-600 flex items-center justify-center text-emerald-400 shrink-0">
               <Scan className="w-4 h-4" />
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="font-bold text-sm sm:text-base text-white">Receipt Capture &amp; OCR Engine</h2>
-                <span className="text-[10px] bg-emerald-600/30 text-emerald-300 border border-emerald-600 px-2 py-0.5 rounded font-mono font-bold">
+                <h2 className="font-bold text-xs sm:text-sm text-white truncate">Receipt Capture &amp; OCR Engine</h2>
+                <span className="text-[9px] bg-emerald-600/30 text-emerald-300 border border-emerald-600 px-1.5 py-0.2 rounded font-mono font-bold">
                   FREEHAND HIGHLIGHTER
                 </span>
               </div>
-              <p className="text-[11px] text-neutral-400 font-mono hidden sm:block">
-                Paint highlighter strokes over text rows to selectively isolate item names and prices
-              </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            {/* Document Type Selector Toggle */}
-            <div className="flex items-center bg-neutral-900 border border-neutral-700 p-0.5 rounded-lg text-xs">
-              <button
-                type="button"
-                onClick={() => setDocType('receipt')}
-                className={`px-2.5 py-1 rounded text-xs font-semibold transition cursor-pointer ${
-                  docType === 'receipt'
-                    ? 'bg-emerald-600 text-white font-bold shadow-xs'
-                    : 'text-neutral-400 hover:text-white'
-                }`}
-              >
-                Purchase Receipt
-              </button>
-              <button
-                type="button"
-                onClick={() => setDocType('bank_transaction')}
-                className={`px-2.5 py-1 rounded text-xs font-semibold transition cursor-pointer ${
-                  docType === 'bank_transaction'
-                    ? 'bg-emerald-600 text-white font-bold shadow-xs'
-                    : 'text-neutral-400 hover:text-white'
-                }`}
-              >
-                Bank Slip
-              </button>
-            </div>
-
-            <button
-              type="button"
-              onClick={onClose}
-              className="p-1.5 text-neutral-400 hover:text-white rounded-lg hover:bg-neutral-800 transition cursor-pointer"
-              title="Close (Esc)"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1.5 text-neutral-400 hover:text-white rounded-lg hover:bg-neutral-800 transition cursor-pointer shrink-0"
+            title="Close (Esc)"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
         {/* Modal Body */}
         <div className="flex-1 p-3 sm:p-5 overflow-hidden flex flex-col min-h-0 bg-[#121415]">
           {/* ================= STATE 1: UPLOAD / CAMERA CHOICE ================= */}
           {!imagePreview && !isWebcamActive && (
-            <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-6 max-w-xl mx-auto">
+            <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-6 max-w-xl mx-auto w-full">
               <div className="w-16 h-16 rounded-2xl bg-emerald-950/80 border border-emerald-600 flex items-center justify-center text-emerald-400 shadow-xl">
-                <Paintbrush className="w-8 h-8" />
+                <Camera className="w-8 h-8" />
               </div>
 
               <div className="space-y-2">
-                <h3 className="text-lg font-bold text-white">Capture or Upload Receipt</h3>
+                <h3 className="text-lg font-bold text-white">Snap or Upload Document</h3>
                 <p className="text-xs text-neutral-400 max-w-md leading-relaxed">
-                  Take a photo with your webcam or upload a clear receipt image. Use the freehand highlighter to paint over specific items to extract line items and prices.
+                  Use your mobile or device camera for high-accuracy live receipt capture, or upload an existing image from your photo gallery.
                 </p>
               </div>
 
@@ -609,19 +578,19 @@ export const ReceiptCaptureModal: React.FC<ReceiptCaptureModalProps> = ({
                 <button
                   type="button"
                   onClick={handleStartWebcam}
-                  className="flex-1 py-3.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition shadow-lg cursor-pointer"
+                  className="flex-1 min-h-[48px] py-3.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition shadow-lg cursor-pointer"
                 >
                   <Camera className="w-4 h-4" />
-                  <span>Activate Camera / Webcam</span>
+                  <span>Open Camera</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex-1 py-3.5 px-4 bg-neutral-800 hover:bg-neutral-700 text-neutral-100 border border-neutral-600 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition cursor-pointer"
+                  className="flex-1 min-h-[48px] py-3.5 px-4 bg-neutral-800 hover:bg-neutral-700 text-neutral-100 border border-neutral-600 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition cursor-pointer"
                 >
                   <Upload className="w-4 h-4 text-emerald-400" />
-                  <span>Upload Image File</span>
+                  <span>Choose from Gallery</span>
                 </button>
 
                 <input
@@ -635,177 +604,95 @@ export const ReceiptCaptureModal: React.FC<ReceiptCaptureModalProps> = ({
             </div>
           )}
 
-          {/* ================= STATE 2: ACTIVE LIVE WEBCAM FEED ================= */}
+          {/* ================= STATE 2: ACTIVE LIVE WEBCAM FEED (NATIVE MOBILE CAMERA UX) ================= */}
           {isWebcamActive && (
-            <div className="flex-1 flex flex-col items-center justify-between min-h-0 w-full p-2 space-y-3">
-              <div className="relative rounded-2xl overflow-hidden border-2 border-emerald-500 shadow-2xl bg-black w-full flex-1 min-h-[300px] sm:min-h-[420px] max-h-[72vh] flex items-center justify-center">
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  className="w-full h-full object-contain bg-black block"
-                />
-                <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/80 to-transparent flex items-center justify-center pointer-events-none">
-                  <span className="text-xs text-emerald-300 font-mono flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                    Live Camera Feed Active
+            <div className="relative flex-1 flex flex-col items-center justify-center min-h-0 w-full overflow-hidden rounded-2xl bg-black">
+              {/* Native Edge-to-Edge Video Feed */}
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className="w-full h-full object-cover sm:object-contain bg-black block"
+              />
+
+              {/* Viewfinder Framing Guides & Crosshair (Native Camera Style) */}
+              <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-6 sm:p-10">
+                {/* Rule of Thirds Grid Overlay */}
+                <div className="absolute inset-0 grid grid-cols-3 grid-rows-3 pointer-events-none">
+                  <div className="border-r border-b border-white/15"></div>
+                  <div className="border-r border-b border-white/15"></div>
+                  <div className="border-b border-white/15"></div>
+                  <div className="border-r border-b border-white/15"></div>
+                  <div className="border-r border-b border-white/15 relative flex items-center justify-center">
+                    {/* Center Focus Reticle / Crosshair */}
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 border-2 border-amber-400/80 rounded-lg relative flex items-center justify-center animate-pulse">
+                      <div className="w-2.5 h-0.5 bg-amber-400/90 absolute"></div>
+                      <div className="h-2.5 w-0.5 bg-amber-400/90 absolute"></div>
+                    </div>
+                  </div>
+                  <div className="border-b border-white/15"></div>
+                  <div className="border-r border-white/15"></div>
+                  <div className="border-r border-white/15"></div>
+                  <div></div>
+                </div>
+
+                {/* Top Subtle Status Badge */}
+                <div className="relative z-10 flex items-center justify-between">
+                  <span className="text-[11px] font-mono font-bold bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-emerald-400 border border-emerald-500/40 flex items-center gap-1.5 shadow-lg">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                    REC • READY
+                  </span>
+                  <span className="text-[11px] font-mono text-white/70 bg-black/50 backdrop-blur-md px-2.5 py-1 rounded-full">
+                    ALIGN RECEIPT
                   </span>
                 </div>
-              </div>
 
-              <div className="flex flex-wrap items-center justify-center gap-3 w-full py-1 shrink-0">
-                <button
-                  type="button"
-                  onClick={handleCaptureSnapshot}
-                  className="min-h-[44px] px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg transition cursor-pointer w-full sm:w-auto"
-                >
-                  <Camera className="w-5 h-5" />
-                  <span>Take Snapshot</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="min-h-[44px] px-4 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-600 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition cursor-pointer w-full sm:w-auto"
-                >
-                  <Upload className="w-4 h-4 text-emerald-400" />
-                  <span>Upload Instead</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={stopWebcam}
-                  className="min-h-[44px] px-4 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-neutral-400 hover:text-white border border-neutral-700 rounded-xl text-xs font-semibold transition cursor-pointer w-full sm:w-auto"
-                >
-                  Cancel
-                </button>
+                {/* Bottom Minimalist Floating Native Controls */}
+                <div className="relative z-10 pt-4 flex items-center justify-around max-w-sm mx-auto w-full pointer-events-auto">
+                  {/* Left: Gallery / Upload Fallback */}
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-12 h-12 rounded-full bg-neutral-900/80 hover:bg-neutral-800 text-white backdrop-blur-md border border-white/20 flex items-center justify-center transition cursor-pointer active:scale-95 shadow-xl"
+                    title="Upload from gallery"
+                  >
+                    <Upload className="w-5 h-5 text-emerald-400" />
+                  </button>
+
+                  {/* Center: Large Native Shutter Button */}
+                  <button
+                    type="button"
+                    onClick={handleCaptureSnapshot}
+                    className="w-18 h-18 sm:w-20 sm:h-20 rounded-full border-4 border-white bg-white/20 hover:bg-white/40 active:scale-90 transition-all flex items-center justify-center shadow-2xl cursor-pointer p-1"
+                    title="Capture photo"
+                  >
+                    <div className="w-full h-full bg-white rounded-full flex items-center justify-center">
+                      <Camera className="w-7 h-7 text-neutral-950" />
+                    </div>
+                  </button>
+
+                  {/* Right: Cancel / Close Camera */}
+                  <button
+                    type="button"
+                    onClick={stopWebcam}
+                    className="w-12 h-12 rounded-full bg-neutral-900/80 hover:bg-neutral-800 text-white backdrop-blur-md border border-white/20 flex items-center justify-center transition cursor-pointer active:scale-95 shadow-xl"
+                    title="Close camera"
+                  >
+                    <X className="w-5 h-5 text-neutral-300" />
+                  </button>
+                </div>
               </div>
             </div>
           )}
 
           {/* ================= STATE 3: FREEHAND HIGHLIGHTER CANVAS ================= */}
           {imagePreview && isCropping && (
-            <div className="flex-1 flex flex-col min-h-0 space-y-3">
-              {/* Highlighter Toolbar Header */}
-              <div className="px-3 py-2 bg-neutral-900 border border-neutral-700 rounded-xl flex flex-wrap items-center justify-between gap-2 shrink-0">
-                <div className="flex items-center gap-2">
-                  {/* Tool Mode: Highlight vs Pan */}
-                  <div className="flex items-center bg-neutral-950 p-0.5 rounded-lg border border-neutral-800">
-                    <button
-                      type="button"
-                      onClick={() => setActiveTool('highlight')}
-                      className={`px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer ${
-                        activeTool === 'highlight'
-                          ? 'bg-yellow-500 text-neutral-950 font-bold shadow-xs'
-                          : 'text-neutral-400 hover:text-white'
-                      }`}
-                    >
-                      <Paintbrush className="w-3.5 h-3.5" />
-                      <span>Highlight Marker</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setActiveTool('pan')}
-                      className={`px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer ${
-                        activeTool === 'pan'
-                          ? 'bg-neutral-800 text-white font-bold shadow-xs'
-                          : 'text-neutral-400 hover:text-white'
-                      }`}
-                    >
-                      <Move className="w-3.5 h-3.5" />
-                      <span>Pan / Zoom</span>
-                    </button>
-                  </div>
-
-                  {/* Undo Stroke Button */}
-                  <button
-                    type="button"
-                    disabled={strokes.length === 0}
-                    onClick={handleUndoStroke}
-                    className="px-2.5 py-1.5 bg-neutral-800 hover:bg-neutral-700 disabled:opacity-40 text-neutral-300 rounded-lg text-xs font-semibold flex items-center gap-1 transition cursor-pointer border border-neutral-700"
-                    title="Undo last painted highlight"
-                  >
-                    <Undo2 className="w-3.5 h-3.5 text-neutral-400" />
-                    <span>Undo</span>
-                  </button>
-
-                  {/* Clear All Highlights Button */}
-                  {strokes.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={handleClearStrokes}
-                      className="px-2.5 py-1.5 bg-neutral-800 hover:bg-red-900/60 text-neutral-300 hover:text-red-200 rounded-lg text-xs font-semibold flex items-center gap-1 transition cursor-pointer border border-neutral-700"
-                      title="Clear all highlight strokes"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      <span>Clear All</span>
-                    </button>
-                  )}
-
-                  <span className="text-xs font-mono text-emerald-400 font-bold bg-emerald-950/80 px-2.5 py-1 rounded-md border border-emerald-700/60">
-                    {strokes.length} Highlighted Item{strokes.length === 1 ? '' : 's'}
-                  </span>
-                </div>
-
-                {/* Right controls: Zoom & Scan CTA */}
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center bg-neutral-950 px-1 py-0.5 rounded-lg border border-neutral-800 text-xs">
-                    <button
-                      type="button"
-                      onClick={() => setZoomLevel((z) => Math.max(0.75, z - 0.25))}
-                      className="p-1 hover:text-white text-neutral-400 cursor-pointer"
-                      title="Zoom Out"
-                    >
-                      <ZoomOut className="w-3.5 h-3.5" />
-                    </button>
-                    <span className="px-2 font-mono text-[11px] text-neutral-300">
-                      {Math.round(zoomLevel * 100)}%
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setZoomLevel((z) => Math.min(3, z + 0.25))}
-                      className="p-1 hover:text-white text-neutral-400 cursor-pointer"
-                      title="Zoom In"
-                    >
-                      <ZoomIn className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setZoomLevel(1);
-                        setPanOffset({ x: 0, y: 0 });
-                      }}
-                      className="p-1 hover:text-white text-neutral-400 ml-1 cursor-pointer"
-                      title="Reset View"
-                    >
-                      <RotateCcw className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-
-                  <button
-                    type="button"
-                    disabled={isProcessing || strokes.length === 0}
-                    onClick={handleStartOCR}
-                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-lg font-bold text-xs shadow-md transition cursor-pointer flex items-center gap-1.5"
-                  >
-                    {isProcessing ? (
-                      <>
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        <span>Processing...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Scan className="w-3.5 h-3.5" />
-                        <span>Scan Highlighted Items ({strokes.length})</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-
+            <div className="relative flex-1 flex flex-col min-h-0 w-full overflow-hidden rounded-2xl bg-neutral-950 border border-neutral-800">
               {/* Viewport & Highlighter Canvas Area */}
               <div
                 ref={viewportRef}
-                className={`relative flex-1 bg-neutral-950 rounded-xl overflow-hidden border border-neutral-800 flex items-center justify-center select-none ${
+                className={`relative flex-1 bg-neutral-950 overflow-hidden flex items-center justify-center select-none ${
                   activeTool === 'highlight' ? 'cursor-crosshair' : 'cursor-grab active:cursor-grabbing'
                 }`}
                 onMouseDown={(e) => handlePointerDown(e.clientX, e.clientY, e.button)}
@@ -823,12 +710,6 @@ export const ReceiptCaptureModal: React.FC<ReceiptCaptureModalProps> = ({
                 }}
                 onTouchEnd={handlePointerUp}
               >
-                {/* Floating guidance overlay */}
-                <div className="absolute top-3 left-3 z-20 pointer-events-none bg-neutral-900/90 backdrop-blur-xs text-neutral-200 px-3 py-1.5 rounded-lg border border-neutral-700/80 text-[11px] font-mono flex items-center gap-2 shadow-lg">
-                  <Paintbrush className="w-3.5 h-3.5 text-yellow-400" />
-                  <span>Paint highlighter marker strokes over each line item to extract</span>
-                </div>
-
                 {/* Scaled & Panned Image + SVG Overlay Container */}
                 <div
                   className="relative transition-transform duration-75 origin-center inline-block"
@@ -841,7 +722,7 @@ export const ReceiptCaptureModal: React.FC<ReceiptCaptureModalProps> = ({
                     src={imagePreview}
                     alt="Receipt for OCR"
                     draggable={false}
-                    className="max-h-[66vh] w-auto max-w-full object-contain block pointer-events-none rounded shadow-2xl"
+                    className="max-h-[72vh] w-auto max-w-full object-contain block pointer-events-none rounded shadow-2xl"
                   />
 
                   {/* SVG Overlay for Freehand Highlighter Strokes */}
@@ -913,6 +794,129 @@ export const ReceiptCaptureModal: React.FC<ReceiptCaptureModalProps> = ({
                   </svg>
                 </div>
               </div>
+
+              {/* Top Minimalist Floating Pill (Instruction & Badge) */}
+              <div className="absolute top-3 inset-x-3 pointer-events-none flex items-center justify-between z-20">
+                <div className="bg-black/75 backdrop-blur-md text-neutral-200 px-3 py-1.5 rounded-full border border-white/15 text-[11px] font-mono flex items-center gap-2 shadow-xl">
+                  <Paintbrush className="w-3.5 h-3.5 text-yellow-400 shrink-0" />
+                  <span className="truncate">Paint highlighter over items to extract</span>
+                </div>
+
+                <span className="text-xs font-mono text-emerald-400 font-bold bg-black/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-emerald-500/40 shadow-xl shrink-0">
+                  {strokes.length} {strokes.length === 1 ? 'Item' : 'Items'}
+                </span>
+              </div>
+
+              {/* Bottom Minimalist Floating Toolbar Strip */}
+              <div className="absolute bottom-3 inset-x-3 z-20 flex flex-wrap items-center justify-between gap-2 bg-neutral-900/90 backdrop-blur-md p-2 rounded-2xl border border-neutral-700/80 shadow-2xl">
+                {/* Editing Tools Pill: Highlight vs Pan */}
+                <div className="flex items-center gap-1.5">
+                  <div className="flex items-center bg-black/60 p-1 rounded-xl border border-white/10">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTool('highlight')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer ${
+                        activeTool === 'highlight'
+                          ? 'bg-yellow-500 text-neutral-950 font-bold shadow-xs'
+                          : 'text-neutral-400 hover:text-white'
+                      }`}
+                    >
+                      <Paintbrush className="w-3.5 h-3.5" />
+                      <span>Marker</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTool('pan')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer ${
+                        activeTool === 'pan'
+                          ? 'bg-neutral-800 text-white font-bold shadow-xs'
+                          : 'text-neutral-400 hover:text-white'
+                      }`}
+                    >
+                      <Move className="w-3.5 h-3.5" />
+                      <span>Pan/Zoom</span>
+                    </button>
+                  </div>
+
+                  {/* Undo Button */}
+                  <button
+                    type="button"
+                    disabled={strokes.length === 0}
+                    onClick={handleUndoStroke}
+                    className="p-2 bg-neutral-800/80 hover:bg-neutral-700 disabled:opacity-30 text-neutral-300 rounded-xl transition cursor-pointer border border-neutral-700"
+                    title="Undo stroke"
+                  >
+                    <Undo2 className="w-4 h-4" />
+                  </button>
+
+                  {/* Clear All Button */}
+                  {strokes.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleClearStrokes}
+                      className="p-2 bg-neutral-800/80 hover:bg-red-950 text-neutral-300 hover:text-red-300 rounded-xl transition cursor-pointer border border-neutral-700"
+                      title="Clear all"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Right Actions: Zoom & Scan CTA */}
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center bg-black/60 px-1.5 py-1 rounded-xl border border-white/10 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setZoomLevel((z) => Math.max(0.75, z - 0.25))}
+                      className="p-1 hover:text-white text-neutral-400 cursor-pointer"
+                      title="Zoom Out"
+                    >
+                      <ZoomOut className="w-3.5 h-3.5" />
+                    </button>
+                    <span className="px-1.5 font-mono text-[11px] text-neutral-300">
+                      {Math.round(zoomLevel * 100)}%
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setZoomLevel((z) => Math.min(3, z + 0.25))}
+                      className="p-1 hover:text-white text-neutral-400 cursor-pointer"
+                      title="Zoom In"
+                    >
+                      <ZoomIn className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setZoomLevel(1);
+                        setPanOffset({ x: 0, y: 0 });
+                      }}
+                      className="p-1 hover:text-white text-neutral-400 ml-0.5 cursor-pointer"
+                      title="Reset View"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    disabled={isProcessing || strokes.length === 0}
+                    onClick={handleStartOCR}
+                    className="min-h-[40px] px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white rounded-xl font-bold text-xs shadow-lg transition cursor-pointer flex items-center gap-1.5"
+                  >
+                    {isProcessing ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Scanning...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Scan className="w-4 h-4" />
+                        <span>Scan Items ({strokes.length})</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 
@@ -947,6 +951,40 @@ export const ReceiptCaptureModal: React.FC<ReceiptCaptureModalProps> = ({
 
               {/* Right Column: Multi-Stroke Extracted Line Items & Financial Data */}
               <div className="lg:w-7/12 flex flex-col justify-center space-y-4">
+                {/* Defer Purchase Receipt vs Bank Slip Selection: Prompt shown after photo is taken */}
+                <div className="bg-neutral-900 border border-neutral-700/80 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                  <div>
+                    <span className="text-xs font-bold text-white block">Document Classification</span>
+                    <span className="text-[10px] text-neutral-400">
+                      Is this document an expense receipt or a bank transaction slip?
+                    </span>
+                  </div>
+                  <div className="flex items-center bg-black/70 border border-neutral-700 p-1 rounded-xl text-xs shrink-0 self-start sm:self-auto">
+                    <button
+                      type="button"
+                      onClick={() => setDocType('receipt')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                        docType === 'receipt'
+                          ? 'bg-emerald-600 text-white font-bold shadow-xs'
+                          : 'text-neutral-400 hover:text-white'
+                      }`}
+                    >
+                      Purchase Receipt
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDocType('bank_transaction')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                        docType === 'bank_transaction'
+                          ? 'bg-emerald-600 text-white font-bold shadow-xs'
+                          : 'text-neutral-400 hover:text-white'
+                      }`}
+                    >
+                      Bank Slip
+                    </button>
+                  </div>
+                </div>
+
                 {errorMsg && (
                   <div className="p-3 bg-amber-950/80 border border-amber-600 text-amber-200 rounded-xl text-xs flex items-center gap-2">
                     <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />

@@ -381,9 +381,9 @@ export const RecurringManagerModal: React.FC<RecurringManagerModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/75 backdrop-blur-xs animate-in fade-in duration-200">
       <div className="bg-neutral-900 border border-neutral-700 rounded-lg shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden text-neutral-100 text-xs">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 bg-neutral-800/90 border-b border-neutral-700">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 bg-neutral-800/90 border-b border-neutral-700">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full bg-blue-950/80 border border-blue-600 flex items-center justify-center text-blue-400">
+            <div className="w-7 h-7 rounded-full bg-blue-950/80 border border-blue-600 flex items-center justify-center text-blue-400 shrink-0">
               <CalendarClock className="w-4 h-4" />
             </div>
             <div>
@@ -399,7 +399,7 @@ export const RecurringManagerModal: React.FC<RecurringManagerModalProps> = ({
               resetForm();
               onClose();
             }}
-            className="text-neutral-400 hover:text-white p-1 rounded transition cursor-pointer"
+            className="text-neutral-400 hover:text-white p-1 rounded transition cursor-pointer self-end sm:self-auto"
           >
             <X className="w-4 h-4" />
           </button>
@@ -1054,9 +1054,9 @@ export const RecurringExpensesModule: React.FC<RecurringExpensesModuleProps> = (
   return (
     <div className="bg-white dark:bg-[#1e2324] border border-neutral-300 dark:border-neutral-700 shadow-xs rounded-xs overflow-hidden text-xs">
       {/* Header */}
-      <div className="bg-[#2d3134] text-white p-3 flex items-center justify-between border-b border-neutral-700">
-        <div className="flex items-center gap-2">
-          <CalendarClock className="w-4 h-4 text-emerald-400" />
+      <div className="bg-[#2d3134] text-white p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-neutral-700">
+        <div className="flex items-center gap-2.5">
+          <CalendarClock className="w-4 h-4 text-emerald-400 shrink-0" />
           <div>
             <h2 className="font-bold text-sm tracking-wide">Recurring Expenses Engine</h2>
             <p className="text-[10px] text-neutral-300 font-mono">
@@ -1071,7 +1071,7 @@ export const RecurringExpensesModule: React.FC<RecurringExpensesModuleProps> = (
               resetForm();
               setIsAddingNew(true);
             }}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white rounded text-xs font-bold transition shadow-xs cursor-pointer"
+            className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-emerald-700 hover:bg-emerald-600 text-white rounded text-xs font-bold transition shadow-xs cursor-pointer w-full sm:w-auto shrink-0"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Add Schedule</span>

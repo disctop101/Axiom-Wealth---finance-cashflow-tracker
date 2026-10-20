@@ -1666,20 +1666,20 @@ export const Dashboard: React.FC<DashboardProps> = ({
         {/* Date Filter Inputs & Action Buttons */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 text-xs">
           {/* Start and End Selectors */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full lg:w-auto">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full lg:w-auto">
             {/* Start Month & Year */}
-            <div className={`flex items-center justify-between bg-[#282d30] px-2.5 py-2 rounded border transition min-h-[42px] ${filterByPeriod ? 'border-neutral-600' : 'border-neutral-700 opacity-60'}`}>
-              <span className="text-neutral-400 font-semibold mr-1.5 uppercase text-[10px] shrink-0">
+            <div className={`flex items-center justify-between bg-[#282d30] px-3 py-2 rounded border transition min-h-[42px] flex-1 sm:flex-initial sm:w-auto ${filterByPeriod ? 'border-neutral-600' : 'border-neutral-700 opacity-60'}`}>
+              <span className="text-neutral-400 font-semibold mr-2 uppercase text-[10px] shrink-0">
                 Start:
               </span>
-              <div className="flex items-center gap-1.5 flex-1 justify-end min-w-0">
+              <div className="flex items-center gap-2 flex-1 sm:flex-initial justify-end">
                 <select
                   value={period.startMonth}
                   onChange={(e) => {
                     setFilterByPeriod(true);
                     setPeriod((prev) => ({ ...prev, startMonth: e.target.value }));
                   }}
-                  className="bg-transparent text-white font-medium focus:outline-hidden cursor-pointer text-xs truncate max-w-[110px]"
+                  className="bg-transparent text-white font-medium focus:outline-hidden cursor-pointer text-xs truncate"
                 >
                   {MONTH_NAMES.map((m) => (
                     <option key={m} value={m} className="bg-neutral-800 text-white">
@@ -1694,24 +1694,24 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     setFilterByPeriod(true);
                     setPeriod((prev) => ({ ...prev, startYear: parseInt(e.target.value) || new Date().getFullYear() }));
                   }}
-                  className="w-16 bg-transparent text-white text-right font-medium focus:outline-hidden border-l border-neutral-700 pl-1.5 shrink-0"
+                  className="w-16 min-w-[3.5rem] bg-transparent text-white text-right font-medium focus:outline-hidden border-l border-neutral-700 pl-2 shrink-0"
                 />
               </div>
             </div>
 
             {/* End Month & Year */}
-            <div className={`flex items-center justify-between bg-[#282d30] px-2.5 py-2 rounded border transition min-h-[42px] ${filterByPeriod ? 'border-neutral-600' : 'border-neutral-700 opacity-60'}`}>
-              <span className="text-neutral-400 font-semibold mr-1.5 uppercase text-[10px] shrink-0">
+            <div className={`flex items-center justify-between bg-[#282d30] px-3 py-2 rounded border transition min-h-[42px] flex-1 sm:flex-initial sm:w-auto ${filterByPeriod ? 'border-neutral-600' : 'border-neutral-700 opacity-60'}`}>
+              <span className="text-neutral-400 font-semibold mr-2 uppercase text-[10px] shrink-0">
                 End:
               </span>
-              <div className="flex items-center gap-1.5 flex-1 justify-end min-w-0">
+              <div className="flex items-center gap-2 flex-1 sm:flex-initial justify-end">
                 <select
                   value={period.endMonth}
                   onChange={(e) => {
                     setFilterByPeriod(true);
                     setPeriod((prev) => ({ ...prev, endMonth: e.target.value }));
                   }}
-                  className="bg-transparent text-white font-medium focus:outline-hidden cursor-pointer text-xs truncate max-w-[110px]"
+                  className="bg-transparent text-white font-medium focus:outline-hidden cursor-pointer text-xs truncate"
                 >
                   {MONTH_NAMES.map((m) => (
                     <option key={m} value={m} className="bg-neutral-800 text-white">
@@ -1726,7 +1726,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     setFilterByPeriod(true);
                     setPeriod((prev) => ({ ...prev, endYear: parseInt(e.target.value) || new Date().getFullYear() }));
                   }}
-                  className="w-16 bg-transparent text-white text-right font-medium focus:outline-hidden border-l border-neutral-700 pl-1.5 shrink-0"
+                  className="w-16 min-w-[3.5rem] bg-transparent text-white text-right font-medium focus:outline-hidden border-l border-neutral-700 pl-2 shrink-0"
                 />
               </div>
             </div>

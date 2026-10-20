@@ -48,6 +48,8 @@ import {
   isOwnerUser,
   getOwnerEmail,
   setOwnerEmail,
+  getDeveloperProOverride,
+  setDeveloperProOverride,
   SubscriptionPlanType,
   getTrialStatus,
   setSimulateTrialExpired,
@@ -152,14 +154,16 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 
   // 15-Day Free Trial Simulation Controls State
   const [trialInfo, setTrialInfo] = useState<TrialStatus>(getTrialStatus);
+  const [isDevProActive, setIsDevProActive] = useState<boolean>(() => getDeveloperProOverride(user?.email));
 
   useEffect(() => {
     const handleSyncTrial = () => {
       setTrialInfo(getTrialStatus());
+      setIsDevProActive(getDeveloperProOverride(user?.email));
     };
     window.addEventListener('axiom_trial_change', handleSyncTrial);
     return () => window.removeEventListener('axiom_trial_change', handleSyncTrial);
-  }, []);
+  }, [user?.email]);
 
   const handleActivateTrial = () => {
     const next = activateFreeTrial();
@@ -980,6 +984,54 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             </div>
 
             <div className="p-4 sm:p-5 space-y-4 text-xs">
+              {/* Toggle Switch: Developer Pro / Apex Mode */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-gradient-to-r from-emerald-950/60 via-neutral-900 to-emerald-950/60 rounded-lg border border-emerald-600/80 shadow-md">
+                <div className="space-y-1">
+                  <div className="font-bold text-white flex items-center gap-2 text-sm">
+                    <Sparkles className="w-4 h-4 text-emerald-400 animate-pulse" />
+                    <span>Developer Pro / Apex Mode</span>
+                    <span
+                      className={`text-[10px] font-mono px-2 py-0.5 rounded font-bold ${
+                        isDevProActive
+                          ? 'bg-emerald-500/30 text-emerald-300 border border-emerald-500/60'
+                          : 'bg-neutral-800 text-neutral-400 border border-neutral-700'
+                      }`}
+                    >
+                      {isDevProActive ? 'UNCONDITIONAL APEX ACTIVE' : 'STANDARD TIER RULES'}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-neutral-300 max-w-xl leading-relaxed">
+                    Unconditionally unlocks the highest Apex tier for this account. Automatically hides all paywalls, trial countdowns, upgrade prompts, and restricted tool locks. (Enabled by default for <code className="text-emerald-400 font-mono">emmanuelfajutagana@gmail.com</code>).
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = !isDevProActive;
+                    setIsDevProActive(next);
+                    setDeveloperProOverride(next);
+                  }}
+                  className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold transition shadow-md cursor-pointer shrink-0 ${
+                    isDevProActive
+                      ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                      : 'bg-neutral-800 hover:bg-neutral-700 text-neutral-300 border border-neutral-600'
+                  }`}
+                >
+                  {isDevProActive ? (
+                    <>
+                      <Check className="w-4 h-4 text-white" />
+                      <span>Pro Override: ON</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4 text-neutral-400" />
+                      <span>Enable Pro Override</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
               {/* Toggle: Preview as Customer */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-neutral-800/80 rounded-lg border border-neutral-700">
                 <div className="space-y-1">

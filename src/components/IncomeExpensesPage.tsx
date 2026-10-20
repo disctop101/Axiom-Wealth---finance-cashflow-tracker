@@ -1460,89 +1460,91 @@ export const IncomeExpensesPage: React.FC<IncomeExpensesPageProps> = ({
 
               {/* Month Selection Tool & Pacing Toggle Bar */}
               <div className="bg-neutral-50/80 dark:bg-[#16191b] p-2.5 rounded border border-neutral-200 dark:border-neutral-700/80 space-y-2.5">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
                   {/* Month Selection Tool */}
-                  <div className="flex items-center gap-1.5 text-xs">
-                    <span className="font-bold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider text-[10px] flex items-center gap-1">
+                  <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                    <span className="font-bold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider text-[10px] flex items-center gap-1 shrink-0">
                       <CalendarCheck className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                       <span>Budget Month:</span>
                     </span>
 
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (budgetMonth === 1) {
-                          setBudgetMonth(12);
-                          setBudgetYear((y) => y - 1);
-                        } else {
-                          setBudgetMonth((m) => m - 1);
-                        }
-                      }}
-                      className="p-1 rounded bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 cursor-pointer"
-                      title="Previous Month"
-                    >
-                      <ChevronLeft className="w-3.5 h-3.5" />
-                    </button>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (budgetMonth === 1) {
+                            setBudgetMonth(12);
+                            setBudgetYear((y) => y - 1);
+                          } else {
+                            setBudgetMonth((m) => m - 1);
+                          }
+                        }}
+                        className="p-1 rounded bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 cursor-pointer"
+                        title="Previous Month"
+                      >
+                        <ChevronLeft className="w-3.5 h-3.5" />
+                      </button>
 
-                    <select
-                      value={budgetMonth}
-                      onChange={(e) => setBudgetMonth(parseInt(e.target.value) || 1)}
-                      className="px-2 py-1 rounded bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 font-semibold text-neutral-800 dark:text-neutral-200 focus:outline-hidden cursor-pointer"
-                    >
-                      {MONTH_NAMES.map((m, idx) => (
-                        <option key={m} value={idx + 1}>
-                          {m}
-                        </option>
-                      ))}
-                    </select>
+                      <select
+                        value={budgetMonth}
+                        onChange={(e) => setBudgetMonth(parseInt(e.target.value) || 1)}
+                        className="px-2 py-1 rounded bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 font-semibold text-neutral-800 dark:text-neutral-200 focus:outline-hidden cursor-pointer text-xs"
+                      >
+                        {MONTH_NAMES.map((m, idx) => (
+                          <option key={m} value={idx + 1}>
+                            {m}
+                          </option>
+                        ))}
+                      </select>
 
-                    <select
-                      value={budgetYear}
-                      onChange={(e) => setBudgetYear(parseInt(e.target.value) || currentYear)}
-                      className="px-2 py-1 rounded bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 font-mono font-semibold text-neutral-800 dark:text-neutral-200 focus:outline-hidden cursor-pointer"
-                    >
-                      {budgetYearOptions.map((y) => (
-                        <option key={y} value={y}>
-                          {y}
-                        </option>
-                      ))}
-                    </select>
+                      <select
+                        value={budgetYear}
+                        onChange={(e) => setBudgetYear(parseInt(e.target.value) || currentYear)}
+                        className="px-2 py-1 rounded bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 font-mono font-semibold text-neutral-800 dark:text-neutral-200 focus:outline-hidden cursor-pointer text-xs"
+                      >
+                        {budgetYearOptions.map((y) => (
+                          <option key={y} value={y}>
+                            {y}
+                          </option>
+                        ))}
+                      </select>
 
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (budgetMonth === 12) {
-                          setBudgetMonth(1);
-                          setBudgetYear((y) => y + 1);
-                        } else {
-                          setBudgetMonth((m) => m + 1);
-                        }
-                      }}
-                      className="p-1 rounded bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 cursor-pointer"
-                      title="Next Month"
-                    >
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (budgetMonth === 12) {
+                            setBudgetMonth(1);
+                            setBudgetYear((y) => y + 1);
+                          } else {
+                            setBudgetMonth((m) => m + 1);
+                          }
+                        }}
+                        className="p-1 rounded bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 cursor-pointer"
+                        title="Next Month"
+                      >
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
 
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setBudgetMonth(currentMonthNum);
-                        setBudgetYear(currentYear);
-                      }}
-                      className="text-[10px] text-blue-700 dark:text-blue-400 hover:underline font-semibold ml-1 cursor-pointer whitespace-nowrap"
-                      title={`Reset budget view to current month (${currentMonthShort} ${currentYear})`}
-                    >
-                      Current
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setBudgetMonth(currentMonthNum);
+                          setBudgetYear(currentYear);
+                        }}
+                        className="text-[10px] text-blue-700 dark:text-blue-400 hover:underline font-semibold ml-1 cursor-pointer whitespace-nowrap"
+                        title={`Reset budget view to current month (${currentMonthShort} ${currentYear})`}
+                      >
+                        Current
+                      </button>
+                    </div>
                   </div>
 
                   {/* Budget Pacing Toggle Switch: Day, Week, Month, Year */}
-                  <div className="flex items-center gap-1">
-                    <span className="text-[10px] text-neutral-500 dark:text-neutral-400 uppercase font-mono font-bold mr-1">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="text-[10px] text-neutral-500 dark:text-neutral-400 uppercase font-mono font-bold shrink-0">
                       Pacing:
                     </span>
-                    <div className="flex rounded bg-neutral-200 dark:bg-neutral-800 p-0.5 text-xs font-semibold">
+                    <div className="flex flex-wrap rounded bg-neutral-200 dark:bg-neutral-800 p-0.5 text-xs font-semibold gap-0.5">
                       {(['daily', 'weekly', 'month', 'year'] as const).map((p) => {
                         const labels = {
                           daily: 'Daily',
@@ -1742,22 +1744,22 @@ export const IncomeExpensesPage: React.FC<IncomeExpensesPageProps> = ({
                       className="p-2.5 border border-neutral-200 dark:border-neutral-700/80 rounded hover:border-emerald-500 dark:hover:border-emerald-500 hover:shadow-xs transition bg-white dark:bg-[#1a1e20] cursor-pointer group relative"
                       title={`Click to view itemized transaction drilldown for ${cat.name}`}
                     >
-                      <div className="flex items-center justify-between text-xs mb-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-neutral-900 dark:text-neutral-100 group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition">
+                      <div className="flex flex-wrap items-center justify-between text-xs mb-1.5 gap-1.5">
+                        <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+                          <span className="font-bold text-neutral-900 dark:text-neutral-100 group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition truncate">
                             {cat.name}
                           </span>
-                          <span className="text-[10px] text-neutral-400 dark:text-neutral-500 font-normal group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition">
+                          <span className="text-[10px] text-neutral-400 dark:text-neutral-500 font-normal group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition hidden sm:inline">
                             (click to inspect items)
                           </span>
                           {isOver && (
-                            <span className="text-[10px] px-1.5 py-0.2 bg-red-100 dark:bg-red-950/80 text-red-700 dark:text-red-300 font-bold rounded flex items-center gap-1 border border-red-200 dark:border-red-800">
+                            <span className="text-[10px] px-1.5 py-0.2 bg-red-100 dark:bg-red-950/80 text-red-700 dark:text-red-300 font-bold rounded flex items-center gap-1 border border-red-200 dark:border-red-800 shrink-0">
                               <AlertTriangle className="w-3 h-3" />
                               Over Budget
                             </span>
                           )}
                           {isNear && (
-                            <span className="text-[10px] px-1.5 py-0.2 bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 font-bold rounded border border-amber-300 dark:border-amber-700 flex items-center gap-1">
+                            <span className="text-[10px] px-1.5 py-0.2 bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 font-bold rounded border border-amber-300 dark:border-amber-700 flex items-center gap-1 shrink-0">
                               <AlertTriangle className="w-3 h-3 text-amber-600 dark:text-amber-400" />
                               <span>75% Cap Hit</span>
                             </span>
@@ -1765,7 +1767,7 @@ export const IncomeExpensesPage: React.FC<IncomeExpensesPageProps> = ({
                         </div>
 
                         {/* Budget limit / edit trigger */}
-                        <div className="flex items-center gap-2 text-[11px]">
+                        <div className="flex items-center gap-1.5 text-[11px] shrink-0 ml-auto">
                           <div className="flex items-center gap-1 font-mono">
                             <span className="text-neutral-500 dark:text-neutral-400">Budget:</span>
                             <span className="font-bold text-neutral-800 dark:text-neutral-200">
