@@ -225,14 +225,24 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         {/* Header Bar */}
         <div className="px-5 py-4 border-b border-neutral-700/80 flex items-center justify-between bg-gradient-to-r from-neutral-900 via-[#212529] to-neutral-900">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-emerald-950/80 border border-emerald-700/60 flex items-center justify-center text-emerald-400">
+            <div className="w-8 h-8 rounded-lg bg-emerald-950/80 border border-emerald-700/60 flex items-center justify-center overflow-hidden shrink-0">
               {mode === 'mfa' ? (
-                <KeyRound className="w-4 h-4" />
+                <KeyRound className="w-4 h-4 text-emerald-400" />
               ) : mode === 'forgot' ? (
-                <ShieldCheck className="w-4 h-4" />
+                <ShieldCheck className="w-4 h-4 text-emerald-400" />
               ) : (
-                <Sparkles className="w-4 h-4" />
+                <img
+                  src="/logo.png"
+                  alt="Axiom Wealth"
+                  className="w-5 h-5 object-contain"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    const fallback = e.currentTarget.parentElement?.querySelector('.auth-logo-fallback');
+                    if (fallback) fallback.classList.remove('hidden');
+                  }}
+                />
               )}
+              <span className="auth-logo-fallback hidden text-emerald-400 font-bold font-mono text-xs">AW</span>
             </div>
             <div>
               <h2 className="text-sm font-extrabold uppercase tracking-wider text-neutral-100">

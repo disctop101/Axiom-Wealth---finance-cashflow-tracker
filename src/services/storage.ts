@@ -261,7 +261,7 @@ export function saveLocalTransactions(transactions: TransactionItem[]) {
  */
 export function runOneTimeTestDataPurge(): boolean {
   try {
-    const PURGE_FLAG_KEY = 'axiom_test_data_purged_v3';
+    const PURGE_FLAG_KEY = 'axiom_test_data_purged_v4';
     if (localStorage.getItem(PURGE_FLAG_KEY) === 'true') {
       return false;
     }
@@ -277,56 +277,71 @@ export function runOneTimeTestDataPurge(): boolean {
     const liab: LiabilityItem[] = rawLiab ? JSON.parse(rawLiab) : [];
     const rec: RecurringExpenseItem[] = rawRec ? JSON.parse(rawRec) : [];
 
-    const hasMockTx = txs.some(
-      (t) =>
-        t.id?.startsWith('mock-tx-') ||
-        t.id?.startsWith('tx-') ||
-        t.id?.startsWith('t-') ||
-        t.name?.includes('Executive Salary') ||
-        t.name?.includes('Quarterly Salary & Consulting Payout') ||
-        t.name?.includes('Hybrid') ||
-        t.name?.includes('Shell V-Power')
-    );
+    // Filter out ANY mock or dummy items unconditionally
+    const isMockTx = (t: TransactionItem) =>
+      t.id?.startsWith('mock-tx-') ||
+      t.id?.startsWith('tx-') ||
+      t.id?.startsWith('t-') ||
+      t.name?.includes('Executive Salary') ||
+      t.name?.includes('Quarterly Salary & Consulting Payout') ||
+      t.name?.includes('Hybrid') ||
+      t.name?.includes('Shell V-Power');
 
-    const hasMockAsset = assets.some(
-      (a) =>
-        a.id?.startsWith('mock-asset-') ||
-        a.id?.startsWith('ast-') ||
-        a.name?.includes('BPI / GCash') ||
-        a.name?.includes('High-Yield Checking') ||
-        a.name?.includes('COL Financial Trading Account') ||
-        a.name?.includes('Hybrid Executive SUV') ||
-        a.name?.includes('Toyota') ||
-        a.institution?.includes('Toyota')
-    );
+    const isMockAsset = (a: AssetItem) =>
+      a.id?.startsWith('mock-asset-') ||
+      a.id?.startsWith('ast-') ||
+      a.name?.includes('BPI / GCash') ||
+      a.name?.includes('High-Yield Checking') ||
+      a.name?.includes('COL Financial Trading Account') ||
+      a.name?.includes('Hybrid Executive SUV') ||
+      a.name?.includes('BGC High Street') ||
+      a.name?.includes('Digital SaaS & Advisory Agency') ||
+      a.name?.includes('Toyota') ||
+      a.institution?.includes('Toyota') ||
+      a.initialValue === 1450000 ||
+      a.initialValue === 1405000 ||
+      a.initialValue === 851235;
 
-    const hasMockLiab = liab.some(
-      (l) =>
-        l.id?.startsWith('mock-liab-') ||
-        l.id?.startsWith('liab-') ||
-        l.name?.includes('Home Mortgage') ||
-        l.name?.includes('Promissory Note') ||
-        l.name?.includes('Auto Hybrid Financing Loan')
-    );
+    const isMockLiab = (l: LiabilityItem) =>
+      l.id?.startsWith('mock-liab-') ||
+      l.id?.startsWith('liab-') ||
+      l.name?.includes('Home Mortgage') ||
+      l.name?.includes('Promissory Note') ||
+      l.name?.includes('Auto Hybrid Financing Loan') ||
+      l.name?.includes('Condo Unit Prime Mortgage') ||
+      l.name?.includes('Platinum Corporate Rewards Card') ||
+      l.initialAmount === 750000 ||
+      l.initialAmount === 680000 ||
+      l.initialAmount === 2200000 ||
+      l.initialAmount === 117000 ||
+      l.initialAmount === 94200;
 
-    const hasMockRec = rec.some(
-      (r) =>
-        r.id?.startsWith('mock-rec-') ||
-        r.id?.startsWith('rec-') ||
-        r.name?.includes('Residential Apartment Rent') ||
-        r.name?.includes('Fiber Broadband')
-    );
+    const isMockRec = (r: RecurringExpenseItem) =>
+      r.id?.startsWith('mock-rec-') ||
+      r.id?.startsWith('rec-') ||
+      r.name?.includes('Residential Apartment Rent') ||
+      r.name?.includes('Fiber Broadband');
 
+    const hasMockTx = txs.some(isMockTx);
+    const hasMockAsset = assets.some(isMockAsset);
+    const hasMockLiab = liab.some(isMockLiab);
+    const hasMockRec = rec.some(isMockRec);
     const isDefaultName = rawName === 'Emmanuel Fajutagana' || rawName === 'Emmanuel';
 
+    // If ANY mock records exist, scrub them clean and retain only real non-mock entries (or [] if all mock)
     if (hasMockTx || hasMockAsset || hasMockLiab || hasMockRec || isDefaultName) {
-      console.log('[Axiom Cleanup] Purging previously injected 90-day test data and mock fixtures to force clean zero state...');
-      localStorage.setItem(STORAGE_KEYS.TRANSACTIONS, JSON.stringify([]));
+      console.log('[Axiom Cleanup] Purging mock fixtures and legacy test items to enforce clean state...');
+      const cleanTx = txs.filter((t) => !isMockTx(t));
+      const cleanAssets = assets.filter((a) => !isMockAsset(a));
+      const cleanLiab = liab.filter((l) => !isMockLiab(l));
+      const cleanRec = rec.filter((r) => !isMockRec(r));
+
+      localStorage.setItem(STORAGE_KEYS.TRANSACTIONS, JSON.stringify(cleanTx));
       localStorage.setItem(STORAGE_KEYS.ASSET_TXS, JSON.stringify([]));
       localStorage.setItem(STORAGE_KEYS.LIABILITY_PAYMENTS, JSON.stringify([]));
-      localStorage.setItem(STORAGE_KEYS.ASSETS, JSON.stringify([]));
-      localStorage.setItem(STORAGE_KEYS.LIABILITIES, JSON.stringify([]));
-      localStorage.setItem(STORAGE_KEYS.RECURRING, JSON.stringify([]));
+      localStorage.setItem(STORAGE_KEYS.ASSETS, JSON.stringify(cleanAssets));
+      localStorage.setItem(STORAGE_KEYS.LIABILITIES, JSON.stringify(cleanLiab));
+      localStorage.setItem(STORAGE_KEYS.RECURRING, JSON.stringify(cleanRec));
 
       if (isDefaultName) {
         localStorage.removeItem(STORAGE_KEYS.USER_NAME);
@@ -562,12 +577,21 @@ export function subscribeToUserAssets(
     (snapshot) => {
       const items: AssetItem[] = [];
       snapshot.forEach((d) => {
-        items.push(d.data() as AssetItem);
+        const item = d.data() as AssetItem;
+        // Exclude any stale mock assets that might have leaked into remote database
+        const isMock =
+          item.id?.startsWith('mock-asset-') ||
+          item.id?.startsWith('ast-') ||
+          item.name?.includes('High-Yield Checking') ||
+          item.name?.includes('Hybrid Executive SUV') ||
+          item.name?.includes('BGC High Street') ||
+          item.name?.includes('COL Financial Trading Account');
+        if (!isMock) {
+          items.push(item);
+        }
       });
-      if (items.length > 0) {
-        onUpdate(items);
-        saveLocalAssets(items);
-      }
+      onUpdate(items);
+      saveLocalAssets(items);
     },
     (err) => {
       console.error('Assets listener error:', err);
@@ -589,12 +613,26 @@ export function subscribeToUserLiabilities(
     (snapshot) => {
       const items: LiabilityItem[] = [];
       snapshot.forEach((d) => {
-        items.push(d.data() as LiabilityItem);
+        const item = d.data() as LiabilityItem;
+        // Exclude any stale mock liabilities that might have leaked into remote database
+        const isMock =
+          item.id?.startsWith('mock-liab-') ||
+          item.id?.startsWith('liab-') ||
+          item.name?.includes('Home Mortgage') ||
+          item.name?.includes('Promissory Note') ||
+          item.name?.includes('Auto Hybrid Financing Loan') ||
+          item.name?.includes('Condo Unit Prime Mortgage') ||
+          item.initialAmount === 750000 ||
+          item.initialAmount === 680000 ||
+          item.initialAmount === 2200000 ||
+          item.initialAmount === 117000 ||
+          item.initialAmount === 94200;
+        if (!isMock) {
+          items.push(item);
+        }
       });
-      if (items.length > 0) {
-        onUpdate(items);
-        saveLocalLiabilities(items);
-      }
+      onUpdate(items);
+      saveLocalLiabilities(items);
     },
     (err) => {
       console.error('Liabilities listener error:', err);
