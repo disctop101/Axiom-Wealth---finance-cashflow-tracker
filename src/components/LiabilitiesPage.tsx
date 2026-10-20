@@ -3,6 +3,7 @@ import {
   LiabilityCategory,
   LiabilityItem,
   LiabilityPayment,
+  LiabilityPaymentFrequency,
   LiabilityPurpose,
   formatCurrency,
 } from '../types/finance';
@@ -19,6 +20,7 @@ import {
   X,
   History,
   Calendar,
+  Clock,
   DollarSign,
   Receipt,
   Link2,
@@ -29,6 +31,7 @@ import {
   ArrowUp,
   ArrowDown,
   HelpCircle,
+  BookOpen,
 } from 'lucide-react';
 import { ConfirmModal } from './ConfirmModal';
 import { Tooltip } from './Tooltip';
@@ -99,8 +102,11 @@ export const LiabilitiesPage: React.FC<LiabilitiesPageProps> = ({
   const [lender, setLender] = useState('');
   const [purpose, setPurpose] = useState<LiabilityPurpose>('financed_purchase');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [autoLedger, setAutoLedger] = useState(true);
   const [notes, setNotes] = useState('');
+
+  // Scheduled Payment Option States (Permanent on main form)
+  const [paymentFrequency, setPaymentFrequency] = useState<LiabilityPaymentFrequency>('monthly');
+  const [nextDueDate, setNextDueDate] = useState('');
 
   const [showSettled, setShowSettled] = useState(false);
   const [sortField, setSortField] = useState<'name' | 'category' | 'date' | 'lender' | 'payments' | 'monthlyPayment' | 'balance'>('date');
@@ -146,8 +152,11 @@ export const LiabilitiesPage: React.FC<LiabilitiesPageProps> = ({
     setLender('');
     setPurpose('financed_purchase');
     setDate(new Date().toISOString().split('T')[0]);
-    setAutoLedger(true);
     setNotes('');
+    setPaymentFrequency('monthly');
+    const defaultNextDue = new Date();
+    defaultNextDue.setMonth(defaultNextDue.getMonth() + 1);
+    setNextDueDate(defaultNextDue.toISOString().split('T')[0]);
     setIsModalOpen(true);
   };
 
@@ -161,8 +170,10 @@ export const LiabilitiesPage: React.FC<LiabilitiesPageProps> = ({
     setLender(item.lender || '');
     setPurpose(item.purpose || 'financed_purchase');
     setDate(item.date || new Date().toISOString().split('T')[0]);
-    setAutoLedger(false);
     setNotes(item.notes || '');
+    // Prepopulate payment frequency and due date
+    setPaymentFrequency(item.paymentFrequency || 'monthly');
+    setNextDueDate(item.nextDueDate || '');
     setIsModalOpen(true);
   };
 
@@ -171,22 +182,33 @@ export const LiabilitiesPage: React.FC<LiabilitiesPageProps> = ({
     const numericAmount = parseFloat(initialAmount) || 0;
     if (!name.trim()) return;
 
+    const parsedMonthlyPayment = monthlyPayment ? parseFloat(monthlyPayment) : undefined;
+
     if (editingLiability) {
+      // Check if settled to automatically deactivate schedule
+      const alreadyPaid = computeTotalPaidForLiability(editingLiability.id);
+      const isSettled = numericAmount <= alreadyPaid && numericAmount > 0;
+      const scheduledActive = !isSettled && Boolean(nextDueDate);
+
       onUpdateLiability({
         ...editingLiability,
         name: name.trim(),
         category,
         initialAmount: numericAmount,
         interestRate: interestRate ? parseFloat(interestRate) : undefined,
-        monthlyPayment: monthlyPayment ? parseFloat(monthlyPayment) : undefined,
+        monthlyPayment: parsedMonthlyPayment,
         lender: lender.trim() || undefined,
         purpose,
         date,
         notes: notes.trim() || undefined,
+        // Scheduled payment fields
+        scheduledPaymentEnabled: scheduledActive,
+        paymentFrequency,
+        nextDueDate: scheduledActive ? nextDueDate : undefined,
         updatedAt: new Date().toISOString(),
       });
     } else {
-      // Cross-linked ledger automation:
+      // Mandatory cross-linked ledger automation:
       // Taking on a new liability like cash loan -> registers as Income (cash inflow)
       // Financed purchase -> registers as Expense (purchase outflow)
       const isCashLoan = purpose === 'cash_loan';
@@ -200,20 +222,26 @@ export const LiabilitiesPage: React.FC<LiabilitiesPageProps> = ({
         else ledgerCategory = 'Account Payables';
       }
 
+      const scheduledActive = Boolean(nextDueDate);
+
       onAddLiability(
         {
           name: name.trim(),
           category,
           initialAmount: numericAmount,
           interestRate: interestRate ? parseFloat(interestRate) : undefined,
-          monthlyPayment: monthlyPayment ? parseFloat(monthlyPayment) : undefined,
+          monthlyPayment: parsedMonthlyPayment,
           lender: lender.trim() || undefined,
           purpose,
           date,
           notes: notes.trim() || undefined,
+          // Scheduled payment fields
+          scheduledPaymentEnabled: scheduledActive,
+          paymentFrequency,
+          nextDueDate: scheduledActive ? nextDueDate : undefined,
         },
         {
-          enabled: autoLedger,
+          enabled: true, // Mandatory background cross-linking
           type: ledgerType,
           category: ledgerCategory,
         }
@@ -245,6 +273,18 @@ export const LiabilitiesPage: React.FC<LiabilitiesPageProps> = ({
         category: paymentCategory,
       }
     );
+
+    // If this payment settles the liability, automatically stop and deactivate the recurring schedule
+    const currentPaid = computeTotalPaidForLiability(selectedLiabilityForHistory.id);
+    const newTotalPaid = currentPaid + numAmount;
+    if (newTotalPaid >= selectedLiabilityForHistory.initialAmount) {
+      onUpdateLiability({
+        ...selectedLiabilityForHistory,
+        scheduledPaymentEnabled: false,
+        nextDueDate: undefined,
+        updatedAt: new Date().toISOString(),
+      });
+    }
 
     setPayAmount('');
     setPayNotes('');
@@ -328,14 +368,14 @@ export const LiabilitiesPage: React.FC<LiabilitiesPageProps> = ({
 
         <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
           {onOpenHelp && (
-            <Tooltip content="Open complete guide and operational walkthrough for Liabilities & Debts">
+            <Tooltip content="Open operational guide and button explanations for Liabilities & Debts">
               <button
                 type="button"
                 onClick={onOpenHelp}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-700 hover:bg-neutral-600 text-neutral-100 rounded text-xs font-semibold shadow-xs transition border border-neutral-600"
               >
-                <HelpCircle className="w-3.5 h-3.5 text-blue-400" />
-                <span>Help &amp; Guide</span>
+                <BookOpen className="w-3.5 h-3.5 text-blue-400" />
+                <span>Guide</span>
               </button>
             </Tooltip>
           )}
@@ -524,7 +564,7 @@ export const LiabilitiesPage: React.FC<LiabilitiesPageProps> = ({
                 onClick={() => handleSort('monthlyPayment')}
               >
                 <div className="flex items-center justify-end gap-1">
-                  <span>Monthly Due</span>
+                  <span>Scheduled Payment / Due</span>
                   {sortField === 'monthlyPayment' ? (
                     sortDirection === 'asc' ? <ArrowUp className="w-3 h-3 text-cyan-400" /> : <ArrowDown className="w-3 h-3 text-cyan-400" />
                   ) : (
@@ -607,7 +647,27 @@ export const LiabilitiesPage: React.FC<LiabilitiesPageProps> = ({
                       </span>
                     </td>
                     <td className="py-2.5 px-3 text-right font-mono text-neutral-700">
-                      {item.monthlyPayment ? formatCurrency(item.monthlyPayment, currencySymbol) : '-'}
+                      {item.monthlyPayment ? (
+                        <div>
+                          <div className="font-semibold text-neutral-800">
+                            {formatCurrency(item.monthlyPayment, currencySymbol)}
+                            <span className="text-[10px] text-neutral-500 font-sans font-normal ml-0.5">/mo</span>
+                          </div>
+                          {item.nextDueDate && (
+                            <div className="text-[10px] text-red-600 font-sans font-medium flex items-center justify-end gap-1 mt-0.5">
+                              <Clock className="w-2.5 h-2.5 text-red-500" />
+                              <span>Due: {item.nextDueDate}</span>
+                            </div>
+                          )}
+                        </div>
+                      ) : item.nextDueDate ? (
+                        <div className="text-[10px] text-red-600 font-sans font-medium flex items-center justify-end gap-1">
+                          <Clock className="w-2.5 h-2.5 text-red-500" />
+                          <span>Due: {item.nextDueDate}</span>
+                        </div>
+                      ) : (
+                        <span className="text-neutral-400">-</span>
+                      )}
                     </td>
                     <td className="py-2.5 px-3 text-right font-mono font-bold text-red-700 text-sm">
                       {formatCurrency(currentBalance, currencySymbol)}
@@ -1046,6 +1106,39 @@ export const LiabilitiesPage: React.FC<LiabilitiesPageProps> = ({
                 </div>
               </div>
 
+              {/* Recurring Payment Schedule: Frequency & Next Due Date */}
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block font-medium text-neutral-700 mb-1 flex items-center gap-1">
+                    <Clock className="w-3.5 h-3.5 text-neutral-500" />
+                    <span>Payment Frequency</span>
+                  </label>
+                  <select
+                    value={paymentFrequency}
+                    onChange={(e) => setPaymentFrequency(e.target.value as LiabilityPaymentFrequency)}
+                    className="w-full px-2.5 py-1.5 border border-neutral-300 rounded text-xs focus:outline-hidden bg-white cursor-pointer"
+                  >
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="monthly">Monthly</option>
+                    <option value="yearly">Yearly</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-medium text-neutral-700 mb-1 flex items-center gap-1">
+                    <Calendar className="w-3.5 h-3.5 text-neutral-500" />
+                    <span>Next Payment Due Date</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={nextDueDate}
+                    onChange={(e) => setNextDueDate(e.target.value)}
+                    className="w-full px-2.5 py-1.5 border border-neutral-300 rounded font-mono text-xs focus:outline-hidden bg-white"
+                  />
+                </div>
+              </div>
+
               <div>
                 <label className="block font-medium text-neutral-700 mb-1">Notes</label>
                 <textarea
@@ -1056,30 +1149,6 @@ export const LiabilitiesPage: React.FC<LiabilitiesPageProps> = ({
                   className="w-full px-2.5 py-1.5 border border-neutral-300 rounded focus:outline-hidden"
                 />
               </div>
-
-              {!editingLiability && (
-                <div className="p-2.5 bg-neutral-100 border border-neutral-200 rounded">
-                  <label className="flex items-start gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={autoLedger}
-                      onChange={(e) => setAutoLedger(e.target.checked)}
-                      className="mt-0.5 rounded text-red-600 focus:ring-red-500 cursor-pointer"
-                    />
-                    <div className="text-[11px] text-neutral-700">
-                      <span className="font-semibold text-neutral-900 flex items-center gap-1">
-                        <Link2 className="w-3.5 h-3.5 text-blue-600" />
-                        <span>Cross-Link into Income &amp; Expenses Ledger</span>
-                      </span>
-                      <span className="text-neutral-500 block text-[10px] mt-0.5">
-                        {purpose === 'cash_loan'
-                          ? `Automatically records as Income on ${date} (cash borrowing inflow).`
-                          : `Automatically records as Expense on ${date} (financed purchase outlay).`}
-                      </span>
-                    </div>
-                  </label>
-                </div>
-              )}
 
               <div className="flex justify-end gap-2 pt-2 border-t border-neutral-200">
                 <button

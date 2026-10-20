@@ -24,6 +24,7 @@ import {
   AlertCircle,
   CheckCircle2,
   Loader2,
+  BookOpen,
 } from 'lucide-react';
 import { Tooltip } from './Tooltip';
 
@@ -511,76 +512,76 @@ const StockDividendCalculatorContent: React.FC<StockDividendCalculatorPageProps>
   ]);
 
   return (
-    <div className="space-y-4 pb-12 w-full max-w-full overflow-x-hidden min-w-0">
+    <div className="space-y-4 pb-12 max-w-full overflow-x-hidden">
       {/* Header Banner */}
-      <div className="bg-[#212529] text-white p-4 sm:p-5 rounded-xl shadow-md border border-neutral-700 flex flex-col md:flex-row md:items-center justify-between gap-4 max-w-full overflow-hidden">
-        <div className="flex items-center gap-3 min-w-0">
+      <div className="bg-[#212529] text-white p-4 sm:p-5 rounded-xl shadow-md border border-neutral-700 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-emerald-950 border border-emerald-600 flex items-center justify-center text-emerald-400 shrink-0">
             <Calculator className="w-5 h-5" />
           </div>
-          <div className="min-w-0">
+          <div>
             <div className="flex items-center gap-2">
-              <h1 className="font-bold text-base sm:text-lg text-white truncate">
+              <h1 className="font-bold text-base sm:text-lg text-white">
                 International Stock &amp; Dividend Simulator
               </h1>
             </div>
-            <p className="text-xs text-neutral-400 mt-0.5 line-clamp-2 sm:line-clamp-none">
+            <p className="text-xs text-neutral-400 mt-0.5">
               Simulate stock trades with custom broker fees, compute true dividend yield &amp; ROI payoff, and model long-term compounding.
             </p>
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto shrink-0 min-w-0">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full md:w-auto">
           {onOpenHelp && (
-            <Tooltip content="Open complete guide and operational walkthrough for Stock & Dividend Simulator">
+            <Tooltip content="Open operational guide and button explanations for Stock & Dividend Simulator">
               <button
                 type="button"
                 onClick={onOpenHelp}
-                className="flex items-center justify-center gap-1.5 px-3 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 rounded-lg text-xs font-semibold shadow-xs transition border border-neutral-700 shrink-0 cursor-pointer"
+                className="flex items-center justify-center gap-1.5 px-3 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 rounded-lg text-xs font-semibold shadow-xs transition border border-neutral-700 self-start sm:self-auto cursor-pointer"
               >
-                <HelpCircle className="w-3.5 h-3.5 text-blue-400" />
-                <span>Help &amp; Guide</span>
+                <BookOpen className="w-3.5 h-3.5 text-blue-400" />
+                <span>Guide</span>
               </button>
             </Tooltip>
           )}
 
-          {/* Global Navigation Tabs (Fully responsive with horizontal scroll and no viewport blowout) */}
-          <div className="w-full sm:w-auto overflow-x-auto flex items-center bg-neutral-900 border border-neutral-700 p-1 rounded-lg no-scrollbar min-w-0">
+          {/* Global Navigation Tabs (Fully constrained to viewport width on mobile) */}
+          <div className="grid grid-cols-3 bg-neutral-900 border border-neutral-700 p-1 rounded-lg w-full sm:w-auto sm:flex sm:items-center gap-1">
             <button
               type="button"
               onClick={() => setActiveTab('trade')}
-              className={`px-3 py-1.5 rounded text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap flex-1 sm:flex-initial ${
+              className={`px-2 sm:px-3 py-1.5 rounded text-[11px] sm:text-xs font-bold transition flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer text-center ${
                 activeTab === 'trade'
                   ? 'bg-emerald-600 text-white shadow-sm'
                   : 'text-neutral-400 hover:text-white'
               }`}
             >
               <ArrowDownUp className="w-3.5 h-3.5 shrink-0" />
-              <span>Stock Trade &amp; Fees</span>
+              <span className="truncate">Trade &amp; Fees</span>
             </button>
             <button
               type="button"
               onClick={() => setActiveTab('dividend')}
-              className={`px-3 py-1.5 rounded text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap flex-1 sm:flex-initial ${
+              className={`px-2 sm:px-3 py-1.5 rounded text-[11px] sm:text-xs font-bold transition flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer text-center ${
                 activeTab === 'dividend'
                   ? 'bg-emerald-600 text-white shadow-sm'
                   : 'text-neutral-400 hover:text-white'
               }`}
             >
               <Coins className="w-3.5 h-3.5 shrink-0" />
-              <span>Yield &amp; ROI</span>
+              <span className="truncate">Yield &amp; ROI</span>
             </button>
             <button
               type="button"
               onClick={() => setActiveTab('compound')}
-              className={`px-3 py-1.5 rounded text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap flex-1 sm:flex-initial ${
+              className={`px-2 sm:px-3 py-1.5 rounded text-[11px] sm:text-xs font-bold transition flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer text-center ${
                 activeTab === 'compound'
                   ? 'bg-emerald-600 text-white shadow-sm'
                   : 'text-neutral-400 hover:text-white'
               }`}
             >
               <TrendingUp className="w-3.5 h-3.5 shrink-0" />
-              <span>DRIP Compounding</span>
+              <span className="truncate">Compounding</span>
             </button>
           </div>
         </div>
@@ -891,27 +892,29 @@ const StockDividendCalculatorContent: React.FC<StockDividendCalculatorPageProps>
                       return (
                         <tr
                           key={fee.id}
-                          className={`hover:bg-neutral-50 transition ${
-                            !isApplicable ? 'opacity-40 bg-neutral-100/50' : ''
+                          className={`transition ${
+                            !isApplicable
+                              ? 'bg-neutral-100/60 dark:bg-neutral-800/60'
+                              : 'bg-white dark:bg-[#1a1e20] hover:bg-neutral-50 dark:hover:bg-neutral-800/80'
                           }`}
                         >
-                          <td className="py-2 px-3 font-sans font-semibold text-neutral-800">
+                          <td className={`py-2 px-3 font-sans ${!isApplicable ? 'text-neutral-500 dark:text-neutral-300 font-medium italic' : 'font-semibold text-neutral-800 dark:text-neutral-100'}`}>
                             {fee.name}
                           </td>
-                          <td className="py-2 px-3 uppercase text-[10px] text-neutral-500 font-sans">
+                          <td className={`py-2 px-3 uppercase text-[10px] font-sans ${!isApplicable ? 'text-neutral-500 dark:text-neutral-300' : 'text-neutral-500 dark:text-neutral-300'}`}>
                             {fee.appliesTo}
                           </td>
-                          <td className="py-2 px-3 text-neutral-600">
+                          <td className={`py-2 px-3 ${!isApplicable ? 'text-neutral-500 dark:text-neutral-300' : 'text-neutral-600 dark:text-neutral-200'}`}>
                             {fee.type === 'percent' ? `${fee.value}%` : `${safeCurrency} ${fee.value.toFixed(2)}`}
                           </td>
-                          <td className="py-2 px-3 text-right font-bold text-neutral-900">
+                          <td className={`py-2 px-3 text-right font-bold ${!isApplicable ? 'text-neutral-500 dark:text-neutral-300' : 'text-neutral-900 dark:text-neutral-100'}`}>
                             {computed ? formatCurrency(computed.amount, safeCurrency) : '—'}
                           </td>
                           <td className="py-2 px-2 text-center">
                             <button
                               type="button"
                               onClick={() => handleRemoveFee(fee.id)}
-                              className="text-neutral-400 hover:text-red-600 p-1 cursor-pointer transition"
+                              className="text-neutral-400 hover:text-red-600 dark:hover:text-red-400 p-1 cursor-pointer transition"
                               title="Delete fee"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -921,12 +924,12 @@ const StockDividendCalculatorContent: React.FC<StockDividendCalculatorPageProps>
                       );
                     })}
                   </tbody>
-                  <tfoot className="bg-neutral-100 font-bold border-t border-neutral-300">
+                  <tfoot className="bg-neutral-100 dark:bg-neutral-800 font-bold border-t border-neutral-300 dark:border-neutral-700">
                     <tr>
-                      <td colSpan={3} className="py-2 px-3 text-neutral-700 uppercase text-[10px]">
+                      <td colSpan={3} className="py-2 px-3 text-neutral-700 dark:text-neutral-300 uppercase text-[10px]">
                         Total Computed Fees ({tradeAction})
                       </td>
-                      <td className="py-2 px-3 text-right font-mono text-red-600 text-xs">
+                      <td className="py-2 px-3 text-right font-mono text-red-600 dark:text-red-400 text-xs">
                         {formatCurrency(tradeMath.totalFees, safeCurrency)}
                       </td>
                       <td></td>
@@ -1136,6 +1139,8 @@ const StockDividendCalculatorContent: React.FC<StockDividendCalculatorPageProps>
                   />
                 </div>
               </div>
+
+
             </div>
 
             {/* Dividend Payout Schedule Card (7 cols) */}
@@ -1218,38 +1223,38 @@ const StockDividendCalculatorContent: React.FC<StockDividendCalculatorPageProps>
               </span>
             </div>
 
-            <div className="bg-white border border-neutral-300 rounded-lg p-3.5 shadow-xs">
-              <span className="text-[10px] text-neutral-500 font-bold uppercase tracking-wider block">
+            <div className="bg-white dark:bg-[#1e2324] border border-neutral-300 dark:border-neutral-700 rounded-lg p-3.5 shadow-xs">
+              <span className="text-[10px] text-neutral-500 dark:text-neutral-400 font-bold uppercase tracking-wider block">
                 Projected Value ({timeframeYears} Yrs)
               </span>
-              <div className="text-lg sm:text-xl font-bold font-mono text-emerald-700 mt-1">
+              <div className="text-lg sm:text-xl font-bold font-mono text-emerald-700 dark:text-emerald-400 mt-1">
                 {formatCurrency(compoundCalculations.finalPortfolioValue, safeCurrency)}
               </div>
-              <span className="text-[10px] text-emerald-600 font-semibold block mt-0.5">
+              <span className="text-[10px] text-emerald-600 dark:text-emerald-300 font-semibold block mt-0.5">
                 +{compoundCalculations.finalTotalReturnPercent.toFixed(1)}% total gain
               </span>
             </div>
 
-            <div className="bg-white border border-neutral-300 rounded-lg p-3.5 shadow-xs">
-              <span className="text-[10px] text-neutral-500 font-bold uppercase tracking-wider block">
+            <div className="bg-white dark:bg-[#1e2324] border border-neutral-300 dark:border-neutral-700 rounded-lg p-3.5 shadow-xs">
+              <span className="text-[10px] text-neutral-500 dark:text-neutral-400 font-bold uppercase tracking-wider block">
                 Total Gain / Profit
               </span>
-              <div className="text-lg sm:text-xl font-bold font-mono text-emerald-700 mt-1">
+              <div className="text-lg sm:text-xl font-bold font-mono text-emerald-700 dark:text-emerald-400 mt-1">
                 +{formatCurrency(compoundCalculations.finalTotalReturn, safeCurrency)}
               </div>
-              <span className="text-[10px] text-neutral-400 block mt-0.5">
+              <span className="text-[10px] text-neutral-400 dark:text-neutral-400 block mt-0.5">
                 Growth + reinvested dividends
               </span>
             </div>
 
-            <div className="bg-white border border-neutral-300 rounded-lg p-3.5 shadow-xs">
-              <span className="text-[10px] text-neutral-500 font-bold uppercase tracking-wider block">
+            <div className="bg-white dark:bg-[#1e2324] border border-neutral-300 dark:border-neutral-700 rounded-lg p-3.5 shadow-xs">
+              <span className="text-[10px] text-neutral-500 dark:text-neutral-400 font-bold uppercase tracking-wider block">
                 Year {timeframeYears} Annual Div
               </span>
-              <div className="text-lg sm:text-xl font-bold font-mono text-purple-700 mt-1">
+              <div className="text-lg sm:text-xl font-bold font-mono text-purple-700 dark:text-purple-300 mt-1">
                 {formatCurrency(compoundCalculations.finalAnnualDividend, safeCurrency)} / yr
               </div>
-              <span className="text-[10px] text-neutral-500 mt-0.5 block">
+              <span className="text-[10px] text-neutral-500 dark:text-neutral-400 mt-0.5 block">
                 {formatCurrency(compoundCalculations.finalAnnualDividend / 12, safeCurrency)} / mo
               </span>
             </div>
@@ -1431,28 +1436,30 @@ const StockDividendCalculatorContent: React.FC<StockDividendCalculatorPageProps>
                     {compoundCalculations.yearlyBreakdown.map((row) => (
                       <tr
                         key={row.year}
-                        className={`hover:bg-emerald-50/50 transition ${
-                          row.year % 2 === 0 ? 'bg-neutral-50/40' : 'bg-white'
+                        className={`hover:bg-emerald-50/50 dark:hover:bg-neutral-800 transition ${
+                          row.year % 2 === 0 ? 'bg-neutral-50/40 dark:bg-[#16191b]' : 'bg-white dark:bg-[#1a1e20]'
                         }`}
                       >
-                        <td className="py-2 px-3 font-bold text-neutral-800">
+                        <td className="py-2 px-3 font-bold text-neutral-800 dark:text-neutral-100">
                           Yr {row.year}
                         </td>
-                        <td className="py-2 px-3 text-neutral-600">
+                        <td className="py-2 px-3 text-neutral-600 dark:text-neutral-300">
                           {formatCurrency(row.sharePrice, safeCurrency)}
                         </td>
-                        <td className="py-2 px-3 text-right text-neutral-700">
+                        <td className="py-2 px-3 text-right text-neutral-700 dark:text-neutral-200">
                           {Math.round(row.sharesCount).toLocaleString()}
                         </td>
-                        <td className="py-2 px-3 text-right text-purple-700 font-semibold">
+                        <td className="py-2 px-3 text-right text-purple-700 dark:text-purple-300 font-bold">
                           +{formatCurrency(row.annualDividend, safeCurrency)}
                         </td>
-                        <td className="py-2 px-3 text-right font-bold text-neutral-900">
+                        <td className="py-2 px-3 text-right font-bold text-neutral-900 dark:text-neutral-100">
                           {formatCurrency(row.portfolioValue, safeCurrency)}
                         </td>
                         <td
                           className={`py-2 px-3 text-right font-bold ${
-                            row.totalReturnPercent >= 0 ? 'text-emerald-700' : 'text-red-600'
+                            row.totalReturnPercent >= 0
+                              ? 'text-emerald-700 dark:text-emerald-400'
+                              : 'text-red-600 dark:text-red-400'
                           }`}
                         >
                           +{row.totalReturnPercent.toFixed(1)}%

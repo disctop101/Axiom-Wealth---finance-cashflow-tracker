@@ -17,9 +17,12 @@ import {
   Clock,
   DollarSign,
   ArrowRight,
+  HelpCircle,
+  BookOpen,
+  Moon,
+  Sun,
   Shield,
   PlusCircle,
-  HelpCircle,
 } from 'lucide-react';
 import {
   CurrencyConfig,
@@ -35,6 +38,7 @@ import {
   RecurringStatusItem,
 } from './RecurringExpensesSection';
 import { useTooltips } from '../context/TooltipContext';
+import { useTheme } from '../context/ThemeContext';
 import { Tooltip } from './Tooltip';
 
 export type AppNavTab =
@@ -101,6 +105,8 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   // Master platform-wide tooltips toggle
   const { tooltipsEnabled, toggleTooltips } = useTooltips();
+  // Master Dark/Light Mode toggle
+  const { theme, isDark, toggleTheme } = useTheme();
 
   const navContainerRef = useRef<HTMLDivElement>(null);
 
@@ -428,36 +434,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </button>
               </Tooltip>
 
-              {/* Master Platform Tooltip Toggle Switch */}
-              <button
-                type="button"
-                onClick={toggleTooltips}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium border transition cursor-pointer ${
-                  tooltipsEnabled
-                    ? 'bg-emerald-950/40 text-emerald-300 border-emerald-700/60 hover:bg-emerald-900/50'
-                    : 'bg-neutral-800 text-neutral-400 border-neutral-700 hover:text-neutral-200 hover:bg-neutral-700'
-                }`}
-                title={tooltipsEnabled ? 'Tooltips: ON (Click to disable all hover tooltips platform-wide)' : 'Tooltips: OFF (Click to enable hover tooltips platform-wide)'}
-                aria-label="Toggle platform tooltips"
-              >
-                <HelpCircle className={`w-3.5 h-3.5 shrink-0 ${tooltipsEnabled ? 'text-emerald-400' : 'text-neutral-500'}`} />
-                <span className="hidden lg:inline text-[11px]">
-                  Tooltips: <strong className={tooltipsEnabled ? 'text-emerald-400' : 'text-neutral-400'}>{tooltipsEnabled ? 'ON' : 'OFF'}</strong>
-                </span>
-              </button>
 
-              {/* Global Help & Operational Guide Button */}
-              {onOpenHelp && (
-                <button
-                  type="button"
-                  onClick={onOpenHelp}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white border border-neutral-700 rounded text-xs font-medium transition cursor-pointer"
-                  title="Open operational help and comprehensive button explanations"
-                >
-                  <HelpCircle className="w-3.5 h-3.5 text-sky-400 shrink-0" />
-                  <span className="hidden xl:inline">Help &amp; Guide</span>
-                </button>
-              )}
+
 
               {/* Hide Navigation Toggle Button */}
               {onToggleHide && (
@@ -716,7 +694,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                         <span className="text-[10px] text-neutral-400">Manage</span>
                       </button>
 
-                      {/* Help & Guide Link */}
+                      {/* Master Help & Guide Link */}
                       <button
                         type="button"
                         onClick={() => {
@@ -726,10 +704,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                         className="w-full flex items-center justify-between px-3.5 py-2 text-left hover:bg-neutral-800 transition cursor-pointer"
                       >
                         <div className="flex items-center gap-2 text-neutral-200">
-                          <HelpCircle className="w-4 h-4 text-sky-400" />
+                          <BookOpen className="w-4 h-4 text-emerald-400" />
                           <span>Help &amp; Guide</span>
                         </div>
-                        <span className="text-[10px] text-neutral-400">Docs</span>
+                        <span className="text-[10px] text-neutral-400 font-mono">Master Docs</span>
                       </button>
 
                       {/* Tooltips Master Switch */}
@@ -750,6 +728,31 @@ export const Navbar: React.FC<NavbarProps> = ({
                             : 'bg-neutral-800 text-neutral-400 border border-neutral-700'
                         }`}>
                           {tooltipsEnabled ? 'ON' : 'OFF'}
+                        </span>
+                      </button>
+
+                      {/* Theme Toggle (Dark / Light) */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          toggleTheme();
+                        }}
+                        className="w-full flex items-center justify-between px-3.5 py-2 text-left hover:bg-neutral-800 transition cursor-pointer"
+                      >
+                        <div className="flex items-center gap-2 text-neutral-200">
+                          {isDark ? (
+                            <Moon className="w-4 h-4 text-cyan-400" />
+                          ) : (
+                            <Sun className="w-4 h-4 text-amber-400" />
+                          )}
+                          <span>Theme Mode</span>
+                        </div>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1 ${
+                          isDark
+                            ? 'bg-neutral-800 text-cyan-300 border border-cyan-800'
+                            : 'bg-amber-950 text-amber-300 border border-amber-700'
+                        }`}>
+                          {isDark ? 'DARK' : 'LIGHT'}
                         </span>
                       </button>
                     </div>

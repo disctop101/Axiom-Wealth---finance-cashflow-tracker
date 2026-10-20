@@ -29,6 +29,7 @@ import {
   BarChart3,
   LineChart,
   HelpCircle,
+  BookOpen,
 } from 'lucide-react';
 import { Tooltip } from './Tooltip';
 
@@ -947,7 +948,7 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({
             />
           </div>
 
-          {/* Help & Guide Button */}
+          {/* Contextual Guide Button */}
           {onOpenHelp && (
             <Tooltip content="Open operational guide and button explanations for Analytics & Trends" position="bottom">
               <button
@@ -955,8 +956,8 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({
                 onClick={onOpenHelp}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white border border-neutral-600 rounded-lg text-xs font-semibold transition cursor-pointer shrink-0 shadow-xs"
               >
-                <HelpCircle className="w-3.5 h-3.5 text-sky-400" />
-                <span>Help &amp; Guide</span>
+                <BookOpen className="w-3.5 h-3.5 text-sky-400" />
+                <span>Guide</span>
               </button>
             </Tooltip>
           )}

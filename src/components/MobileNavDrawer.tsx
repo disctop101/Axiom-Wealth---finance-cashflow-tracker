@@ -15,11 +15,16 @@ import {
   LogIn,
   ChevronRight,
   ChevronDown,
-  ChevronUp,
   User as UserIcon,
+  Sliders,
+  Sparkles,
+  BookOpen,
+  Moon,
+  Sun,
 } from 'lucide-react';
 import { AppNavTab } from './Navbar';
 import { useTooltips } from '../context/TooltipContext';
+import { useTheme } from '../context/ThemeContext';
 
 interface MobileNavDrawerProps {
   isOpen: boolean;
@@ -47,9 +52,17 @@ export const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({
   onOpenHelp,
 }) => {
   const { tooltipsEnabled, toggleTooltips } = useTooltips();
+  const { isDark, toggleTheme } = useTheme();
 
-  const [isToolsOpen, setIsToolsOpen] = useState(true);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(true);
+  // Accordion open states
+  const isToolsActive =
+    activeTab === 'analytics' ||
+    activeTab === 'purchase-checker' ||
+    activeTab === 'stock-dividend-calculator';
+  const isSettingsActive = activeTab === 'notifications' || activeTab === 'settings';
+
+  const [isToolsOpen, setIsToolsOpen] = useState<boolean>(isToolsActive);
+  const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(isSettingsActive);
 
   if (!isOpen) return null;
 
@@ -73,7 +86,7 @@ export const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({
       onClick={onClose}
     >
       <div
-        className="bg-[#1e2324] border-t border-neutral-700 w-full max-h-[85vh] rounded-t-2xl overflow-y-auto shadow-2xl p-4 space-y-4 animate-in slide-in-from-bottom duration-200"
+        className="bg-[#1e2324] border-t border-neutral-700 w-full max-h-[88vh] rounded-t-2xl overflow-y-auto shadow-2xl p-4 space-y-4 animate-in slide-in-from-bottom duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Drag Pill Indicator */}
@@ -107,10 +120,10 @@ export const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({
           </button>
         </div>
 
-        {/* Application Pages Section */}
+        {/* Primary Application Pages Section */}
         <div className="space-y-1.5">
           <div className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 px-2 py-0.5">
-            Application Pages
+            Core Ledger Pages
           </div>
 
           {/* Tab 1: Financial Statement */}
@@ -124,7 +137,7 @@ export const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({
             }`}
           >
             <div className="flex items-center gap-3">
-              <div className="w-7 h-7 rounded-md bg-emerald-950/90 border border-emerald-700/60 flex items-center justify-center text-emerald-400">
+              <div className="w-7 h-7 rounded-md bg-emerald-950/90 border border-emerald-700/60 flex items-center justify-center text-emerald-400 shrink-0">
                 <FileText className="w-4 h-4" />
               </div>
               <div className="text-left">
@@ -132,7 +145,7 @@ export const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({
                 <div className="text-[10px] text-neutral-400">Income Statement, Cashflow &amp; Balance Sheet</div>
               </div>
             </div>
-            <ChevronRight className="w-4 h-4 text-neutral-500" />
+            <ChevronRight className="w-4 h-4 text-neutral-500 shrink-0" />
           </button>
 
           {/* Tab 2: Income & Expenses */}
@@ -146,7 +159,7 @@ export const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({
             }`}
           >
             <div className="flex items-center gap-3">
-              <div className="w-7 h-7 rounded-md bg-amber-950/90 border border-amber-700/60 flex items-center justify-center text-amber-400">
+              <div className="w-7 h-7 rounded-md bg-amber-950/90 border border-amber-700/60 flex items-center justify-center text-amber-400 shrink-0">
                 <ReceiptText className="w-4 h-4" />
               </div>
               <div className="text-left">
@@ -154,7 +167,7 @@ export const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({
                 <div className="text-[10px] text-neutral-400">Transaction logs, budgets &amp; recurring engine</div>
               </div>
             </div>
-            <ChevronRight className="w-4 h-4 text-neutral-500" />
+            <ChevronRight className="w-4 h-4 text-neutral-500 shrink-0" />
           </button>
 
           {/* Tab 3: Wealth */}
@@ -168,7 +181,7 @@ export const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({
             }`}
           >
             <div className="flex items-center gap-3">
-              <div className="w-7 h-7 rounded-md bg-blue-950/90 border border-blue-700/60 flex items-center justify-center text-blue-400">
+              <div className="w-7 h-7 rounded-md bg-blue-950/90 border border-blue-700/60 flex items-center justify-center text-blue-400 shrink-0">
                 <Wallet className="w-4 h-4" />
               </div>
               <div className="text-left">
@@ -176,30 +189,35 @@ export const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({
                 <div className="text-[10px] text-neutral-400">Assets, holdings, liabilities &amp; net worth</div>
               </div>
             </div>
-            <ChevronRight className="w-4 h-4 text-neutral-500" />
+            <ChevronRight className="w-4 h-4 text-neutral-500 shrink-0" />
           </button>
         </div>
 
-        {/* Tools & Utilities Accordion Section */}
-        <div className="space-y-1.5 pt-2 border-t border-neutral-700/60">
+        {/* ================= ACCORDION 1: TOOLS & UTILITIES ================= */}
+        <div className="pt-2 border-t border-neutral-700/60 space-y-1.5">
           <button
             type="button"
             onClick={() => setIsToolsOpen(!isToolsOpen)}
-            className="w-full flex items-center justify-between px-2 py-1 rounded hover:bg-neutral-800/50 transition cursor-pointer group"
+            className="w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/50 transition cursor-pointer"
           >
-            <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-neutral-400 group-hover:text-neutral-200">
-              <span>Tools &amp; Utilities</span>
-              <span className="text-[9px] px-1.5 py-0.2 bg-neutral-800 rounded-full text-neutral-400">3</span>
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-300">
+                Tools &amp; Utilities
+              </span>
+              <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-neutral-800 text-neutral-400 border border-neutral-700">
+                3 Tools
+              </span>
             </div>
             {isToolsOpen ? (
-              <ChevronUp className="w-3.5 h-3.5 text-neutral-400 group-hover:text-neutral-200" />
+              <ChevronDown className="w-4 h-4 text-neutral-400" />
             ) : (
-              <ChevronDown className="w-3.5 h-3.5 text-neutral-400 group-hover:text-neutral-200" />
+              <ChevronRight className="w-4 h-4 text-neutral-500" />
             )}
           </button>
 
           {isToolsOpen && (
-            <div className="space-y-1 animate-in fade-in duration-150 pl-0.5">
+            <div className="space-y-1.5 pl-1 animate-in fade-in duration-150">
               {/* Analytics */}
               <button
                 type="button"
@@ -211,7 +229,7 @@ export const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-7 h-7 rounded-md bg-cyan-950/90 border border-cyan-700/60 flex items-center justify-center text-cyan-400">
+                  <div className="w-7 h-7 rounded-md bg-cyan-950/90 border border-cyan-700/60 flex items-center justify-center text-cyan-400 shrink-0">
                     <TrendingUp className="w-4 h-4" />
                   </div>
                   <div className="text-left">
@@ -219,7 +237,7 @@ export const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({
                     <div className="text-[10px] text-neutral-400">Stock-market style glowing trend line graph</div>
                   </div>
                 </div>
-                <ChevronRight className="w-4 h-4 text-neutral-500" />
+                <ChevronRight className="w-4 h-4 text-neutral-500 shrink-0" />
               </button>
 
               {/* Purchase Checker */}
@@ -233,7 +251,7 @@ export const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-7 h-7 rounded-md bg-purple-950/90 border border-purple-700/60 flex items-center justify-center text-purple-400">
+                  <div className="w-7 h-7 rounded-md bg-purple-950/90 border border-purple-700/60 flex items-center justify-center text-purple-400 shrink-0">
                     <Shield className="w-4 h-4" />
                   </div>
                   <div className="text-left">
@@ -241,7 +259,7 @@ export const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({
                     <div className="text-[10px] text-neutral-400">10x Rule Affordability &amp; Impulse Evaluator</div>
                   </div>
                 </div>
-                <ChevronRight className="w-4 h-4 text-neutral-500" />
+                <ChevronRight className="w-4 h-4 text-neutral-500 shrink-0" />
               </button>
 
               {/* Stock & Dividend Calculator */}
@@ -255,40 +273,47 @@ export const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-7 h-7 rounded-md bg-emerald-950/90 border border-emerald-700/60 flex items-center justify-center text-emerald-400">
+                  <div className="w-7 h-7 rounded-md bg-emerald-950/90 border border-emerald-700/60 flex items-center justify-center text-emerald-400 shrink-0">
                     <Calculator className="w-4 h-4" />
                   </div>
                   <div className="text-left">
-                    <div className="text-xs font-bold text-white">Stock &amp; Dividend Calculator</div>
+                    <div className="text-xs font-bold text-white">Stock &amp; Dividend Simulator</div>
                     <div className="text-[10px] text-neutral-400">DRIP Compounding &amp; Yield Projections</div>
                   </div>
                 </div>
-                <ChevronRight className="w-4 h-4 text-neutral-500" />
+                <ChevronRight className="w-4 h-4 text-neutral-500 shrink-0" />
               </button>
             </div>
           )}
         </div>
 
-        {/* Settings & Preferences Accordion Section */}
-        <div className="space-y-1.5 pt-2 border-t border-neutral-700/60">
+        {/* ================= ACCORDION 2: PREFERENCES & SYSTEM ================= */}
+        <div className="pt-2 border-t border-neutral-700/60 space-y-1.5">
           <button
             type="button"
             onClick={() => setIsSettingsOpen(!isSettingsOpen)}
-            className="w-full flex items-center justify-between px-2 py-1 rounded hover:bg-neutral-800/50 transition cursor-pointer group"
+            className="w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/50 transition cursor-pointer"
           >
-            <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-neutral-400 group-hover:text-neutral-200">
-              <span>Settings &amp; Preferences</span>
-              <span className="text-[9px] px-1.5 py-0.2 bg-neutral-800 rounded-full text-neutral-400">4</span>
+            <div className="flex items-center gap-2">
+              <Sliders className="w-3.5 h-3.5 text-blue-400" />
+              <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-300">
+                Preferences &amp; System
+              </span>
+              {totalAlertCount > 0 && (
+                <span className="px-1.5 py-0.2 rounded-full bg-rose-600 text-white text-[9px] font-extrabold animate-pulse">
+                  {totalAlertCount}
+                </span>
+              )}
             </div>
             {isSettingsOpen ? (
-              <ChevronUp className="w-3.5 h-3.5 text-neutral-400 group-hover:text-neutral-200" />
+              <ChevronDown className="w-4 h-4 text-neutral-400" />
             ) : (
-              <ChevronDown className="w-3.5 h-3.5 text-neutral-400 group-hover:text-neutral-200" />
+              <ChevronRight className="w-4 h-4 text-neutral-500" />
             )}
           </button>
 
           {isSettingsOpen && (
-            <div className="space-y-1 animate-in fade-in duration-150 pl-0.5">
+            <div className="space-y-1.5 pl-1 animate-in fade-in duration-150">
               {/* Notifications */}
               <button
                 type="button"
@@ -300,12 +325,12 @@ export const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-7 h-7 rounded-md bg-amber-950/90 border border-amber-700/60 flex items-center justify-center text-amber-400">
+                  <div className="w-7 h-7 rounded-md bg-amber-950/90 border border-amber-700/60 flex items-center justify-center text-amber-400 shrink-0">
                     <Bell className="w-4 h-4" />
                   </div>
                   <div className="text-left">
                     <div className="text-xs font-bold text-white">Notifications &amp; Alerts</div>
-                    <div className="text-[10px] text-neutral-400">Scheduled bill dues &amp; budget cap warnings</div>
+                    <div className="text-[10px] text-neutral-400">Scheduled bill dues &amp; budget warnings</div>
                   </div>
                 </div>
                 {totalAlertCount > 0 ? (
@@ -328,33 +353,33 @@ export const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-7 h-7 rounded-md bg-emerald-950/90 border border-emerald-700/60 flex items-center justify-center text-emerald-400">
+                  <div className="w-7 h-7 rounded-md bg-emerald-950/90 border border-emerald-700/60 flex items-center justify-center text-emerald-400 shrink-0">
                     <Settings className="w-4 h-4" />
                   </div>
                   <div className="text-left">
                     <div className="text-xs font-bold text-white">Settings &amp; Utilities</div>
-                    <div className="text-[10px] text-neutral-400">Account management, wipe data &amp; Google Sheets</div>
+                    <div className="text-[10px] text-neutral-400">Subtabs: Profile, Preferences &amp; Dev Tools</div>
                   </div>
                 </div>
-                <ChevronRight className="w-4 h-4 text-neutral-500" />
+                <ChevronRight className="w-4 h-4 text-neutral-500 shrink-0" />
               </button>
 
-              {/* Help & Guide */}
+              {/* Contextual Page Guide */}
               <button
                 type="button"
                 onClick={handleHelpClick}
                 className="w-full flex items-center justify-between px-3.5 py-2 rounded-lg text-xs font-semibold text-neutral-200 hover:bg-neutral-800/80 transition cursor-pointer"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-7 h-7 rounded-md bg-blue-950/90 border border-blue-700/60 flex items-center justify-center text-blue-400">
-                    <HelpCircle className="w-4 h-4" />
+                  <div className="w-7 h-7 rounded-md bg-emerald-950/90 border border-emerald-700/60 flex items-center justify-center text-emerald-400 shrink-0">
+                    <BookOpen className="w-4 h-4" />
                   </div>
                   <div className="text-left">
-                    <div className="text-xs font-bold text-white">Help &amp; Guide</div>
-                    <div className="text-[10px] text-neutral-400">Documentation, onboarding &amp; feature walkthrough</div>
+                    <div className="text-xs font-bold text-white">Guide</div>
+                    <div className="text-[10px] text-neutral-400">Operational walkthrough for active page</div>
                   </div>
                 </div>
-                <ChevronRight className="w-4 h-4 text-neutral-500" />
+                <ChevronRight className="w-4 h-4 text-neutral-500 shrink-0" />
               </button>
 
               {/* Master Tooltip Switch on Mobile */}
@@ -364,7 +389,7 @@ export const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({
                 className="w-full flex items-center justify-between px-3.5 py-2 rounded-lg text-xs font-semibold text-neutral-200 hover:bg-neutral-800/80 transition cursor-pointer"
               >
                 <div className="flex items-center gap-3">
-                  <div className={`w-7 h-7 rounded-md flex items-center justify-center ${
+                  <div className={`w-7 h-7 rounded-md flex items-center justify-center shrink-0 ${
                     tooltipsEnabled
                       ? 'bg-emerald-950/90 border border-emerald-700/60 text-emerald-400'
                       : 'bg-neutral-800 border border-neutral-700 text-neutral-500'
@@ -374,7 +399,7 @@ export const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({
                   <div className="text-left">
                     <div className="text-xs font-bold text-white">Hover Tooltips &amp; Guidance</div>
                     <div className="text-[10px] text-neutral-400">
-                      {tooltipsEnabled ? 'Enabled on all buttons & metrics' : 'Disabled for minimal UI'}
+                      {tooltipsEnabled ? 'Enabled across all buttons & metrics' : 'Disabled for clean UI'}
                     </div>
                   </div>
                 </div>
@@ -384,6 +409,36 @@ export const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({
                     : 'bg-neutral-800 text-neutral-400 border border-neutral-700'
                 }`}>
                   {tooltipsEnabled ? 'ON' : 'OFF'}
+                </span>
+              </button>
+
+              {/* Theme Toggle on Mobile */}
+              <button
+                type="button"
+                onClick={toggleTheme}
+                className="w-full flex items-center justify-between px-3.5 py-2 rounded-lg text-xs font-semibold text-neutral-200 hover:bg-neutral-800/80 transition cursor-pointer"
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-7 h-7 rounded-md flex items-center justify-center shrink-0 ${
+                    isDark
+                      ? 'bg-neutral-800 border border-cyan-800 text-cyan-400'
+                      : 'bg-amber-950/90 border border-amber-700/60 text-amber-400'
+                  }`}>
+                    {isDark ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+                  </div>
+                  <div className="text-left">
+                    <div className="text-xs font-bold text-white">Theme Mode</div>
+                    <div className="text-[10px] text-neutral-400">
+                      {isDark ? 'Dark theme active' : 'Light theme active'}
+                    </div>
+                  </div>
+                </div>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1 ${
+                  isDark
+                    ? 'bg-neutral-800 text-cyan-300 border border-cyan-800'
+                    : 'bg-amber-950 text-amber-300 border border-amber-700'
+                }`}>
+                  {isDark ? 'DARK' : 'LIGHT'}
                 </span>
               </button>
             </div>
@@ -397,10 +452,10 @@ export const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({
               <img
                 src={user.photoURL}
                 alt="User"
-                className="w-7 h-7 rounded-full object-cover ring-1 ring-emerald-500"
+                className="w-7 h-7 rounded-full object-cover ring-1 ring-emerald-500 shrink-0"
               />
             ) : (
-              <div className="w-7 h-7 rounded-full bg-neutral-800 border border-neutral-600 flex items-center justify-center text-neutral-300">
+              <div className="w-7 h-7 rounded-full bg-neutral-800 border border-neutral-600 flex items-center justify-center text-neutral-300 shrink-0">
                 <UserIcon className="w-4 h-4 text-emerald-400" />
               </div>
             )}

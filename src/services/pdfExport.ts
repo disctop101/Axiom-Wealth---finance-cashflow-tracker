@@ -325,24 +325,27 @@ export async function exportStatementToPdf({
 
   autoTable(doc, {
     startY: 32,
-    margin: { left: marginX },
+    margin: { left: marginX, right: pageWidth - marginX - halfTableWidth, bottom: 8 },
     tableWidth: halfTableWidth, // 131mm
     head: [['Personal Income Statement', 'Amount']],
     body: incomeBody as any,
     theme: 'grid',
+    pageBreak: 'avoid',
+    rowPageBreak: 'avoid',
     styles: {
-      fontSize: 7.5,
-      cellPadding: 1.4,
+      fontSize: 6.8,
+      cellPadding: { top: 0.7, bottom: 0.7, left: 1.5, right: 1.5 },
       textColor: [30, 41, 59],
       lineColor: [226, 232, 240],
-      lineWidth: 0.2,
+      lineWidth: 0.15,
     },
     headStyles: {
       fillColor: [46, 52, 54],
       textColor: [255, 255, 255],
       fontStyle: 'bold',
       halign: 'left',
-      fontSize: 8,
+      fontSize: 7.2,
+      cellPadding: { top: 1.0, bottom: 1.0, left: 1.5, right: 1.5 },
     },
     columnStyles: {
       0: { cellWidth: 88, halign: 'left' },
@@ -448,26 +451,32 @@ export async function exportStatementToPdf({
     },
   ]);
 
+  // Enforce active page pointer is strictly Page 1 before Table 2
+  doc.setPage(1);
+
   autoTable(doc, {
     startY: 32,
-    margin: { left: marginX + halfTableWidth + 7 }, // 152mm startX
+    margin: { left: marginX + halfTableWidth + 7, right: marginX, bottom: 8 }, // 152mm startX
     tableWidth: halfTableWidth, // 131mm
     head: [['Cash Flow Statement', 'Amount']],
     body: cashFlowBody as any,
     theme: 'grid',
+    pageBreak: 'avoid',
+    rowPageBreak: 'avoid',
     styles: {
-      fontSize: 7.5,
-      cellPadding: 1.4,
+      fontSize: 6.8,
+      cellPadding: { top: 0.7, bottom: 0.7, left: 1.5, right: 1.5 },
       textColor: [30, 41, 59],
       lineColor: [226, 232, 240],
-      lineWidth: 0.2,
+      lineWidth: 0.15,
     },
     headStyles: {
       fillColor: [46, 52, 54],
       textColor: [255, 255, 255],
       fontStyle: 'bold',
       halign: 'left',
-      fontSize: 8,
+      fontSize: 7.2,
+      cellPadding: { top: 1.0, bottom: 1.0, left: 1.5, right: 1.5 },
     },
     columnStyles: {
       0: { cellWidth: 88, halign: 'left' },
@@ -482,17 +491,20 @@ export async function exportStatementToPdf({
   // Reconstructs the horizontal bar visualizer natively in the right column
   // directly underneath the Cash Flow Statement
   // ==========================================
+  // Enforce active page pointer is strictly Page 1 for right column visualizer
+  doc.setPage(1);
+
   const chartStartX = marginX + halfTableWidth + 7; // 152mm
   const chartWidth = halfTableWidth; // 131mm
-  let curY = rightFinalY + 3.5;
+  let curY = rightFinalY + 3.0;
 
   let capturedImageSuccess = false;
   try {
-    const captured = await captureVisualizerChartImage('period-expense-visualizer-container', 1200);
+    const captured = await captureVisualizerChartImage('period-expense-visualizer-container', 1000);
     if (captured && captured.dataUrl) {
-      const imgHeight = Math.min(65, (captured.height / captured.width) * chartWidth);
+      const imgHeight = Math.min(48, (captured.height / captured.width) * chartWidth);
       doc.addImage(captured.dataUrl, 'PNG', chartStartX, curY, chartWidth, imgHeight);
-      curY += imgHeight + 3.5;
+      curY += imgHeight + 3.0;
       capturedImageSuccess = true;
     }
   } catch (chartErr) {
@@ -521,23 +533,23 @@ export async function exportStatementToPdf({
 
     // 1. Visualizer Header Bar
     doc.setFillColor(63, 69, 74); // #3f454a
-    doc.rect(chartStartX, curY, chartWidth, 4.6, 'F');
+    doc.rect(chartStartX, curY, chartWidth, 4.2, 'F');
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7.5);
+    doc.setFontSize(7.0);
     doc.setTextColor(255, 255, 255);
-    doc.text('PERIOD EXPENSES VISUALIZER', chartStartX + 3, curY + 3.3);
+    doc.text('PERIOD EXPENSES VISUALIZER', chartStartX + 3, curY + 3.0);
 
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(6.5);
+    doc.setFontSize(6.2);
     doc.setTextColor(203, 213, 225);
-    doc.text(`(${safeCurrency})`, chartStartX + chartWidth - 3, curY + 3.3, { align: 'right' });
+    doc.text(`(${safeCurrency})`, chartStartX + chartWidth - 3, curY + 3.0, { align: 'right' });
 
-    curY += 5.0;
+    curY += 4.5;
 
     // 2. 15 Category Rows with background track and filled bar
     ORDERED_EXPENSE_CATEGORIES.forEach((cat, idx) => {
       const amount = expenseMap[cat] || 0;
-      const rowHeight = 3.1;
+      const rowHeight = 2.6;
 
       // Alternating subtle background row
       if (idx % 2 === 1) {
@@ -547,19 +559,19 @@ export async function exportStatementToPdf({
 
       // Category Label
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(6.5);
+      doc.setFontSize(6.0);
       doc.setTextColor(71, 85, 105);
-      doc.text(cat, chartStartX + 42, curY + 2.2, { align: 'right' });
+      doc.text(cat, chartStartX + 42, curY + 1.9, { align: 'right' });
 
       // Background Bar Track
       const trackX = chartStartX + 44;
       const trackWidth = 59;
-      const trackHeight = 1.9;
-      const trackY = curY + 0.6;
+      const trackHeight = 1.6;
+      const trackY = curY + 0.4;
 
       doc.setFillColor(241, 245, 249);
       doc.setDrawColor(226, 232, 240);
-      doc.setLineWidth(0.15);
+      doc.setLineWidth(0.12);
       doc.rect(trackX, trackY, trackWidth, trackHeight, 'FD');
 
       // Filled Visualizer Bar
@@ -572,104 +584,109 @@ export async function exportStatementToPdf({
 
       // Numerical Figure (Right-aligned)
       doc.setFont('helvetica', amount > 0 ? 'bold' : 'normal');
-      doc.setFontSize(6.5);
+      doc.setFontSize(6.0);
       if (amount > 0) {
         doc.setTextColor(185, 28, 28); // #b91c1c Red
-        doc.text(formatMoney(-amount, data.currencySymbol), chartStartX + chartWidth - 2, curY + 2.2, { align: 'right' });
+        doc.text(formatMoney(-amount, data.currencySymbol), chartStartX + chartWidth - 2, curY + 1.9, { align: 'right' });
       } else {
         doc.setTextColor(148, 163, 184); // #94a3b8 Slate gray
-        doc.text('-', chartStartX + chartWidth - 2, curY + 2.2, { align: 'right' });
+        doc.text('-', chartStartX + chartWidth - 2, curY + 1.9, { align: 'right' });
       }
 
       curY += rowHeight;
     });
 
     // 3. Total Expenses Row
-    curY += 0.5;
+    curY += 0.4;
     doc.setDrawColor(203, 213, 225);
-    doc.setLineWidth(0.25);
+    doc.setLineWidth(0.2);
     doc.line(chartStartX, curY, chartStartX + chartWidth, curY);
 
     doc.setFillColor(241, 245, 249);
-    doc.rect(chartStartX, curY, chartWidth, 4.0, 'F');
+    doc.rect(chartStartX, curY, chartWidth, 3.6, 'F');
 
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7);
+    doc.setFontSize(6.5);
     doc.setTextColor(15, 23, 42);
-    doc.text('TOTAL EXPENSES', chartStartX + 42, curY + 2.9, { align: 'right' });
+    doc.text('TOTAL EXPENSES', chartStartX + 42, curY + 2.6, { align: 'right' });
 
     doc.setTextColor(185, 28, 28);
     doc.text(
       formatMoney(data.totalExpenses > 0 ? -data.totalExpenses : 0, data.currencySymbol),
       chartStartX + chartWidth - 2,
-      curY + 2.9,
+      curY + 2.6,
       { align: 'right' }
     );
 
-    curY += 5.2;
+    curY += 4.6;
   }
 
   // 4. Bottom Cash Flow Summary Cards (2x2 Grid)
   const cardWidth = (chartWidth - 3) / 2; // 64mm
-  const cardHeight = 6.0;
+  const cardHeight = 5.4;
 
   // Row 1: Inflows & Outflows
   doc.setFillColor(255, 255, 255);
   doc.setDrawColor(226, 232, 240);
-  doc.setLineWidth(0.2);
+  doc.setLineWidth(0.18);
   doc.roundedRect(chartStartX, curY, cardWidth, cardHeight, 0.5, 0.5, 'FD');
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(6.5);
+  doc.setFontSize(6.2);
   doc.setTextColor(30, 41, 59);
-  doc.text('Total Cash Inflows', chartStartX + 2.5, curY + 4.0);
+  doc.text('Total Cash Inflows', chartStartX + 2.5, curY + 3.6);
   doc.setTextColor(5, 150, 105);
-  doc.text(formatMoney(data.cashInflows, data.currencySymbol), chartStartX + cardWidth - 2.5, curY + 4.0, { align: 'right' });
+  doc.text(formatMoney(data.cashInflows, data.currencySymbol), chartStartX + cardWidth - 2.5, curY + 3.6, { align: 'right' });
 
   doc.setFillColor(255, 255, 255);
   doc.roundedRect(chartStartX + cardWidth + 3, curY, cardWidth, cardHeight, 0.5, 0.5, 'FD');
   doc.setTextColor(30, 41, 59);
-  doc.text('Total Cash Outflows', chartStartX + cardWidth + 5.5, curY + 4.0);
+  doc.text('Total Cash Outflows', chartStartX + cardWidth + 5.5, curY + 3.6);
   doc.setTextColor(220, 38, 38);
   doc.text(
     formatMoney(data.cashOutflows > 0 ? -data.cashOutflows : 0, data.currencySymbol),
     chartStartX + chartWidth - 2.5,
-    curY + 4.0,
+    curY + 3.6,
     { align: 'right' }
   );
 
-  curY += 7.0;
+  curY += 6.2;
 
   // Row 2: Net Cash Flow & Ending Balance
   doc.setFillColor(236, 253, 245); // emerald-50
   doc.setDrawColor(167, 243, 208); // emerald-200
-  doc.roundedRect(chartStartX, curY, cardWidth, 6.8, 0.5, 0.5, 'FD');
+  doc.roundedRect(chartStartX, curY, cardWidth, 6.2, 0.5, 0.5, 'FD');
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(6.8);
+  doc.setFontSize(6.4);
   doc.setTextColor(4, 120, 87);
-  doc.text('Net Cash Flow', chartStartX + 2.5, curY + 3.6);
-  doc.text(formatMoney(data.netCashFlow, data.currencySymbol), chartStartX + cardWidth - 2.5, curY + 3.6, { align: 'right' });
+  doc.text('Net Cash Flow', chartStartX + 2.5, curY + 3.3);
+  doc.text(formatMoney(data.netCashFlow, data.currencySymbol), chartStartX + cardWidth - 2.5, curY + 3.3, { align: 'right' });
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(4.6);
+  doc.setFontSize(4.4);
   doc.setTextColor(100, 116, 139);
-  doc.text('[Total Inflows] - [Total Outflows]', chartStartX + 2.5, curY + 5.5);
+  doc.text('[Total Inflows] - [Total Outflows]', chartStartX + 2.5, curY + 5.0);
 
   doc.setFillColor(254, 249, 195); // yellow-100
   doc.setDrawColor(253, 224, 71); // yellow-300
-  doc.roundedRect(chartStartX + cardWidth + 3, curY, cardWidth, 6.8, 0.5, 0.5, 'FD');
+  doc.roundedRect(chartStartX + cardWidth + 3, curY, cardWidth, 6.2, 0.5, 0.5, 'FD');
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(6.8);
+  doc.setFontSize(6.4);
   doc.setTextColor(120, 53, 15);
-  doc.text('Ending Balance', chartStartX + cardWidth + 5.5, curY + 3.6);
-  doc.text(formatMoney(data.endingBalance, data.currencySymbol), chartStartX + chartWidth - 2.5, curY + 3.6, { align: 'right' });
+  doc.text('Ending Balance', chartStartX + cardWidth + 5.5, curY + 3.3);
+  doc.text(formatMoney(data.endingBalance, data.currencySymbol), chartStartX + chartWidth - 2.5, curY + 3.3, { align: 'right' });
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(4.6);
+  doc.setFontSize(4.4);
   doc.setTextColor(146, 64, 14);
-  doc.text('[Beginning Balance] + [Net Cash Flow]', chartStartX + cardWidth + 5.5, curY + 5.5);
+  doc.text('[Beginning Balance] + [Net Cash Flow]', chartStartX + cardWidth + 5.5, curY + 5.0);
 
   // ==========================================
   // PAGE 2: PERSONAL BALANCE SHEET & WEALTH STATEMENT
   // Rendered cleanly on Page 2 with dedicated header banner
   // ==========================================
+  // Enforce trimming if any unintended page was opened by autoTable
+  while ((doc as any).internal.getNumberOfPages() > 1) {
+    (doc as any).deletePage((doc as any).internal.getNumberOfPages());
+  }
+
   doc.addPage('a4', 'landscape');
 
   // Page 2 Header Banner
@@ -751,24 +768,27 @@ export async function exportStatementToPdf({
 
   autoTable(doc, {
     startY: 32,
-    margin: { left: marginX },
+    margin: { left: marginX, right: marginX, bottom: 8 },
     tableWidth: usableWidth, // 269mm
     head: [['Balance Sheet Assets', 'Asset Value', 'Balance Sheet Liabilities', 'Debt Amount']],
     body: balanceSheetBody as any,
     theme: 'grid',
+    pageBreak: 'avoid',
+    rowPageBreak: 'avoid',
     styles: {
-      fontSize: 7.5,
-      cellPadding: 1.4,
+      fontSize: 7.0,
+      cellPadding: { top: 0.9, bottom: 0.9, left: 1.5, right: 1.5 },
       textColor: [30, 41, 59],
       lineColor: [226, 232, 240],
-      lineWidth: 0.2,
+      lineWidth: 0.15,
     },
     headStyles: {
       fillColor: [41, 46, 48],
       textColor: [255, 255, 255],
       fontStyle: 'bold',
       halign: 'left',
-      fontSize: 8,
+      fontSize: 7.5,
+      cellPadding: { top: 1.1, bottom: 1.1, left: 1.5, right: 1.5 },
     },
     columnStyles: {
       0: { cellWidth: 91.5, halign: 'left' },

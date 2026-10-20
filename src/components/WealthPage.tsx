@@ -47,6 +47,7 @@ import {
   ArrowUp,
   ArrowDown,
   HelpCircle,
+  BookOpen,
 } from 'lucide-react';
 import { Tooltip } from './Tooltip';
 
@@ -427,32 +428,32 @@ export const WealthPage: React.FC<WealthPageProps> = ({
 
       if (tx.type === 'buy') {
         typeBadge = 'BUY / ACQUIRE';
-        badgeColor = 'bg-emerald-100 text-emerald-800 border-emerald-300';
+        badgeColor = 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/80 dark:text-emerald-300 dark:border-emerald-700';
         netWorthImpact = 'positive';
         impactAmount = tx.amount;
       } else if (tx.type === 'sell') {
         typeBadge = 'SELL / DISPOSAL';
-        badgeColor = 'bg-amber-100 text-amber-800 border-amber-300';
+        badgeColor = 'bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950/80 dark:text-amber-300 dark:border-amber-700';
         netWorthImpact = 'negative';
         impactAmount = -tx.amount;
       } else if (tx.type === 'deposit') {
         typeBadge = 'DIVIDEND / DEPOSIT';
-        badgeColor = 'bg-teal-100 text-teal-800 border-teal-300';
+        badgeColor = 'bg-teal-100 text-teal-800 border-teal-300 dark:bg-teal-950/80 dark:text-teal-300 dark:border-teal-700';
         netWorthImpact = 'positive';
         impactAmount = tx.amount;
       } else if (tx.type === 'withdrawal') {
         typeBadge = 'WITHDRAWAL';
-        badgeColor = 'bg-orange-100 text-orange-800 border-orange-300';
+        badgeColor = 'bg-orange-100 text-orange-800 border-orange-300 dark:bg-orange-950/80 dark:text-orange-300 dark:border-orange-700';
         netWorthImpact = 'negative';
         impactAmount = -tx.amount;
       } else if (tx.type === 'appreciation') {
         typeBadge = 'VALUE INCREASE';
-        badgeColor = 'bg-green-100 text-green-800 border-green-300';
+        badgeColor = 'bg-green-100 text-green-800 border-green-300 dark:bg-green-950/80 dark:text-green-300 dark:border-green-700';
         netWorthImpact = 'positive';
         impactAmount = tx.amount;
       } else if (tx.type === 'depreciation') {
         typeBadge = 'VALUE LOSS';
-        badgeColor = 'bg-red-100 text-red-800 border-red-300';
+        badgeColor = 'bg-red-100 text-red-800 border-red-300 dark:bg-red-950/80 dark:text-red-300 dark:border-red-700';
         netWorthImpact = 'negative';
         impactAmount = -tx.amount;
       }
@@ -492,7 +493,7 @@ export const WealthPage: React.FC<WealthPageProps> = ({
         originalId: p.id,
         date: p.date,
         typeBadge: 'DEBT AMORTIZATION',
-        badgeColor: 'bg-indigo-100 text-indigo-800 border-indigo-300',
+        badgeColor: 'bg-indigo-100 text-indigo-800 border-indigo-300 dark:bg-indigo-950/80 dark:text-indigo-300 dark:border-indigo-700',
         parentName,
         parentCategory,
         subDetail: `Principal payment on ${parentName}`,
@@ -708,7 +709,7 @@ export const WealthPage: React.FC<WealthPageProps> = ({
               </div>
             </div>
 
-            {/* Help & Guide Popup Button */}
+            {/* Contextual Guide Popup Button */}
             {onOpenHelp && (
               <Tooltip content="Open operational guide and button explanations for Wealth & Portfolio" position="bottom">
                 <button
@@ -716,8 +717,8 @@ export const WealthPage: React.FC<WealthPageProps> = ({
                   onClick={onOpenHelp}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white border border-neutral-600 rounded-lg text-xs font-semibold transition cursor-pointer shrink-0 shadow-xs"
                 >
-                  <HelpCircle className="w-3.5 h-3.5 text-sky-400" />
-                  <span>Help &amp; Guide</span>
+                  <BookOpen className="w-3.5 h-3.5 text-sky-400" />
+                  <span>Guide</span>
                 </button>
               </Tooltip>
             )}
@@ -1287,14 +1288,14 @@ export const WealthPage: React.FC<WealthPageProps> = ({
                   return (
                     <tr
                       key={item.id}
-                      className={`transition hover:bg-amber-50/60 ${
-                        isEven ? 'bg-white' : 'bg-neutral-50/60'
+                      className={`transition hover:bg-neutral-100 dark:hover:bg-neutral-800 ${
+                        isEven ? 'bg-white dark:bg-[#1a1e20]' : 'bg-neutral-50/60 dark:bg-[#141718]'
                       }`}
                     >
                       {/* Date */}
-                      <td className="py-2.5 px-3 font-mono text-neutral-700 whitespace-nowrap">
+                      <td className="py-2.5 px-3 font-mono text-neutral-700 dark:text-neutral-300 whitespace-nowrap">
                         <div className="flex items-center gap-1.5">
-                          <Calendar className="w-3.5 h-3.5 text-neutral-400" />
+                          <Calendar className="w-3.5 h-3.5 text-neutral-400 dark:text-neutral-500" />
                           <span>{item.date}</span>
                         </div>
                       </td>
@@ -1310,32 +1311,32 @@ export const WealthPage: React.FC<WealthPageProps> = ({
 
                       {/* Parent Asset or Liability */}
                       <td className="py-2.5 px-3">
-                        <div className="font-bold text-neutral-900 flex items-center gap-1">
+                        <div className="font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-1">
                           {item.sourceType === 'asset_tx' ? (
-                            <Wallet className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                            <Wallet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                           ) : (
-                            <CreditCard className="w-3.5 h-3.5 text-red-600 shrink-0" />
+                            <CreditCard className="w-3.5 h-3.5 text-red-600 dark:text-red-400 shrink-0" />
                           )}
                           <span>{item.parentName}</span>
                         </div>
-                        <div className="text-[10px] text-neutral-500 font-mono">
+                        <div className="text-[10px] text-neutral-500 dark:text-neutral-400 font-mono">
                           {item.parentCategory}
                         </div>
                       </td>
 
                       {/* Movement Details / Memo / Notes */}
                       <td className="py-2.5 px-3">
-                        <div className="text-neutral-800 font-medium">
+                        <div className="text-neutral-800 dark:text-neutral-200 font-medium">
                           {item.subDetail}
                         </div>
                         <div className="flex flex-wrap items-center gap-2 mt-0.5">
                           {item.extraMeta && (
-                            <span className="text-[10px] text-neutral-500 font-mono bg-neutral-100 px-1.5 py-0.2 rounded border border-neutral-200">
+                            <span className="text-[10px] text-neutral-700 dark:text-neutral-300 font-mono bg-neutral-100 dark:bg-neutral-800 px-1.5 py-0.2 rounded border border-neutral-200 dark:border-neutral-700">
                               {item.extraMeta}
                             </span>
                           )}
                           {item.notes && (
-                            <span className="text-[10px] text-neutral-500 italic">
+                            <span className="text-[10px] text-neutral-500 dark:text-neutral-300 italic">
                               "{item.notes}"
                             </span>
                           )}
@@ -1343,26 +1344,26 @@ export const WealthPage: React.FC<WealthPageProps> = ({
                       </td>
 
                       {/* Amount */}
-                      <td className="py-2.5 px-3 text-right font-mono font-bold whitespace-nowrap text-neutral-900">
+                      <td className="py-2.5 px-3 text-right font-mono font-bold whitespace-nowrap text-neutral-900 dark:text-neutral-100">
                         {formatCurrency(item.amount, currencySymbol)}
                       </td>
 
                       {/* Net Worth Impact */}
                       <td className="py-2.5 px-3 text-center whitespace-nowrap font-mono text-[11px]">
                         {item.netWorthImpact === 'positive' && (
-                          <span className="inline-flex items-center gap-0.5 text-emerald-700 font-bold bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">
-                            <ArrowUpRight className="w-3 h-3 text-emerald-600" />
+                          <span className="inline-flex items-center gap-0.5 text-emerald-700 dark:text-emerald-300 font-bold bg-emerald-50 dark:bg-emerald-950/80 border border-emerald-200 dark:border-emerald-700 px-1.5 py-0.5 rounded">
+                            <ArrowUpRight className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                             +{formatCurrency(Math.abs(item.impactAmount), currencySymbol)}
                           </span>
                         )}
                         {item.netWorthImpact === 'negative' && (
-                          <span className="inline-flex items-center gap-0.5 text-red-700 font-bold bg-red-50 border border-red-200 px-1.5 py-0.5 rounded">
-                            <ArrowDownRight className="w-3 h-3 text-red-600" />
+                          <span className="inline-flex items-center gap-0.5 text-red-700 dark:text-red-300 font-bold bg-red-50 dark:bg-red-950/80 border border-red-200 dark:border-red-700 px-1.5 py-0.5 rounded">
+                            <ArrowDownRight className="w-3 h-3 text-red-600 dark:text-red-400" />
                             −{formatCurrency(Math.abs(item.impactAmount), currencySymbol)}
                           </span>
                         )}
                         {item.netWorthImpact === 'neutral' && (
-                          <span className="text-neutral-400">Neutral</span>
+                          <span className="text-neutral-400 dark:text-neutral-400">Neutral</span>
                         )}
                       </td>
 

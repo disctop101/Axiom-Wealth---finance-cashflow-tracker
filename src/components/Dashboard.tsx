@@ -34,8 +34,8 @@ import {
   Wallet,
   Landmark,
   Clock,
+  BookOpen,
 } from 'lucide-react';
-import { HelpModal } from './HelpModal';
 import { Tooltip } from './Tooltip';
 
 interface DashboardProps {
@@ -93,9 +93,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
     if (onSubTabChange) onSubTabChange(tab);
     setInternalSubTab(tab);
   };
-  // Help Modal State
-  const [isHelpOpen, setIsHelpOpen] = React.useState(false);
-
   // Set Period to Current System Month & Year
   const handleSetCurrentMonth = () => {
     const now = new Date();
@@ -272,12 +269,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
         const endParts = range.end.split('-');
         const startMIdx = parseInt(startParts[1]) - 1;
         const endMIdx = parseInt(endParts[1]) - 1;
-        setPeriod({
+        setPeriod((prev) => ({
+          ...prev,
           startMonth: MONTH_NAMES[startMIdx],
           startYear: parseInt(startParts[0]),
           endMonth: MONTH_NAMES[endMIdx],
           endYear: parseInt(endParts[0]),
-        });
+        }));
       }
     }
   };
@@ -670,9 +668,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
 
             {/* Total Income: Major Summary */}
-            <div className="grid grid-cols-12 py-1.5 px-3 bg-[#e0e2e5] text-neutral-900 font-extrabold items-center border-b-2 border-neutral-400">
-              <div className="col-span-8 text-xs uppercase tracking-wide">Total Income:</div>
-              <div className="col-span-4 text-right font-mono text-sm">{formatCurrency(totalIncome, currencySymbol)}</div>
+            <div className="statement-light-row grid grid-cols-12 py-1.5 px-3 bg-[#e0e2e5] font-extrabold items-center border-b-2 border-neutral-400">
+              <div className="col-span-8 text-xs uppercase tracking-wide text-neutral-950 dark:!text-neutral-950">
+                Total Income:
+              </div>
+              <div className="col-span-4 text-right font-mono text-sm text-neutral-950 dark:!text-neutral-950">
+                {formatCurrency(totalIncome, currencySymbol)}
+              </div>
             </div>
 
             {/* Table Header: Period Expenses | Amount */}
@@ -862,23 +864,25 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
 
             {/* Total Expenses Row */}
-            <div className="grid grid-cols-12 py-1.5 px-3 bg-[#e0e2e5] text-[#c5221f] font-extrabold items-center">
-              <div className="col-span-8 text-xs uppercase tracking-wide text-neutral-900">
+            <div className="statement-light-row grid grid-cols-12 py-1.5 px-3 bg-[#e0e2e5] font-extrabold items-center">
+              <div className="col-span-8 text-xs uppercase tracking-wide text-neutral-950 dark:!text-neutral-950">
                 Total Expenses
               </div>
-              <div className="col-span-4 text-right font-mono text-sm">
+              <div className="statement-red-text col-span-4 text-right font-mono text-sm text-[#c5221f] dark:!text-[#c5221f]">
                 {formatCurrency(totalExpenses > 0 ? -totalExpenses : 0, currencySymbol)}
               </div>
             </div>
 
             {/* Net Income Row */}
-            <div className="grid grid-cols-12 py-1.5 px-3 bg-[#e8eaed] items-center border-t border-neutral-300">
-              <div className="col-span-8 font-bold text-neutral-900 text-[11px] sm:text-xs">
+            <div className="statement-light-row grid grid-cols-12 py-1.5 px-3 bg-[#e8eaed] items-center border-t border-neutral-300">
+              <div className="col-span-8 font-bold text-neutral-950 dark:!text-neutral-950 text-[11px] sm:text-xs">
                 Net Income (Total Income - Total Expenses)
               </div>
               <div
                 className={`col-span-4 text-right font-mono font-bold text-xs ${
-                  netIncome >= 0 ? 'text-[#137333]' : 'text-[#c5221f]'
+                  netIncome >= 0
+                    ? 'statement-green-text text-[#137333] dark:!text-[#137333]'
+                    : 'statement-red-text text-[#c5221f] dark:!text-[#c5221f]'
                 }`}
               >
                 {formatCurrency(netIncome, currencySymbol)}
@@ -931,11 +935,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
 
             {/* Beginning Balance Bar (Rolling) */}
-            <div className="bg-[#e8eaed] p-2 flex items-center justify-between border-b border-neutral-300 px-4">
-              <span className="font-bold text-neutral-800 text-xs sm:text-sm">
+            <div className="statement-light-row bg-[#e8eaed] p-2 flex items-center justify-between border-b border-neutral-300 px-4">
+              <span className="font-bold text-neutral-950 dark:!text-neutral-950 text-xs sm:text-sm">
                 Beginning Balance
               </span>
-              <span className="font-mono font-bold text-neutral-900 text-sm">
+              <span className="font-mono font-bold text-neutral-950 dark:!text-neutral-950 text-sm">
                 {formatCurrency(rollingBeginningBalance, currencySymbol)}
               </span>
             </div>
@@ -1149,24 +1153,24 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <div className="grid grid-cols-2 gap-2 text-xs mt-2">
               <div className="bg-[#e8f5e9] p-2 border border-emerald-300">
                 <div className="flex justify-between items-center">
-                  <span className="font-extrabold text-[#137333]">Net Cash Flow</span>
-                  <span className="font-mono font-bold text-[#137333] text-sm">
+                  <span className="font-extrabold text-[#137333] dark:text-emerald-400">Net Cash Flow</span>
+                  <span className="font-mono font-bold text-[#137333] dark:text-emerald-300 text-sm">
                     {formatCurrency(netCashFlow, currencySymbol)}
                   </span>
                 </div>
-                <div className="text-[10px] text-neutral-500 font-mono mt-0.5">
+                <div className="text-[10px] text-neutral-600 dark:text-emerald-200/90 font-mono mt-0.5">
                   [Total Cash Inflows] - [Total Cash Outflows]
                 </div>
               </div>
 
-              <div className="bg-[#fef9c3] p-2 border border-yellow-300">
+              <div className="statement-light-row bg-[#fef9c3] p-2 border border-yellow-300">
                 <div className="flex justify-between items-center">
-                  <span className="font-extrabold text-amber-900">Ending Balance</span>
-                  <span className="font-mono font-bold text-amber-950 text-sm">
+                  <span className="font-extrabold text-amber-950 dark:!text-amber-950">Ending Balance</span>
+                  <span className="font-mono font-bold text-amber-950 dark:!text-amber-950 text-sm">
                     {formatCurrency(cashFlowEndingBalance, currencySymbol)}
                   </span>
                 </div>
-                <div className="text-[10px] text-neutral-500 font-mono mt-0.5">
+                <div className="text-[10px] text-neutral-800 dark:!text-neutral-900 font-mono font-semibold mt-0.5">
                   [Beginning Balance] + [Net Cash Flow]
                 </div>
               </div>
@@ -1717,17 +1721,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
           {/* Action Buttons in a responsive grid for mobile, flex for desktop */}
           <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:items-center gap-1.5 w-full lg:w-auto">
-            {/* Help & Guide Popup Button */}
+            {/* Contextual Guide Popup Button */}
             {onOpenHelp && (
-              <Tooltip content="Open operational guide and button explanations for the Financial Statement" position="bottom">
+              <Tooltip content="Open operational guide and button explanations for Financial Statements" position="bottom">
                 <button
                   type="button"
                   onClick={onOpenHelp}
                   className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white rounded text-xs font-semibold transition border border-neutral-600 shadow-xs cursor-pointer"
-                  title="Open operational help and guide"
+                  title="Open operational guide"
                 >
-                  <HelpCircle className="w-3.5 h-3.5 text-sky-400" />
-                  <span>Help &amp; Guide</span>
+                  <BookOpen className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Guide</span>
                 </button>
               </Tooltip>
             )}
@@ -1816,14 +1820,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
           {currentSubTab === 'balancesheet' && renderBalanceSheet(true)}
         </div>
       </div>
-
-
-      {/* Operational Instructions & User Guide Modal */}
-      <HelpModal
-        isOpen={isHelpOpen}
-        onClose={() => setIsHelpOpen(false)}
-        userName={rawName}
-      />
     </div>
   );
 };

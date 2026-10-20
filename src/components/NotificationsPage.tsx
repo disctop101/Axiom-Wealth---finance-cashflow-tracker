@@ -28,6 +28,7 @@ import {
   EyeOff,
   ArrowUpDown,
   HelpCircle,
+  BookOpen,
 } from 'lucide-react';
 import { Tooltip } from './Tooltip';
 
@@ -300,14 +301,14 @@ export const NotificationsPage: React.FC<NotificationsPageProps> = ({
 
         <div className="flex items-center gap-2 self-start md:self-auto flex-wrap">
           {onOpenHelp && (
-            <Tooltip content="Open complete guide and operational walkthrough for Notifications & Alert Center">
+            <Tooltip content="Open operational guide and button explanations for Notifications & Alert Center">
               <button
                 type="button"
                 onClick={onOpenHelp}
                 className="flex items-center gap-1.5 px-3 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 rounded-lg text-xs font-semibold shadow-xs transition border border-neutral-700"
               >
-                <HelpCircle className="w-3.5 h-3.5 text-blue-400" />
-                <span>Help &amp; Guide</span>
+                <BookOpen className="w-3.5 h-3.5 text-blue-400" />
+                <span>Guide</span>
               </button>
             </Tooltip>
           )}

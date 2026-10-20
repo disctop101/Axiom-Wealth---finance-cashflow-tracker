@@ -87,6 +87,8 @@ export type LiabilityCategory =
 
 export type LiabilityPurpose = 'cash_loan' | 'financed_purchase' | 'refinance' | 'other';
 
+export type LiabilityPaymentFrequency = 'daily' | 'weekly' | 'monthly' | 'yearly';
+
 export interface LiabilityItem {
   id: string;
   userId?: string;
@@ -99,6 +101,13 @@ export interface LiabilityItem {
   purpose?: LiabilityPurpose;
   date: string; // Origination date
   notes?: string;
+  // Scheduled payment options
+  scheduledPaymentEnabled?: boolean;
+  paymentFrequency?: LiabilityPaymentFrequency;
+  scheduledAmount?: number;
+  nextDueDate?: string; // YYYY-MM-DD
+  dueDayOfMonth?: number; // 1-31
+  autoDeductPayment?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -116,6 +125,7 @@ export interface LiabilityPayment {
 
 export type TransactionType = 'income' | 'expense';
 export type IncomeClassification = 'earned' | 'passive' | 'other';
+export type ExpenseClassification = 'fixed' | 'variable' | 'other';
 export type PaymentMethodType = 'Cash' | 'Card' | 'Bank Transfer';
 export type RecurrenceFrequency = 'daily' | 'weekly' | 'monthly' | 'yearly';
 
@@ -151,6 +161,8 @@ export interface RecurringExpenseItem {
   frequency: RecurrenceFrequency;
   startDate: string; // YYYY-MM-DD
   nextDueDate: string; // YYYY-MM-DD
+  dayOfMonth?: number;
+  autoPay?: boolean;
   paymentMethod?: PaymentMethodType;
   notes?: string;
   lastPaidDate?: string;

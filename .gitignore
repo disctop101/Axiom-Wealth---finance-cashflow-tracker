@@ -1,8 +1,74 @@
+# ========================================================
+# Axiom Wealth - Production Git Ignore Configuration
+# Tailored for React + Vite + TypeScript + Firebase
+# ========================================================
+
+# Dependencies
 node_modules/
-build/
+.pnp
+.pnp.js
+
+# Build Outputs & Production Artifacts
 dist/
-coverage/
-.DS_Store
-*.log
-.env*
+dist-ssr/
+build/
+out/
+*.local
+
+# Environment Variables & Secrets (CRITICAL: Never commit credentials)
+.env
+.env.local
+.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
 !.env.example
+
+# Firebase Logs, Emulators & Cache
+.firebase/
+firebase-debug.log*
+firestore-debug.log*
+ui-debug.log*
+database-debug.log*
+pubsub-debug.log*
+
+# Vite Cache & TypeScript Build Info
+.vite/
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# Logs & Debugging
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Testing & Code Coverage
+coverage/
+.nyc_output/
+
+# Operating System Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+[Dd]esktop.ini
+
+# IDE & Editor Specific Configurations
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.bak
+*.tmp

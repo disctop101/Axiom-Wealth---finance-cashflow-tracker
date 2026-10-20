@@ -16,12 +16,11 @@ const STORAGE_KEYS = {
   SUBSCRIPTION_PLAN: 'axiom_wealth_sub_plan',
 };
 
-export const PRIMARY_ADMIN_EMAILS = [
+export const DEFAULT_OWNER_EMAIL = 'emmanuelfajutagana@gmail.com';
+export const PRIMARY_OWNER_EMAILS = [
   'emmanuelfajutagana@gmail.com',
   'fajutaganaemmanuel@gmail.com',
 ];
-
-export const DEFAULT_OWNER_EMAIL = 'emmanuelfajutagana@gmail.com';
 
 /**
  * Returns the configured owner email address (case-insensitive).
@@ -44,16 +43,15 @@ export function setOwnerEmail(email: string) {
 }
 
 /**
- * Checks whether a given user object or email belongs to the primary app owner / admin.
- * Only authenticated users matching the primary designated admin emails are granted developer access.
+ * Checks whether a given user object or email belongs to the app owner / admin.
  */
 export function isOwnerUser(user: User | null | undefined): boolean {
   if (!user || !user.email) return false;
   const userEmail = user.email.trim().toLowerCase();
-  const ownerEmail = getOwnerEmail().toLowerCase();
+  const ownerEmail = getOwnerEmail();
   return (
-    PRIMARY_ADMIN_EMAILS.includes(userEmail) ||
     userEmail === ownerEmail ||
+    PRIMARY_OWNER_EMAILS.includes(userEmail) ||
     userEmail.includes('fajutagana') ||
     userEmail.endsWith('@axiomwealth.com')
   );

@@ -112,20 +112,20 @@ export const PeriodExpenseChart: React.FC<PeriodExpenseChartProps> = ({
   };
 
   return (
-    <div id="period-expense-visualizer-container" className="bg-white border border-neutral-300 p-3 my-2 text-xs select-none">
+    <div id="period-expense-visualizer-container" className="bg-white dark:bg-[#1a1e20] border border-neutral-300 dark:border-neutral-700/80 p-3 my-2 text-xs select-none rounded-lg shadow-xs transition-colors">
       {/* Header with 4 Individual Toggle Buttons */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-2 mb-2 border-b border-neutral-200 gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-2 mb-2 border-b border-neutral-200 dark:border-neutral-700/80 gap-2">
         <div className="flex items-center gap-2">
-          <span className="font-bold text-neutral-800 tracking-tight text-xs uppercase">
+          <span className="font-bold text-neutral-800 dark:text-neutral-100 tracking-tight text-xs uppercase">
             {getTitle()}
           </span>
-          <span className="text-[10px] text-neutral-500 font-mono">
+          <span className="text-[10px] text-neutral-500 dark:text-neutral-400 font-mono">
             ({currencySymbol})
           </span>
         </div>
 
         {/* 4 Distinct, Individual Visualiser Control Buttons */}
-        <div className="flex flex-wrap rounded bg-neutral-100 p-0.5 border border-neutral-300 gap-0.5 text-[11px] print:hidden">
+        <div className="flex flex-wrap rounded bg-neutral-100 dark:bg-neutral-800/80 p-0.5 border border-neutral-300 dark:border-neutral-700 gap-0.5 text-[11px] print:hidden">
           {/* 1. Income Button */}
           <button
             type="button"
@@ -133,7 +133,7 @@ export const PeriodExpenseChart: React.FC<PeriodExpenseChartProps> = ({
             className={`px-2.5 py-1 rounded font-semibold transition cursor-pointer ${
               activeView === 'income'
                 ? 'bg-emerald-700 text-white shadow-xs'
-                : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200/60'
+                : 'text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-neutral-700/60'
             }`}
             title="Filter Visualiser to show only Income categories"
           >
@@ -146,8 +146,8 @@ export const PeriodExpenseChart: React.FC<PeriodExpenseChartProps> = ({
             onClick={() => setActiveView('expenses')}
             className={`px-2.5 py-1 rounded font-semibold transition cursor-pointer ${
               activeView === 'expenses'
-                ? 'bg-neutral-800 text-white shadow-xs'
-                : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200/60'
+                ? 'bg-neutral-800 dark:bg-neutral-700 text-white shadow-xs'
+                : 'text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-neutral-700/60'
             }`}
             title="Filter Visualiser to show only Expenses categories"
           >
@@ -161,7 +161,7 @@ export const PeriodExpenseChart: React.FC<PeriodExpenseChartProps> = ({
             className={`px-2.5 py-1 rounded font-semibold transition cursor-pointer ${
               activeView === 'assets'
                 ? 'bg-sky-700 text-white shadow-xs'
-                : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200/60'
+                : 'text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-neutral-700/60'
             }`}
             title="Filter Visualiser to show only Assets categories"
           >
@@ -175,7 +175,7 @@ export const PeriodExpenseChart: React.FC<PeriodExpenseChartProps> = ({
             className={`px-2.5 py-1 rounded font-semibold transition cursor-pointer ${
               activeView === 'liabilities'
                 ? 'bg-red-700 text-white shadow-xs'
-                : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200/60'
+                : 'text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-neutral-700/60'
             }`}
             title="Filter Visualiser to show only Liabilities categories"
           >
@@ -196,17 +196,17 @@ export const PeriodExpenseChart: React.FC<PeriodExpenseChartProps> = ({
                 <div
                   key={cat}
                   onClick={() => onSelectCategory && onSelectCategory(cat, 'income')}
-                  className="flex items-center text-[10px] group hover:bg-emerald-50/70 py-0.5 cursor-pointer rounded-xs px-1 transition"
+                  className="flex items-center text-[10px] group hover:bg-emerald-50/70 dark:hover:bg-emerald-950/30 py-0.5 cursor-pointer rounded-xs px-1 transition"
                   title={`Click to view transaction details for ${cat}`}
                 >
                   <div
-                    className="w-40 pr-2 truncate text-neutral-700 text-right group-hover:text-emerald-700 font-medium"
+                    className="w-40 pr-2 truncate text-neutral-700 dark:text-neutral-300 text-right group-hover:text-emerald-700 dark:group-hover:text-emerald-400 font-medium"
                     title={cat}
                   >
                     {cat}
                   </div>
 
-                  <div className="flex-1 h-3.5 bg-neutral-100 relative rounded-none border border-neutral-300 flex overflow-hidden">
+                  <div className="flex-1 h-3.5 bg-neutral-100 dark:bg-neutral-800 relative rounded-none border border-neutral-300 dark:border-neutral-700 flex overflow-hidden">
                     {amount > 0 && (
                       <div
                         className="h-full transition-all duration-300 group-hover:opacity-80"
@@ -218,7 +218,7 @@ export const PeriodExpenseChart: React.FC<PeriodExpenseChartProps> = ({
                     )}
                   </div>
 
-                  <div className="w-20 pl-1.5 text-right font-mono font-bold text-neutral-700 group-hover:text-emerald-700">
+                  <div className="w-20 pl-1.5 text-right font-mono font-bold text-neutral-700 dark:text-neutral-300 group-hover:text-emerald-700 dark:group-hover:text-emerald-400">
                     {amount > 0 ? formatCurrency(amount, currencySymbol) : '-'}
                   </div>
                 </div>
@@ -227,14 +227,14 @@ export const PeriodExpenseChart: React.FC<PeriodExpenseChartProps> = ({
           </div>
 
           {/* Total Row */}
-          <div className="flex items-center text-[10px] pt-1.5 border-t border-neutral-300 mt-2 px-1 bg-emerald-50/50 rounded-xs">
-            <div className="w-40 pr-2 truncate text-neutral-800 text-right font-bold uppercase tracking-wider text-[10px]">
+          <div className="flex items-center text-[10px] pt-1.5 border-t border-neutral-300 dark:border-neutral-700 mt-2 px-1 bg-emerald-50/50 dark:bg-emerald-950/25 rounded-xs">
+            <div className="w-40 pr-2 truncate text-neutral-800 dark:text-neutral-200 text-right font-bold uppercase tracking-wider text-[10px]">
               Total Income
             </div>
             <div className="flex-1 h-3.5 flex items-center">
-              <div className="w-full h-px bg-emerald-200" />
+              <div className="w-full h-px bg-emerald-200 dark:bg-emerald-800" />
             </div>
-            <div className="w-20 pl-1.5 text-right font-mono font-bold text-emerald-700">
+            <div className="w-20 pl-1.5 text-right font-mono font-bold text-emerald-700 dark:text-emerald-400">
               {formatCurrency(totalIncome, currencySymbol)}
             </div>
           </div>
@@ -253,17 +253,17 @@ export const PeriodExpenseChart: React.FC<PeriodExpenseChartProps> = ({
                 <div
                   key={cat}
                   onClick={() => onSelectCategory && onSelectCategory(cat, 'expense')}
-                  className="flex items-center text-[10px] group hover:bg-red-50/60 py-0.5 cursor-pointer rounded-xs px-1 transition"
+                  className="flex items-center text-[10px] group hover:bg-red-50/60 dark:hover:bg-red-950/30 py-0.5 cursor-pointer rounded-xs px-1 transition"
                   title={`Click to view transaction details for ${cat}`}
                 >
                   <div
-                    className="w-40 pr-2 truncate text-neutral-700 text-right group-hover:text-red-700 font-medium"
+                    className="w-40 pr-2 truncate text-neutral-700 dark:text-neutral-300 text-right group-hover:text-red-700 dark:group-hover:text-red-400 font-medium"
                     title={cat}
                   >
                     {cat}
                   </div>
 
-                  <div className="flex-1 h-3.5 bg-neutral-100 relative rounded-none border-l border-r border-neutral-300 flex justify-end overflow-hidden">
+                  <div className="flex-1 h-3.5 bg-neutral-100 dark:bg-neutral-800 relative rounded-none border-l border-r border-neutral-300 dark:border-neutral-700 flex justify-end overflow-hidden">
                     {amount > 0 && (
                       <div
                         className="h-full transition-all duration-300 group-hover:opacity-80"
@@ -275,7 +275,7 @@ export const PeriodExpenseChart: React.FC<PeriodExpenseChartProps> = ({
                     )}
                   </div>
 
-                  <div className="w-20 pl-1.5 text-right font-mono text-neutral-600 group-hover:font-bold group-hover:text-red-700">
+                  <div className="w-20 pl-1.5 text-right font-mono text-neutral-600 dark:text-neutral-400 group-hover:font-bold group-hover:text-red-700 dark:group-hover:text-red-400">
                     {amount > 0 ? formatCurrency(-amount, currencySymbol) : '-'}
                   </div>
                 </div>
@@ -284,14 +284,14 @@ export const PeriodExpenseChart: React.FC<PeriodExpenseChartProps> = ({
           </div>
 
           {/* Total Row */}
-          <div className="flex items-center text-[10px] pt-1.5 border-t border-neutral-300 mt-2 px-1 bg-neutral-100/80 rounded-xs">
-            <div className="w-40 pr-2 truncate text-neutral-800 text-right font-bold uppercase tracking-wider text-[10px]">
+          <div className="flex items-center text-[10px] pt-1.5 border-t border-neutral-300 dark:border-neutral-700 mt-2 px-1 bg-neutral-100/80 dark:bg-neutral-800/50 rounded-xs">
+            <div className="w-40 pr-2 truncate text-neutral-800 dark:text-neutral-200 text-right font-bold uppercase tracking-wider text-[10px]">
               Total Expenses
             </div>
             <div className="flex-1 h-3.5 flex items-center">
-              <div className="w-full h-px bg-neutral-300" />
+              <div className="w-full h-px bg-neutral-300 dark:bg-neutral-700" />
             </div>
-            <div className="w-20 pl-1.5 text-right font-mono font-bold text-red-700">
+            <div className="w-20 pl-1.5 text-right font-mono font-bold text-red-700 dark:text-red-400">
               {formatCurrency(-totalExpenses, currencySymbol)}
             </div>
           </div>
@@ -310,10 +310,10 @@ export const PeriodExpenseChart: React.FC<PeriodExpenseChartProps> = ({
                 <div
                   key={item.category}
                   onClick={() => onSelectCategory && onSelectCategory(item.category, 'asset')}
-                  className="flex items-center text-[10px] group hover:bg-neutral-50 py-0.5 cursor-pointer rounded-xs px-1 transition"
+                  className="flex items-center text-[10px] group hover:bg-neutral-50 dark:hover:bg-neutral-800/50 py-0.5 cursor-pointer rounded-xs px-1 transition"
                   title={`Asset: ${item.category} · Click to inspect`}
                 >
-                  <div className="w-40 pr-2 truncate text-neutral-700 text-right font-medium flex items-center justify-end gap-1">
+                  <div className="w-40 pr-2 truncate text-neutral-700 dark:text-neutral-300 text-right font-medium flex items-center justify-end gap-1">
                     <span
                       className="w-1.5 h-1.5 rounded-full shrink-0"
                       style={{ backgroundColor: color }}
@@ -321,7 +321,7 @@ export const PeriodExpenseChart: React.FC<PeriodExpenseChartProps> = ({
                     <span className="truncate">{item.category}</span>
                   </div>
 
-                  <div className="flex-1 h-3.5 bg-neutral-100 relative rounded-none border border-neutral-300 flex overflow-hidden">
+                  <div className="flex-1 h-3.5 bg-neutral-100 dark:bg-neutral-800 relative rounded-none border border-neutral-300 dark:border-neutral-700 flex overflow-hidden">
                     {item.amount > 0 && (
                       <div
                         className="h-full transition-all duration-300 group-hover:opacity-80"
@@ -333,7 +333,7 @@ export const PeriodExpenseChart: React.FC<PeriodExpenseChartProps> = ({
                     )}
                   </div>
 
-                  <div className="w-20 pl-1.5 text-right font-mono font-bold text-neutral-800">
+                  <div className="w-20 pl-1.5 text-right font-mono font-bold text-neutral-800 dark:text-neutral-200">
                     {item.amount > 0 ? formatCurrency(item.amount, currencySymbol) : '-'}
                   </div>
                 </div>
@@ -342,14 +342,14 @@ export const PeriodExpenseChart: React.FC<PeriodExpenseChartProps> = ({
           </div>
 
           {/* Total Row */}
-          <div className="flex items-center text-[10px] pt-1.5 border-t border-neutral-300 mt-2 px-1 bg-neutral-50 rounded-xs">
-            <div className="w-40 pr-2 truncate text-neutral-900 text-right font-bold uppercase tracking-wider text-[10px]">
+          <div className="flex items-center text-[10px] pt-1.5 border-t border-neutral-300 dark:border-neutral-700 mt-2 px-1 bg-neutral-50 dark:bg-neutral-800/40 rounded-xs">
+            <div className="w-40 pr-2 truncate text-neutral-900 dark:text-neutral-100 text-right font-bold uppercase tracking-wider text-[10px]">
               Total Assets
             </div>
             <div className="flex-1 h-3.5 flex items-center">
-              <div className="w-full h-px bg-neutral-300" />
+              <div className="w-full h-px bg-neutral-300 dark:bg-neutral-700" />
             </div>
-            <div className="w-20 pl-1.5 text-right font-mono font-bold text-neutral-900">
+            <div className="w-20 pl-1.5 text-right font-mono font-bold text-neutral-900 dark:text-neutral-100">
               {formatCurrency(totalAssets, currencySymbol)}
             </div>
           </div>
@@ -368,10 +368,10 @@ export const PeriodExpenseChart: React.FC<PeriodExpenseChartProps> = ({
                 <div
                   key={item.category}
                   onClick={() => onSelectCategory && onSelectCategory(item.category, 'liability')}
-                  className="flex items-center text-[10px] group hover:bg-neutral-50 py-0.5 cursor-pointer rounded-xs px-1 transition"
+                  className="flex items-center text-[10px] group hover:bg-neutral-50 dark:hover:bg-neutral-800/50 py-0.5 cursor-pointer rounded-xs px-1 transition"
                   title={`Liability: ${item.category} · Click to inspect`}
                 >
-                  <div className="w-40 pr-2 truncate text-neutral-700 text-right font-medium flex items-center justify-end gap-1">
+                  <div className="w-40 pr-2 truncate text-neutral-700 dark:text-neutral-300 text-right font-medium flex items-center justify-end gap-1">
                     <span
                       className="w-1.5 h-1.5 rounded-full shrink-0"
                       style={{ backgroundColor: color }}
@@ -379,7 +379,7 @@ export const PeriodExpenseChart: React.FC<PeriodExpenseChartProps> = ({
                     <span className="truncate">{item.category}</span>
                   </div>
 
-                  <div className="flex-1 h-3.5 bg-neutral-100 relative rounded-none border border-neutral-300 flex overflow-hidden">
+                  <div className="flex-1 h-3.5 bg-neutral-100 dark:bg-neutral-800 relative rounded-none border border-neutral-300 dark:border-neutral-700 flex overflow-hidden">
                     {item.amount > 0 && (
                       <div
                         className="h-full transition-all duration-300 group-hover:opacity-80"
@@ -391,7 +391,7 @@ export const PeriodExpenseChart: React.FC<PeriodExpenseChartProps> = ({
                     )}
                   </div>
 
-                  <div className="w-20 pl-1.5 text-right font-mono font-bold text-neutral-800">
+                  <div className="w-20 pl-1.5 text-right font-mono font-bold text-neutral-800 dark:text-neutral-200">
                     {item.amount > 0 ? formatCurrency(item.amount, currencySymbol) : '-'}
                   </div>
                 </div>
@@ -400,14 +400,14 @@ export const PeriodExpenseChart: React.FC<PeriodExpenseChartProps> = ({
           </div>
 
           {/* Total Row */}
-          <div className="flex items-center text-[10px] pt-1.5 border-t border-neutral-300 mt-2 px-1 bg-red-50/50 rounded-xs">
-            <div className="w-40 pr-2 truncate text-red-950 text-right font-bold uppercase tracking-wider text-[10px]">
+          <div className="flex items-center text-[10px] pt-1.5 border-t border-neutral-300 dark:border-neutral-700 mt-2 px-1 bg-red-50/50 dark:bg-red-950/25 rounded-xs">
+            <div className="w-40 pr-2 truncate text-red-950 dark:text-red-300 text-right font-bold uppercase tracking-wider text-[10px]">
               Total Liabilities
             </div>
             <div className="flex-1 h-3.5 flex items-center">
-              <div className="w-full h-px bg-red-200" />
+              <div className="w-full h-px bg-red-200 dark:bg-red-800" />
             </div>
-            <div className="w-20 pl-1.5 text-right font-mono font-bold text-red-700">
+            <div className="w-20 pl-1.5 text-right font-mono font-bold text-red-700 dark:text-red-400">
               {formatCurrency(totalLiabilities, currencySymbol)}
             </div>
           </div>

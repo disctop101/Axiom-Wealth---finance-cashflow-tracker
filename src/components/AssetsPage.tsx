@@ -34,6 +34,7 @@ import {
   ArrowUp,
   ArrowDown,
   HelpCircle,
+  BookOpen,
 } from 'lucide-react';
 import { ConfirmModal } from './ConfirmModal';
 import { Tooltip } from './Tooltip';
@@ -106,6 +107,7 @@ export const AssetsPage: React.FC<AssetsPageProps> = ({
   const [txAmount, setTxAmount] = useState('');
   const [txDate, setTxDate] = useState(new Date().toISOString().split('T')[0]);
   const [txNotes, setTxNotes] = useState('');
+  const [txStockCode, setTxStockCode] = useState('');
   const [txBroker, setTxBroker] = useState('');
   const [txAutoLedger, setTxAutoLedger] = useState(true);
 
@@ -344,7 +346,7 @@ export const AssetsPage: React.FC<AssetsPageProps> = ({
           totalDividendsCollected: isStockCategory ? divCollectedNum : undefined,
         },
         {
-          enabled: autoLedgerAcquisition,
+          enabled: true, // Mandatory background cross-linking
           type: 'expense',
           category: ledgerCategory,
         }
@@ -543,8 +545,8 @@ export const AssetsPage: React.FC<AssetsPageProps> = ({
                 onClick={onOpenHelp}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white border border-neutral-600 rounded text-xs font-semibold shadow-xs transition cursor-pointer"
               >
-                <HelpCircle className="w-3.5 h-3.5 text-sky-400" />
-                <span>Help &amp; Guide</span>
+                <BookOpen className="w-3.5 h-3.5 text-sky-400" />
+                <span>Guide</span>
               </button>
             </Tooltip>
           )}
@@ -1902,23 +1904,6 @@ export const AssetsPage: React.FC<AssetsPageProps> = ({
                   className="w-full px-2.5 py-1.5 border border-neutral-300 rounded focus:outline-hidden"
                 />
               </div>
-
-              {/* Cross-linked Ledger Checkbox */}
-              {!editingAsset && (
-                <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="autoLedgerAcquisition"
-                    checked={autoLedgerAcquisition}
-                    onChange={(e) => setAutoLedgerAcquisition(e.target.checked)}
-                    className="rounded text-emerald-600"
-                  />
-                  <label htmlFor="autoLedgerAcquisition" className="text-[11px] text-emerald-900 cursor-pointer flex items-center gap-1 font-medium">
-                    <Link2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                    <span>Auto-record asset acquisition as an Expense in Income &amp; Expenses</span>
-                  </label>
-                </div>
-              )}
 
               <div className="flex justify-end gap-2 pt-2 border-t border-neutral-200">
                 <button

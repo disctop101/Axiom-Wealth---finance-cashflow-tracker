@@ -17,6 +17,7 @@ import {
   ShoppingBag,
   Loader2,
   Layers,
+  BookOpen,
 } from 'lucide-react';
 import { Tooltip } from './Tooltip';
 
@@ -157,14 +158,14 @@ export const PurchaseCheckerPage: React.FC<PurchaseCheckerPageProps> = ({
 
         <div className="flex items-center gap-2 self-start md:self-auto flex-wrap">
           {onOpenHelp && (
-            <Tooltip content="Open complete guide and operational walkthrough for Buyer & Affordability Checker">
+            <Tooltip content="Open operational guide and button explanations for Buyer & Affordability Checker">
               <button
                 type="button"
                 onClick={onOpenHelp}
                 className="flex items-center gap-1.5 px-3 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 rounded-lg text-xs font-semibold shadow-xs transition border border-neutral-700"
               >
-                <HelpCircle className="w-3.5 h-3.5 text-blue-400" />
-                <span>Help &amp; Guide</span>
+                <BookOpen className="w-3.5 h-3.5 text-blue-400" />
+                <span>Guide</span>
               </button>
             </Tooltip>
           )}

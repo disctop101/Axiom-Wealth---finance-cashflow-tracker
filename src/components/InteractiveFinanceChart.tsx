@@ -122,21 +122,21 @@ export const InteractiveFinanceChart: React.FC<InteractiveFinanceChartProps> = (
     switch (type) {
       case 'income':
       case 'asset':
-        return 'bg-emerald-100 text-emerald-800 border-emerald-200';
+        return 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800';
       case 'expense':
       case 'liability':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'bg-red-100 dark:bg-red-950/80 text-red-800 dark:text-red-300 border-red-200 dark:border-red-800';
       default:
-        return 'bg-neutral-100 text-neutral-800 border-neutral-200';
+        return 'bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 border-neutral-200 dark:border-neutral-700';
     }
   };
 
   return (
-    <div className="bg-white p-3.5 border border-neutral-300 rounded shadow-xs flex flex-col justify-between select-none">
+    <div className="bg-white dark:bg-[#1e2324] p-3.5 border border-neutral-300 dark:border-neutral-700 rounded shadow-xs flex flex-col justify-between select-none transition-colors">
       {/* Top Header with Interactive Style & Sort Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-neutral-200 pb-2 mb-3 gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-neutral-200 dark:border-neutral-700/80 pb-2 mb-3 gap-2">
         <div className="flex items-center gap-2">
-          <h3 className="font-bold text-xs uppercase tracking-wider text-neutral-800">
+          <h3 className="font-bold text-xs uppercase tracking-wider text-neutral-800 dark:text-neutral-100">
             {title}
           </h3>
           <span
@@ -150,15 +150,15 @@ export const InteractiveFinanceChart: React.FC<InteractiveFinanceChartProps> = (
         <div className="flex items-center gap-2 self-start sm:self-auto">
           {/* Sort Controls */}
           {allowSort && (
-            <div className="flex items-center bg-neutral-100 border border-neutral-300 rounded p-0.5 text-[10px] font-medium">
+            <div className="flex items-center bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded p-0.5 text-[10px] font-medium">
               <button
                 type="button"
                 onClick={() => setSortBy('desc')}
                 title="Sort by highest amount"
                 className={`p-1 rounded flex items-center gap-1 transition ${
                   sortBy === 'desc'
-                    ? 'bg-neutral-800 text-white font-bold shadow-xs'
-                    : 'text-neutral-600 hover:text-neutral-900'
+                    ? 'bg-neutral-800 dark:bg-neutral-700 text-white font-bold shadow-xs'
+                    : 'text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white'
                 }`}
               >
                 <ArrowDownWideNarrow className="w-3 h-3" />
@@ -170,8 +170,8 @@ export const InteractiveFinanceChart: React.FC<InteractiveFinanceChartProps> = (
                 title="Sort by lowest amount"
                 className={`p-1 rounded flex items-center gap-1 transition ${
                   sortBy === 'asc'
-                    ? 'bg-neutral-800 text-white font-bold shadow-xs'
-                    : 'text-neutral-600 hover:text-neutral-900'
+                    ? 'bg-neutral-800 dark:bg-neutral-700 text-white font-bold shadow-xs'
+                    : 'text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white'
                 }`}
               >
                 <ArrowUpNarrowWide className="w-3 h-3" />
@@ -183,8 +183,8 @@ export const InteractiveFinanceChart: React.FC<InteractiveFinanceChartProps> = (
                 title="Sort alphabetically (A-Z)"
                 className={`p-1 rounded flex items-center gap-1 transition ${
                   sortBy === 'alpha'
-                    ? 'bg-neutral-800 text-white font-bold shadow-xs'
-                    : 'text-neutral-600 hover:text-neutral-900'
+                    ? 'bg-neutral-800 dark:bg-neutral-700 text-white font-bold shadow-xs'
+                    : 'text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white'
                 }`}
               >
                 <ArrowDownAZ className="w-3 h-3" />
@@ -195,15 +195,15 @@ export const InteractiveFinanceChart: React.FC<InteractiveFinanceChartProps> = (
 
           {/* Visual Style Toggle: Donut vs Bar Graph */}
           {allowStyleToggle && (
-            <div className="flex items-center bg-neutral-100 border border-neutral-300 rounded p-0.5 text-[10px] font-medium">
+            <div className="flex items-center bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded p-0.5 text-[10px] font-medium">
               <button
                 type="button"
                 onClick={() => setChartStyle('donut')}
                 title="Donut / Pie Chart View"
                 className={`p-1 rounded flex items-center gap-1 transition ${
                   chartStyle === 'donut'
-                    ? 'bg-neutral-800 text-white font-bold shadow-xs'
-                    : 'text-neutral-600 hover:text-neutral-900'
+                    ? 'bg-neutral-800 dark:bg-neutral-700 text-white font-bold shadow-xs'
+                    : 'text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white'
                 }`}
               >
                 <PieIcon className="w-3 h-3" />
@@ -215,8 +215,8 @@ export const InteractiveFinanceChart: React.FC<InteractiveFinanceChartProps> = (
                 title="Standard Bar Chart View"
                 className={`p-1 rounded flex items-center gap-1 transition ${
                   chartStyle === 'bar'
-                    ? 'bg-neutral-800 text-white font-bold shadow-xs'
-                    : 'text-neutral-600 hover:text-neutral-900'
+                    ? 'bg-neutral-800 dark:bg-neutral-700 text-white font-bold shadow-xs'
+                    : 'text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white'
                 }`}
               >
                 <BarChart2 className="w-3 h-3" />
@@ -229,8 +229,8 @@ export const InteractiveFinanceChart: React.FC<InteractiveFinanceChartProps> = (
 
       {/* Empty State */}
       {processedSlices.length === 0 || total === 0 ? (
-        <div className="h-48 flex flex-col items-center justify-center text-xs text-neutral-400 italic gap-1">
-          <HelpCircle className="w-5 h-5 text-neutral-300" />
+        <div className="h-48 flex flex-col items-center justify-center text-xs text-neutral-400 dark:text-neutral-500 italic gap-1">
+          <HelpCircle className="w-5 h-5 text-neutral-300 dark:text-neutral-600" />
           <span>No recorded {type} entries in this active period window.</span>
         </div>
       ) : chartStyle === 'donut' ? (
@@ -244,7 +244,8 @@ export const InteractiveFinanceChart: React.FC<InteractiveFinanceChartProps> = (
                 cy="90"
                 r={radius}
                 fill="transparent"
-                stroke="#f1f5f9"
+                stroke="currentColor"
+                className="text-neutral-100 dark:text-neutral-800"
                 strokeWidth={strokeWidth}
               />
 
@@ -277,12 +278,14 @@ export const InteractiveFinanceChart: React.FC<InteractiveFinanceChartProps> = (
 
             {/* Donut Center Summary */}
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center p-2">
-              <span className="text-[10px] text-neutral-500 uppercase font-medium truncate max-w-[100px]">
+              <span className="text-[10px] text-neutral-500 dark:text-neutral-400 uppercase font-medium truncate max-w-[100px]">
                 {hoveredCategory || 'Total'}
               </span>
               <span
                 className={`text-xs font-bold font-mono ${
-                  type === 'income' || type === 'asset' ? 'text-emerald-700' : 'text-red-700'
+                  type === 'income' || type === 'asset'
+                    ? 'text-emerald-700 dark:text-emerald-400'
+                    : 'text-red-700 dark:text-red-400'
                 }`}
               >
                 {hoveredCategory
@@ -293,7 +296,7 @@ export const InteractiveFinanceChart: React.FC<InteractiveFinanceChartProps> = (
                   : formatCurrency(total, currencySymbol)}
               </span>
               {hoveredCategory && (
-                <span className="text-[10px] text-neutral-500 font-mono">
+                <span className="text-[10px] text-neutral-500 dark:text-neutral-400 font-mono">
                   {processedSlices
                     .find((s) => s.category === hoveredCategory)
                     ?.percent.toFixed(1)}
@@ -315,7 +318,9 @@ export const InteractiveFinanceChart: React.FC<InteractiveFinanceChartProps> = (
                   onMouseLeave={() => setHoveredCategory(null)}
                   onClick={() => onSelectCategory && onSelectCategory(slice.category)}
                   className={`flex items-center justify-between p-1 rounded transition cursor-pointer ${
-                    isHovered ? 'bg-neutral-100 font-semibold shadow-xs' : 'hover:bg-neutral-50'
+                    isHovered
+                      ? 'bg-neutral-100 dark:bg-neutral-800 font-semibold shadow-xs'
+                      : 'hover:bg-neutral-50 dark:hover:bg-neutral-800/60'
                   }`}
                   title={`Click to filter or drill into ${slice.category}`}
                 >
@@ -324,12 +329,12 @@ export const InteractiveFinanceChart: React.FC<InteractiveFinanceChartProps> = (
                       className="w-2.5 h-2.5 rounded-full shrink-0"
                       style={{ backgroundColor: slice.color }}
                     />
-                    <span className="truncate text-neutral-700">{slice.category}</span>
+                    <span className="truncate text-neutral-700 dark:text-neutral-200">{slice.category}</span>
                   </div>
 
                   <div className="flex items-center gap-2 font-mono text-[11px]">
-                    <span className="text-neutral-500">{slice.percent.toFixed(1)}%</span>
-                    <span className="font-bold text-neutral-900">
+                    <span className="text-neutral-500 dark:text-neutral-400">{slice.percent.toFixed(1)}%</span>
+                    <span className="font-bold text-neutral-900 dark:text-neutral-100">
                       {formatCurrency(slice.amount, currencySymbol)}
                     </span>
                   </div>
@@ -352,7 +357,7 @@ export const InteractiveFinanceChart: React.FC<InteractiveFinanceChartProps> = (
                 onMouseLeave={() => setHoveredCategory(null)}
                 onClick={() => onSelectCategory && onSelectCategory(slice.category)}
                 className={`p-1.5 rounded transition cursor-pointer ${
-                  isHovered ? 'bg-neutral-100' : 'hover:bg-neutral-50'
+                  isHovered ? 'bg-neutral-100 dark:bg-neutral-800' : 'hover:bg-neutral-50 dark:hover:bg-neutral-800/50'
                 }`}
                 title={`Click to filter or drill into ${slice.category}`}
               >
@@ -362,19 +367,19 @@ export const InteractiveFinanceChart: React.FC<InteractiveFinanceChartProps> = (
                       className="w-2 h-2 rounded-full shrink-0"
                       style={{ backgroundColor: slice.color }}
                     />
-                    <span className="font-medium text-neutral-800 truncate">{slice.category}</span>
+                    <span className="font-medium text-neutral-800 dark:text-neutral-200 truncate">{slice.category}</span>
                   </div>
 
                   <div className="flex items-center gap-2 font-mono text-[11px]">
-                    <span className="text-neutral-500">{slice.percent.toFixed(1)}%</span>
-                    <span className="font-bold text-neutral-900">
+                    <span className="text-neutral-500 dark:text-neutral-400">{slice.percent.toFixed(1)}%</span>
+                    <span className="font-bold text-neutral-900 dark:text-neutral-100">
                       {formatCurrency(slice.amount, currencySymbol)}
                     </span>
                   </div>
                 </div>
 
                 {/* Bar Track */}
-                <div className="h-3.5 bg-neutral-100 rounded-xs overflow-hidden border border-neutral-200">
+                <div className="h-3.5 bg-neutral-100 dark:bg-neutral-800 rounded-xs overflow-hidden border border-neutral-200 dark:border-neutral-700">
                   <div
                     className="h-full transition-all duration-300 rounded-xs"
                     style={{

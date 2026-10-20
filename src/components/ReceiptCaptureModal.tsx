@@ -3,10 +3,8 @@ import {
   Camera,
   Upload,
   X,
-  Building,
   CheckCircle2,
   Loader2,
-  Receipt,
   Sparkles,
   AlertCircle,
   Crop,
@@ -15,16 +13,14 @@ import {
   ZoomOut,
   RotateCcw,
   Move,
-  Crosshair,
-  Maximize2,
   Scan,
-  Plus,
   Trash2,
   Edit3,
-  ArrowRight,
   MousePointer,
-  Layers,
-  ListPlus,
+  Paintbrush,
+  Undo2,
+  CheckSquare,
+  Square,
 } from 'lucide-react';
 import {
   DocumentType,
@@ -36,15 +32,24 @@ import {
 } from '../services/receiptOcrService';
 import { Tooltip } from './Tooltip';
 
-export interface OCRBoundingBox {
-  id: string;
+export interface Point {
   x: number; // percentage 0-100
   y: number; // percentage 0-100
-  w: number; // percentage 0-100
-  h: number; // percentage 0-100
+}
+
+export interface HighlightStroke {
+  id: string;
+  points: Point[];
+  bbox: {
+    x: number; // percentage 0-100
+    y: number; // percentage 0-100
+    w: number; // percentage 0-100
+    h: number; // percentage 0-100
+  };
   extractedName?: string;
   extractedPrice?: number;
   rawText?: string;
+  selected?: boolean; // checkbox selection state
 }
 
 interface ReceiptCaptureModalProps {
@@ -59,6 +64,43 @@ interface ReceiptCaptureModalProps {
     category?: string;
     description?: string;
   }) => void;
+}
+
+function pointsToSvgPath(points: Point[]): string {
+  if (points.length === 0) return '';
+  if (points.length === 1) {
+    return `M ${points[0].x} ${points[0].y} L ${points[0].x + 0.1} ${points[0].y + 0.1}`;
+  }
+  let path = `M ${points[0].x} ${points[0].y}`;
+  for (let i = 1; i < points.length; i++) {
+    path += ` L ${points[i].x} ${points[i].y}`;
+  }
+  return path;
+}
+
+function computeBoundingBox(points: Point[]): { x: number; y: number; w: number; h: number } {
+  if (points.length === 0) return { x: 0, y: 0, w: 0, h: 0 };
+  let minX = points[0].x;
+  let maxX = points[0].x;
+  let minY = points[0].y;
+  let maxY = points[0].y;
+
+  for (const pt of points) {
+    if (pt.x < minX) minX = pt.x;
+    if (pt.x > maxX) maxX = pt.x;
+    if (pt.y < minY) minY = pt.y;
+    if (pt.y > maxY) maxY = pt.y;
+  }
+
+  // Add a slight padding (1.5% horiz, 1.2% vert) so text isn't clipped
+  const padX = 1.5;
+  const padY = 1.2;
+  const x = Math.max(0, minX - padX);
+  const y = Math.max(0, minY - padY);
+  const w = Math.min(100 - x, maxX - minX + padX * 2);
+  const h = Math.min(100 - y, maxY - minY + padY * 2);
+
+  return { x, y, w, h };
 }
 
 export const ReceiptCaptureModal: React.FC<ReceiptCaptureModalProps> = ({
@@ -80,42 +122,23 @@ export const ReceiptCaptureModal: React.FC<ReceiptCaptureModalProps> = ({
   const videoRef = useRef<HTMLVideoElement>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
 
-  // Multi-Bounding Box Cropping State (percentages 0-100)
+  // Freehand Highlighter Canvas State
   const [isCropping, setIsCropping] = useState<boolean>(false);
-  const [boxes, setBoxes] = useState<OCRBoundingBox[]>([
-    { id: 'box-1', x: 5, y: 35, w: 90, h: 12 },
-  ]);
-  const [activeBoxId, setActiveBoxId] = useState<string | null>('box-1');
+  const [strokes, setStrokes] = useState<HighlightStroke[]>([]);
+  const [currentStroke, setCurrentStroke] = useState<Point[] | null>(null);
+  const [activeTool, setActiveTool] = useState<'highlight' | 'pan'>('highlight');
 
   // Zoom & Pan State
   const [zoomLevel, setZoomLevel] = useState<number>(1);
   const [panOffset, setPanOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
-  const [activeTool, setActiveTool] = useState<'crop' | 'pan'>('crop');
 
-  // Drag interaction refs and state
+  // Pan dragging state
+  const [isPanning, setIsPanning] = useState<boolean>(false);
+  const panStartRef = useRef<{ clientX: number; clientY: number; initPanX: number; initPanY: number } | null>(null);
+
+  // Refs for element sizing
   const viewportRef = useRef<HTMLDivElement>(null);
   const imageElementRef = useRef<HTMLImageElement>(null);
-  const imageWrapperRef = useRef<HTMLDivElement>(null);
-
-  const [dragMode, setDragMode] = useState<
-    'draw' | 'move' | 'nw' | 'ne' | 'se' | 'sw' | 'n' | 's' | 'e' | 'w' | 'pan' | null
-  >(null);
-
-  const [dragAnchor, setDragAnchor] = useState<{
-    startClientX: number;
-    startClientY: number;
-    boxId: string;
-    initX: number;
-    initY: number;
-    initW: number;
-    initH: number;
-    initPanX: number;
-    initPanY: number;
-  } | null>(null);
-
-  // Pinch-to-zoom tracking ref
-  const pinchRef = useRef<{ initialDist: number; initialZoom: number } | null>(null);
-
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Stop webcam stream helper
@@ -134,309 +157,117 @@ export const ReceiptCaptureModal: React.FC<ReceiptCaptureModalProps> = ({
     };
   }, [stopWebcam]);
 
-  // Helper to extract coordinates relative to the underlying image (0 to 100%)
-  const getImagePercentCoords = useCallback((clientX: number, clientY: number) => {
-    if (!imageElementRef.current) return { x: 0, y: 0 };
+  // Convert client pointer coordinates into 0-100 percentage relative to the rendered image
+  const getImagePercentCoords = useCallback((clientX: number, clientY: number): Point | null => {
+    if (!imageElementRef.current) return null;
     const rect = imageElementRef.current.getBoundingClientRect();
-    if (rect.width <= 0 || rect.height <= 0) return { x: 0, y: 0 };
+    if (rect.width <= 0 || rect.height <= 0) return null;
 
     const x = Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100));
     const y = Math.max(0, Math.min(100, ((clientY - rect.top) / rect.height) * 100));
-    return { x, y, rect };
+    return { x, y };
   }, []);
 
-  // Global mousemove / touchmove listeners for fluid dragging
-  useEffect(() => {
-    if (!dragMode || !dragAnchor) return;
+  // Pointer Down (Mouse or Touch)
+  const handlePointerDown = (clientX: number, clientY: number, button = 0) => {
+    if (button !== 0) return;
 
-    const handlePointerMove = (clientX: number, clientY: number) => {
-      if (!imageElementRef.current) return;
-      const rect = imageElementRef.current.getBoundingClientRect();
-      if (rect.width <= 0 || rect.height <= 0) return;
-
-      const deltaXPercent = ((clientX - dragAnchor.startClientX) / rect.width) * 100;
-      const deltaYPercent = ((clientY - dragAnchor.startClientY) / rect.height) * 100;
-
-      if (dragMode === 'pan') {
-        const dx = clientX - dragAnchor.startClientX;
-        const dy = clientY - dragAnchor.startClientY;
-        setPanOffset({
-          x: dragAnchor.initPanX + dx / zoomLevel,
-          y: dragAnchor.initPanY + dy / zoomLevel,
-        });
-        return;
-      }
-
-      setBoxes((prevBoxes) =>
-        prevBoxes.map((b) => {
-          if (b.id !== dragAnchor.boxId) return b;
-
-          if (dragMode === 'draw') {
-            const currentX = Math.max(0, Math.min(100, dragAnchor.initX + deltaXPercent));
-            const currentY = Math.max(0, Math.min(100, dragAnchor.initY + deltaYPercent));
-            const newX = Math.min(dragAnchor.initX, currentX);
-            const newY = Math.min(dragAnchor.initY, currentY);
-            const newW = Math.max(4, Math.abs(currentX - dragAnchor.initX));
-            const newH = Math.max(3, Math.abs(currentY - dragAnchor.initY));
-            return { ...b, x: newX, y: newY, w: Math.min(100 - newX, newW), h: Math.min(100 - newY, newH) };
-          }
-
-          if (dragMode === 'move') {
-            const newX = Math.max(0, Math.min(100 - b.w, dragAnchor.initX + deltaXPercent));
-            const newY = Math.max(0, Math.min(100 - b.h, dragAnchor.initY + deltaYPercent));
-            return { ...b, x: newX, y: newY };
-          }
-
-          let { initX, initY, initW, initH } = dragAnchor;
-          let newX = initX;
-          let newY = initY;
-          let newW = initW;
-          let newH = initH;
-
-          // Corner / Edge Resizing
-          if (dragMode.includes('e')) {
-            newW = Math.max(4, Math.min(100 - initX, initW + deltaXPercent));
-          }
-          if (dragMode.includes('s')) {
-            newH = Math.max(3, Math.min(100 - initY, initH + deltaYPercent));
-          }
-          if (dragMode.includes('w')) {
-            const proposedX = initX + deltaXPercent;
-            const clampedX = Math.max(0, Math.min(initX + initW - 4, proposedX));
-            newW = initW + (initX - clampedX);
-            newX = clampedX;
-          }
-          if (dragMode.includes('n')) {
-            const proposedY = initY + deltaYPercent;
-            const clampedY = Math.max(0, Math.min(initY + initH - 3, proposedY));
-            newH = initH + (initY - clampedY);
-            newY = clampedY;
-          }
-
-          return { ...b, x: newX, y: newY, w: newW, h: newH };
-        })
-      );
-    };
-
-    const onMouseMove = (e: MouseEvent) => {
-      handlePointerMove(e.clientX, e.clientY);
-    };
-
-    const onTouchMove = (e: TouchEvent) => {
-      if (e.touches.length === 2 && pinchRef.current) {
-        // Multi-touch pinch zoom
-        const dist = Math.hypot(
-          e.touches[0].clientX - e.touches[1].clientX,
-          e.touches[0].clientY - e.touches[1].clientY
-        );
-        const scale = dist / pinchRef.current.initialDist;
-        const targetZoom = Math.max(1, Math.min(3.5, pinchRef.current.initialZoom * scale));
-        setZoomLevel(targetZoom);
-        return;
-      }
-
-      if (e.touches.length === 1) {
-        handlePointerMove(e.touches[0].clientX, e.touches[0].clientY);
-      }
-    };
-
-    const onPointerUp = () => {
-      setDragMode(null);
-      setDragAnchor(null);
-      pinchRef.current = null;
-    };
-
-    window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('mouseup', onPointerUp);
-    window.addEventListener('touchmove', onTouchMove, { passive: false });
-    window.addEventListener('touchend', onPointerUp);
-
-    return () => {
-      window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('mouseup', onPointerUp);
-      window.removeEventListener('touchmove', onTouchMove);
-      window.removeEventListener('touchend', onPointerUp);
-    };
-  }, [dragMode, dragAnchor, zoomLevel]);
-
-  // Desktop Mouse Wheel zoom
-  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    const zoomFactor = e.deltaY < 0 ? 1.15 : 0.85;
-    setZoomLevel((prev) => {
-      const next = Math.max(1, Math.min(3.5, prev * zoomFactor));
-      if (next === 1) {
-        setPanOffset({ x: 0, y: 0 });
-      }
-      return next;
-    });
-  };
-
-  // Touch Start on Viewport (supports pinch zoom and tap-drag creation)
-  const handleViewportTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
-    if (e.touches.length === 2) {
-      const dist = Math.hypot(
-        e.touches[0].clientX - e.touches[1].clientX,
-        e.touches[0].clientY - e.touches[1].clientY
-      );
-      pinchRef.current = {
-        initialDist: dist,
-        initialZoom: zoomLevel,
+    if (activeTool === 'pan') {
+      setIsPanning(true);
+      panStartRef.current = {
+        clientX,
+        clientY,
+        initPanX: panOffset.x,
+        initPanY: panOffset.y,
       };
-      setDragMode(null);
       return;
     }
 
-    if (e.touches.length === 1) {
-      const touch = e.touches[0];
-      if (activeTool === 'pan' || zoomLevel > 1.05) {
-        setDragMode('pan');
-        setDragAnchor({
-          startClientX: touch.clientX,
-          startClientY: touch.clientY,
-          boxId: activeBoxId || '',
-          initX: 0,
-          initY: 0,
-          initW: 0,
-          initH: 0,
-          initPanX: panOffset.x,
-          initPanY: panOffset.y,
-        });
-      } else {
-        const { x, y } = getImagePercentCoords(touch.clientX, touch.clientY);
-        const newId = `box-${Date.now()}`;
-        const newBox: OCRBoundingBox = { id: newId, x, y, w: 8, h: 5 };
-        setBoxes((prev) => [...prev, newBox]);
-        setActiveBoxId(newId);
-        setDragMode('draw');
-        setDragAnchor({
-          startClientX: touch.clientX,
-          startClientY: touch.clientY,
-          boxId: newId,
-          initX: x,
-          initY: y,
-          initW: 8,
-          initH: 5,
-          initPanX: panOffset.x,
-          initPanY: panOffset.y,
-        });
-      }
-    }
+    // Highlighter Mode: start new stroke
+    const coords = getImagePercentCoords(clientX, clientY);
+    if (!coords) return;
+    setCurrentStroke([coords]);
   };
 
-  // Mouse Down in Viewport backdrop (draws a new selection box)
-  const handleViewportMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.button !== 0) return;
-
-    if (activeTool === 'pan') {
-      setDragMode('pan');
-      setDragAnchor({
-        startClientX: e.clientX,
-        startClientY: e.clientY,
-        boxId: activeBoxId || '',
-        initX: 0,
-        initY: 0,
-        initW: 0,
-        initH: 0,
-        initPanX: panOffset.x,
-        initPanY: panOffset.y,
+  // Pointer Move (Mouse or Touch)
+  const handlePointerMove = (clientX: number, clientY: number) => {
+    if (isPanning && panStartRef.current) {
+      const deltaX = clientX - panStartRef.current.clientX;
+      const deltaY = clientY - panStartRef.current.clientY;
+      setPanOffset({
+        x: panStartRef.current.initPanX + deltaX,
+        y: panStartRef.current.initPanY + deltaY,
       });
       return;
     }
 
-    const { x, y } = getImagePercentCoords(e.clientX, e.clientY);
-    const newId = `box-${Date.now()}`;
-    const newBox: OCRBoundingBox = { id: newId, x, y, w: 8, h: 5 };
-    setBoxes((prev) => [...prev, newBox]);
-    setActiveBoxId(newId);
-    setDragMode('draw');
-    setDragAnchor({
-      startClientX: e.clientX,
-      startClientY: e.clientY,
-      boxId: newId,
-      initX: x,
-      initY: y,
-      initW: 8,
-      initH: 5,
-      initPanX: panOffset.x,
-      initPanY: panOffset.y,
-    });
+    if (currentStroke) {
+      const coords = getImagePercentCoords(clientX, clientY);
+      if (!coords) return;
+      setCurrentStroke((prev) => (prev ? [...prev, coords] : [coords]));
+    }
   };
 
-  // Start dragging a specific selection box
-  const handleBoxPointerDown = (box: OCRBoundingBox, clientX: number, clientY: number, e: React.UIEvent) => {
-    e.stopPropagation();
-    setActiveBoxId(box.id);
-    setDragMode('move');
-    setDragAnchor({
-      startClientX: clientX,
-      startClientY: clientY,
-      boxId: box.id,
-      initX: box.x,
-      initY: box.y,
-      initW: box.w,
-      initH: box.h,
-      initPanX: panOffset.x,
-      initPanY: panOffset.y,
-    });
-  };
+  // Pointer Up (Mouse or Touch)
+  const handlePointerUp = () => {
+    if (isPanning) {
+      setIsPanning(false);
+      panStartRef.current = null;
+    }
 
-  // Start dragging a handle (corner or edge) for the active box
-  const handleHandlePointerDown = (
-    box: OCRBoundingBox,
-    mode: 'nw' | 'ne' | 'se' | 'sw' | 'n' | 's' | 'e' | 'w',
-    clientX: number,
-    clientY: number,
-    e: React.UIEvent
-  ) => {
-    e.stopPropagation();
-    setActiveBoxId(box.id);
-    setDragMode(mode);
-    setDragAnchor({
-      startClientX: clientX,
-      startClientY: clientY,
-      boxId: box.id,
-      initX: box.x,
-      initY: box.y,
-      initW: box.w,
-      initH: box.h,
-      initPanX: panOffset.x,
-      initPanY: panOffset.y,
-    });
-  };
-
-  // Delete a specific bounding box
-  const handleDeleteBox = (boxId: string, e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    setBoxes((prev) => {
-      const filtered = prev.filter((b) => b.id !== boxId);
-      if (filtered.length > 0) {
-        setActiveBoxId(filtered[0].id);
-      } else {
-        setActiveBoxId(null);
+    if (currentStroke && currentStroke.length > 0) {
+      const bbox = computeBoundingBox(currentStroke);
+      // Only keep strokes that have meaningful dimensions (not accidental clicks)
+      if (bbox.w > 2 || bbox.h > 1.5 || currentStroke.length > 2) {
+        const newStroke: HighlightStroke = {
+          id: `stroke-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+          points: currentStroke,
+          bbox,
+          selected: true,
+        };
+        setStrokes((prev) => [...prev, newStroke]);
       }
-      return filtered;
-    });
+      setCurrentStroke(null);
+    }
   };
 
-  // Add a new bounding box in visible center
-  const handleAddBox = () => {
-    const newId = `box-${Date.now()}`;
-    const newBox: OCRBoundingBox = {
-      id: newId,
-      x: 10,
-      y: Math.min(80, 20 + boxes.length * 15),
-      w: 80,
-      h: 12,
+  // Global window listeners for pointer release so strokes aren't stuck if mouse leaves window
+  useEffect(() => {
+    const onWindowMouseUp = () => {
+      if (currentStroke || isPanning) {
+        handlePointerUp();
+      }
     };
-    setBoxes((prev) => [...prev, newBox]);
-    setActiveBoxId(newId);
+    window.addEventListener('mouseup', onWindowMouseUp);
+    window.addEventListener('touchend', onWindowMouseUp);
+    return () => {
+      window.removeEventListener('mouseup', onWindowMouseUp);
+      window.removeEventListener('touchend', onWindowMouseUp);
+    };
+  }, [currentStroke, isPanning]);
+
+  // Undo last stroke
+  const handleUndoStroke = () => {
+    setStrokes((prev) => prev.slice(0, -1));
   };
 
-  // Clear all bounding boxes
-  const handleClearBoxes = () => {
-    setBoxes([]);
-    setActiveBoxId(null);
+  // Clear all strokes
+  const handleClearStrokes = () => {
+    setStrokes([]);
+    setCurrentStroke(null);
+  };
+
+  // Toggle selection checkbox for a line item
+  const handleToggleSelectStroke = (strokeId: string) => {
+    setStrokes((prev) =>
+      prev.map((s) => (s.id === strokeId ? { ...s, selected: s.selected === false ? true : false } : s))
+    );
+  };
+
+  // Toggle select all items
+  const handleToggleSelectAll = () => {
+    const allSelected = strokes.every((s) => s.selected !== false);
+    setStrokes((prev) => prev.map((s) => ({ ...s, selected: !allSelected })));
   };
 
   // Start device webcam
@@ -481,15 +312,14 @@ export const ReceiptCaptureModal: React.FC<ReceiptCaptureModalProps> = ({
       const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
       setImagePreview(dataUrl);
       setIsCropping(true);
-      setBoxes([{ id: 'box-1', x: 5, y: 35, w: 90, h: 12 }]);
-      setActiveBoxId('box-1');
+      setStrokes([]);
       setZoomLevel(1);
       setPanOffset({ x: 0, y: 0 });
     }
     stopWebcam();
   };
 
-  // Handle file explorer upload
+  // Handle file upload
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -500,11 +330,7 @@ export const ReceiptCaptureModal: React.FC<ReceiptCaptureModalProps> = ({
       const dataUrl = event.target?.result as string;
       setImagePreview(dataUrl);
       setIsCropping(true);
-      setBoxes([
-        { id: 'box-1', x: 5, y: 35, w: 90, h: 12 },
-        { id: 'box-2', x: 5, y: 50, w: 90, h: 12 },
-      ]);
-      setActiveBoxId('box-1');
+      setStrokes([]);
       setZoomLevel(1);
       setPanOffset({ x: 0, y: 0 });
       setParsedResult(null);
@@ -513,48 +339,49 @@ export const ReceiptCaptureModal: React.FC<ReceiptCaptureModalProps> = ({
     reader.readAsDataURL(file);
   };
 
-  // Run Multi-Bounding Box OCR on all drawn selection boxes
+  // Run OCR on all highlighted strokes
   const handleStartOCR = async () => {
     if (!imagePreview) {
       setErrorMsg('Please capture or upload an image first.');
       return;
     }
 
-    if (boxes.length === 0) {
-      setErrorMsg('Please draw at least one bounding box over the receipt items.');
+    if (strokes.length === 0) {
+      setErrorMsg('Please highlight at least one item on the receipt using the highlighter tool.');
       return;
     }
 
     setIsProcessing(true);
     setErrorMsg(null);
-    setProgressMsg(`Processing ${boxes.length} bounding box${boxes.length > 1 ? 'es' : ''}...`);
+    setProgressMsg(`Processing ${strokes.length} highlighted item${strokes.length > 1 ? 's' : ''}...`);
 
     try {
-      const updatedBoxes: OCRBoundingBox[] = [];
+      const updatedStrokes: HighlightStroke[] = [];
 
-      // 1. Scan each bounding box individually for Item Name and Price
-      for (let i = 0; i < boxes.length; i++) {
-        const box = boxes[i];
-        setProgressMsg(`Scanning Box #${i + 1} of ${boxes.length}...`);
+      // 1. Scan each stroke's bounding region for Item Name and Price
+      for (let i = 0; i < strokes.length; i++) {
+        const stroke = strokes[i];
+        setProgressMsg(`Scanning Item #${i + 1} of ${strokes.length}...`);
 
-        const croppedDataUrl = await cropImageRegion(imagePreview, box);
+        const croppedDataUrl = await cropImageRegion(imagePreview, stroke.bbox);
         const boxRawText = await performOCR(croppedDataUrl, (pct, status) => {
-          setProgressMsg(`Box #${i + 1}: ${status} (${pct}%)`);
+          setProgressMsg(`Item #${i + 1}: ${status} (${pct}%)`);
         });
 
         const lineItem = parseLineItemFromText(boxRawText);
-        updatedBoxes.push({
-          ...box,
+        updatedStrokes.push({
+          ...stroke,
           extractedName: lineItem.name,
           extractedPrice: lineItem.price,
           rawText: boxRawText,
+          selected: true,
         });
       }
 
-      setBoxes(updatedBoxes);
+      setStrokes(updatedStrokes);
 
       // 2. Scan top header of receipt to extract date & vendor
-      setProgressMsg('Detecting vendor and date...');
+      setProgressMsg('Detecting vendor and date from document header...');
       let headerVendor = 'Scanned Purchase Receipt';
       let headerDate = new Date().toISOString().split('T')[0];
       let headerType: 'income' | 'expense' = 'expense';
@@ -572,8 +399,7 @@ export const ReceiptCaptureModal: React.FC<ReceiptCaptureModalProps> = ({
         // Fallback to defaults
       }
 
-      // Sum all prices extracted across bounding boxes
-      const totalAmount = updatedBoxes.reduce((sum, b) => sum + (b.extractedPrice || 0), 0);
+      const totalAmount = updatedStrokes.reduce((sum, s) => sum + (s.extractedPrice || 0), 0);
 
       const parsed: ParsedTransactionData = {
         name: headerVendor,
@@ -581,7 +407,7 @@ export const ReceiptCaptureModal: React.FC<ReceiptCaptureModalProps> = ({
         date: headerDate,
         type: headerType,
         suggestedCategory: headerCategory,
-        rawText: updatedBoxes.map((b) => b.rawText).join('\n---\n'),
+        rawText: updatedStrokes.map((s) => s.rawText).join('\n---\n'),
         confidence: totalAmount > 0 ? 95 : 60,
       };
 
@@ -589,60 +415,82 @@ export const ReceiptCaptureModal: React.FC<ReceiptCaptureModalProps> = ({
       setIsCropping(false);
 
       if (totalAmount === 0) {
-        setErrorMsg('Could not detect price figures in the selected boxes. You can adjust the boxes or enter the amounts manually.');
+        setErrorMsg('Could not detect price figures in the highlighted strokes. You can adjust the strokes or enter amounts manually.');
       }
     } catch (err: any) {
       console.error('Scan error:', err);
-      setErrorMsg('Failed to process image bounding boxes. Please try adjusting the selection boxes.');
+      setErrorMsg('Failed to process image highlights. Please try re-highlighting the receipt items.');
     } finally {
       setIsProcessing(false);
       setProgressMsg('');
     }
   };
 
-  // Apply single line item to form
-  const handleApplySingleItem = (box: OCRBoundingBox) => {
+  // Apply single line item to form (safe execution without premature reset)
+  const handleApplySingleItem = (stroke: HighlightStroke) => {
     onAutoFill({
-      name: box.extractedName || parsedResult?.name || 'Receipt Item',
-      amount: box.extractedPrice || 0,
+      name: stroke.extractedName || parsedResult?.name || 'Receipt Item',
+      amount: stroke.extractedPrice || 0,
       date: parsedResult?.date || new Date().toISOString().split('T')[0],
       type: parsedResult?.type || 'expense',
       category: parsedResult?.suggestedCategory || 'Food',
-      description: `Item from ${parsedResult?.name || 'Receipt'}: ${box.extractedName || ''} (${currencySymbol} ${(box.extractedPrice || 0).toLocaleString()})`,
+      description: `Item from ${parsedResult?.name || 'Receipt'}: ${stroke.extractedName || ''} (${currencySymbol} ${(stroke.extractedPrice || 0).toLocaleString()})`,
     });
-    handleReset();
     onClose();
   };
 
-  // Apply all line items combined to form
-  const handleApplyAllItems = () => {
-    if (!parsedResult) return;
+  // Apply all selected line items combined to form (safe execution without premature reset)
+  const handleApplySelectedItems = () => {
+    const selectedStrokes = strokes.filter((s) => s.selected !== false);
+    if (selectedStrokes.length === 0) {
+      setErrorMsg('Please select at least one line item to auto-fill.');
+      return;
+    }
 
-    const validBoxes = boxes.filter((b) => (b.extractedPrice || 0) > 0 || (b.extractedName || '').length > 0);
-    const totalAmount = validBoxes.reduce((sum, b) => sum + (b.extractedPrice || 0), 0) || parsedResult.amount || 0;
+    const totalAmount = selectedStrokes.reduce((sum, s) => sum + (s.extractedPrice || 0), 0) || parsedResult?.amount || 0;
 
-    const breakdownNote = validBoxes
-      .map((b) => `${b.extractedName || 'Item'} (${currencySymbol} ${(b.extractedPrice || 0).toLocaleString()})`)
+    const breakdownNote = selectedStrokes
+      .map((s) => `${s.extractedName || 'Item'} (${currencySymbol} ${(s.extractedPrice || 0).toLocaleString()})`)
       .join(', ');
 
     onAutoFill({
-      name: validBoxes.length === 1 ? validBoxes[0].extractedName || parsedResult.name || 'Receipt Item' : parsedResult.name || 'Receipt Purchase',
+      name: selectedStrokes.length === 1
+        ? selectedStrokes[0].extractedName || parsedResult?.name || 'Receipt Item'
+        : parsedResult?.name || 'Receipt Purchase',
       amount: totalAmount,
-      date: parsedResult.date || new Date().toISOString().split('T')[0],
-      type: parsedResult.type,
-      category: parsedResult.suggestedCategory,
+      date: parsedResult?.date || new Date().toISOString().split('T')[0],
+      type: parsedResult?.type || 'expense',
+      category: parsedResult?.suggestedCategory || 'Food',
       description: breakdownNote ? `Line items: ${breakdownNote}` : undefined,
     });
-    handleReset();
     onClose();
+  };
+
+  // Delete a specific line item
+  const handleDeleteStroke = (strokeId: string) => {
+    setStrokes((prev) => prev.filter((s) => s.id !== strokeId));
+  };
+
+  // Update item name or price in stroke state
+  const handleUpdateStrokeItem = (strokeId: string, field: 'name' | 'price', value: string) => {
+    setStrokes((prev) =>
+      prev.map((s) => {
+        if (s.id !== strokeId) return s;
+        if (field === 'name') {
+          return { ...s, extractedName: value };
+        } else {
+          return { ...s, extractedPrice: parseFloat(value) || 0 };
+        }
+      })
+    );
   };
 
   const handleReset = () => {
     stopWebcam();
     setImagePreview(null);
     setIsCropping(false);
-    setBoxes([{ id: 'box-1', x: 5, y: 35, w: 90, h: 12 }]);
-    setActiveBoxId('box-1');
+    setStrokes([]);
+    setCurrentStroke(null);
     setParsedResult(null);
     setIsProcessing(false);
     setProgressMsg('');
@@ -652,19 +500,11 @@ export const ReceiptCaptureModal: React.FC<ReceiptCaptureModalProps> = ({
     setPanOffset({ x: 0, y: 0 });
   };
 
-  // Update item name or price in box state
-  const handleUpdateBoxItem = (boxId: string, field: 'name' | 'price', value: string) => {
-    setBoxes((prev) =>
-      prev.map((b) => {
-        if (b.id !== boxId) return b;
-        if (field === 'name') {
-          return { ...b, extractedName: value };
-        } else {
-          return { ...b, extractedPrice: parseFloat(value) || 0 };
-        }
-      })
-    );
-  };
+  if (!isOpen) return null;
+
+  // Compute total of selected items
+  const selectedStrokes = strokes.filter((s) => s.selected !== false);
+  const selectedTotal = selectedStrokes.reduce((sum, s) => sum + (s.extractedPrice || 0), 0);
 
   return (
     <div
@@ -677,18 +517,18 @@ export const ReceiptCaptureModal: React.FC<ReceiptCaptureModalProps> = ({
         {/* Top Header Bar */}
         <div className="px-5 py-3.5 bg-[#212529] text-white flex items-center justify-between border-b border-neutral-700 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-emerald-950 border border-emerald-600 flex items-center justify-center text-emerald-400">
+            <div className="w-8 h-8 rounded-lg bg-emerald-950 border border-emerald-600 flex items-center justify-center text-emerald-400 shrink-0">
               <Scan className="w-4 h-4" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="font-bold text-sm sm:text-base text-white">Receipt Capture &amp; OCR Engine</h2>
                 <span className="text-[10px] bg-emerald-600/30 text-emerald-300 border border-emerald-600 px-2 py-0.5 rounded font-mono font-bold">
-                  MULTI-BOUNDING BOX
+                  FREEHAND HIGHLIGHTER
                 </span>
               </div>
               <p className="text-[11px] text-neutral-400 font-mono hidden sm:block">
-                Draw multiple selection boxes simultaneously to extract item names and prices for line-item logging
+                Paint highlighter strokes over text rows to selectively isolate item names and prices
               </p>
             </div>
           </div>
@@ -699,111 +539,104 @@ export const ReceiptCaptureModal: React.FC<ReceiptCaptureModalProps> = ({
               <button
                 type="button"
                 onClick={() => setDocType('receipt')}
-                className={`px-3 py-1.5 rounded-md font-semibold transition flex items-center gap-1.5 cursor-pointer ${
+                className={`px-2.5 py-1 rounded text-xs font-semibold transition cursor-pointer ${
                   docType === 'receipt'
-                    ? 'bg-emerald-600 text-white shadow-xs'
+                    ? 'bg-emerald-600 text-white font-bold shadow-xs'
                     : 'text-neutral-400 hover:text-white'
                 }`}
               >
-                <Receipt className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Purchase Receipt</span>
+                Purchase Receipt
               </button>
               <button
                 type="button"
                 onClick={() => setDocType('bank_transaction')}
-                className={`px-3 py-1.5 rounded-md font-semibold transition flex items-center gap-1.5 cursor-pointer ${
+                className={`px-2.5 py-1 rounded text-xs font-semibold transition cursor-pointer ${
                   docType === 'bank_transaction'
-                    ? 'bg-emerald-600 text-white shadow-xs'
+                    ? 'bg-emerald-600 text-white font-bold shadow-xs'
                     : 'text-neutral-400 hover:text-white'
                 }`}
               >
-                <Building className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Bank Transaction</span>
+                Bank Slip
               </button>
             </div>
 
             <button
-              onClick={() => {
-                handleReset();
-                onClose();
-              }}
-              className="text-neutral-400 hover:text-white p-1.5 rounded-lg hover:bg-neutral-800 transition cursor-pointer"
+              type="button"
+              onClick={onClose}
+              className="p-1.5 text-neutral-400 hover:text-white rounded-lg hover:bg-neutral-800 transition cursor-pointer"
+              title="Close (Esc)"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
         </div>
 
-        {/* Modal Body Container */}
-        <div className="flex-1 p-3 sm:p-5 flex flex-col overflow-hidden">
-          {/* ================= STATE 1: INITIAL UPLOAD OR CAMERA START ================= */}
+        {/* Modal Body */}
+        <div className="flex-1 p-3 sm:p-5 overflow-hidden flex flex-col min-h-0 bg-[#121415]">
+          {/* ================= STATE 1: UPLOAD / CAMERA CHOICE ================= */}
           {!imagePreview && !isWebcamActive && (
             <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-6 max-w-xl mx-auto">
-              <div className="w-16 h-16 rounded-2xl bg-neutral-900 border border-neutral-700 flex items-center justify-center text-emerald-400 shadow-xl">
-                <Scan className="w-8 h-8" />
+              <div className="w-16 h-16 rounded-2xl bg-emerald-950/80 border border-emerald-600 flex items-center justify-center text-emerald-400 shadow-xl">
+                <Paintbrush className="w-8 h-8" />
               </div>
 
               <div className="space-y-2">
-                <h3 className="text-lg sm:text-xl font-bold text-white">
-                  Capture or Upload Financial Document
-                </h3>
-                <p className="text-xs sm:text-sm text-neutral-400 max-w-md">
-                  Draw multiple bounding boxes over line items to extract individual item names and prices with high-accuracy OCR.
+                <h3 className="text-lg font-bold text-white">Capture or Upload Receipt</h3>
+                <p className="text-xs text-neutral-400 max-w-md leading-relaxed">
+                  Take a photo with your webcam or upload a clear receipt image. Use the freehand highlighter to paint over specific items to extract line items and prices.
                 </p>
               </div>
 
               {webcamError && (
-                <div className="p-3 bg-red-950/80 border border-red-700 text-red-200 rounded-lg text-xs flex items-center gap-2 max-w-md text-left">
+                <div className="p-3 bg-red-950/80 border border-red-700 text-red-200 rounded-xl text-xs flex items-center gap-2 max-w-md text-left">
                   <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
                   <span>{webcamError}</span>
                 </div>
               )}
 
-              <div className="flex flex-col sm:flex-row items-center gap-3 w-full">
+              <div className="flex flex-col sm:flex-row gap-3 w-full">
                 <button
                   type="button"
                   onClick={handleStartWebcam}
-                  className="w-full sm:flex-1 py-3 px-4 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold rounded-xl shadow-lg flex items-center justify-center gap-2 transition cursor-pointer text-sm"
+                  className="flex-1 py-3.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition shadow-lg cursor-pointer"
                 >
                   <Camera className="w-4 h-4" />
-                  <span>Use Device Webcam</span>
+                  <span>Activate Camera / Webcam</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-full sm:flex-1 py-3 px-4 bg-neutral-800 hover:bg-neutral-700 border border-neutral-600 text-white font-bold rounded-xl shadow-lg flex items-center justify-center gap-2 transition cursor-pointer text-sm"
+                  className="flex-1 py-3.5 px-4 bg-neutral-800 hover:bg-neutral-700 text-neutral-100 border border-neutral-600 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition cursor-pointer"
                 >
-                  <Upload className="w-4 h-4" />
+                  <Upload className="w-4 h-4 text-emerald-400" />
                   <span>Upload Image File</span>
                 </button>
-              </div>
 
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleFileSelect}
-              />
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+              </div>
             </div>
           )}
 
-          {/* ================= STATE 2: LIVE WEBCAM VIEWFINDER ================= */}
+          {/* ================= STATE 2: ACTIVE LIVE WEBCAM FEED ================= */}
           {isWebcamActive && (
             <div className="flex-1 flex flex-col items-center justify-center space-y-4">
-              <div className="relative w-full max-w-3xl aspect-4/3 bg-black rounded-xl overflow-hidden border border-neutral-700 shadow-2xl flex items-center justify-center">
+              <div className="relative rounded-2xl overflow-hidden border-2 border-emerald-500 shadow-2xl bg-black max-w-3xl max-h-[60vh] flex items-center justify-center">
                 <video
                   ref={videoRef}
                   autoPlay
                   playsInline
                   muted
-                  className="w-full h-full object-cover"
+                  className="max-h-[60vh] w-auto object-contain block"
                 />
-                <div className="absolute inset-8 border-2 border-dashed border-emerald-400/70 rounded-lg pointer-events-none flex items-center justify-center">
-                  <span className="bg-black/60 text-emerald-300 font-mono text-xs px-3 py-1 rounded backdrop-blur-xs">
-                    Position receipt clearly inside frame
-                  </span>
+                <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/80 to-transparent flex items-center justify-center">
+                  <span className="text-xs text-emerald-300 font-mono">Live Camera Feed Active</span>
                 </div>
               </div>
 
@@ -811,15 +644,15 @@ export const ReceiptCaptureModal: React.FC<ReceiptCaptureModalProps> = ({
                 <button
                   type="button"
                   onClick={handleCaptureSnapshot}
-                  className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-lg flex items-center gap-2 transition cursor-pointer text-sm"
+                  className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 shadow-lg transition cursor-pointer"
                 >
                   <Camera className="w-4 h-4" />
-                  <span>Snap Photo &amp; Select Items</span>
+                  <span>Take Snapshot</span>
                 </button>
                 <button
                   type="button"
                   onClick={stopWebcam}
-                  className="px-4 py-3 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 font-semibold rounded-xl transition cursor-pointer text-sm"
+                  className="px-4 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded-xl text-xs font-semibold transition cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -827,300 +660,235 @@ export const ReceiptCaptureModal: React.FC<ReceiptCaptureModalProps> = ({
             </div>
           )}
 
-          {/* ================= STATE 3: MULTI-BOUNDING BOX CROP & ZOOM CANVAS ================= */}
+          {/* ================= STATE 3: FREEHAND HIGHLIGHTER CANVAS ================= */}
           {imagePreview && isCropping && (
-            <div className="flex-1 flex flex-col overflow-hidden space-y-3">
-              {/* Interactive Toolbar: Multi-box controls, Zoom, Pan, Drawing */}
-              <div className="bg-[#212529] p-2.5 rounded-xl border border-neutral-700 flex flex-wrap items-center justify-between gap-2 text-xs shrink-0 select-none">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <button
-                    type="button"
-                    onClick={handleAddBox}
-                    className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white rounded-lg font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
-                    title="Draw an additional bounding box over a receipt line item"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Add Selection Box</span>
-                  </button>
-
-                  {boxes.length > 0 && activeBoxId && (
+            <div className="flex-1 flex flex-col min-h-0 space-y-3">
+              {/* Highlighter Toolbar Header */}
+              <div className="px-3 py-2 bg-neutral-900 border border-neutral-700 rounded-xl flex flex-wrap items-center justify-between gap-2 shrink-0">
+                <div className="flex items-center gap-2">
+                  {/* Tool Mode: Highlight vs Pan */}
+                  <div className="flex items-center bg-neutral-950 p-0.5 rounded-lg border border-neutral-800">
                     <button
                       type="button"
-                      onClick={() => activeBoxId && handleDeleteBox(activeBoxId)}
-                      className="px-2.5 py-1.5 bg-neutral-800 hover:bg-red-950/60 hover:text-red-300 text-neutral-300 border border-neutral-700 rounded-lg font-medium flex items-center gap-1.5 transition cursor-pointer"
-                      title="Delete currently selected bounding box"
+                      onClick={() => setActiveTool('highlight')}
+                      className={`px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer ${
+                        activeTool === 'highlight'
+                          ? 'bg-yellow-500 text-neutral-950 font-bold shadow-xs'
+                          : 'text-neutral-400 hover:text-white'
+                      }`}
+                    >
+                      <Paintbrush className="w-3.5 h-3.5" />
+                      <span>Highlight Marker</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTool('pan')}
+                      className={`px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer ${
+                        activeTool === 'pan'
+                          ? 'bg-neutral-800 text-white font-bold shadow-xs'
+                          : 'text-neutral-400 hover:text-white'
+                      }`}
+                    >
+                      <Move className="w-3.5 h-3.5" />
+                      <span>Pan / Zoom</span>
+                    </button>
+                  </div>
+
+                  {/* Undo Stroke Button */}
+                  <button
+                    type="button"
+                    disabled={strokes.length === 0}
+                    onClick={handleUndoStroke}
+                    className="px-2.5 py-1.5 bg-neutral-800 hover:bg-neutral-700 disabled:opacity-40 text-neutral-300 rounded-lg text-xs font-semibold flex items-center gap-1 transition cursor-pointer border border-neutral-700"
+                    title="Undo last painted highlight"
+                  >
+                    <Undo2 className="w-3.5 h-3.5 text-neutral-400" />
+                    <span>Undo</span>
+                  </button>
+
+                  {/* Clear All Highlights Button */}
+                  {strokes.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleClearStrokes}
+                      className="px-2.5 py-1.5 bg-neutral-800 hover:bg-red-900/60 text-neutral-300 hover:text-red-200 rounded-lg text-xs font-semibold flex items-center gap-1 transition cursor-pointer border border-neutral-700"
+                      title="Clear all highlight strokes"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
-                      <span>Delete Box</span>
+                      <span>Clear All</span>
                     </button>
                   )}
 
-                  {boxes.length > 1 && (
+                  <span className="text-xs font-mono text-emerald-400 font-bold bg-emerald-950/80 px-2.5 py-1 rounded-md border border-emerald-700/60">
+                    {strokes.length} Highlighted Item{strokes.length === 1 ? '' : 's'}
+                  </span>
+                </div>
+
+                {/* Right controls: Zoom & Scan CTA */}
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center bg-neutral-950 px-1 py-0.5 rounded-lg border border-neutral-800 text-xs">
                     <button
                       type="button"
-                      onClick={handleClearBoxes}
-                      className="px-2.5 py-1.5 text-neutral-400 hover:text-white transition cursor-pointer text-[11px]"
+                      onClick={() => setZoomLevel((z) => Math.max(0.75, z - 0.25))}
+                      className="p-1 hover:text-white text-neutral-400 cursor-pointer"
+                      title="Zoom Out"
                     >
-                      Clear All ({boxes.length})
+                      <ZoomOut className="w-3.5 h-3.5" />
                     </button>
-                  )}
+                    <span className="px-2 font-mono text-[11px] text-neutral-300">
+                      {Math.round(zoomLevel * 100)}%
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setZoomLevel((z) => Math.min(3, z + 0.25))}
+                      className="p-1 hover:text-white text-neutral-400 cursor-pointer"
+                      title="Zoom In"
+                    >
+                      <ZoomIn className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setZoomLevel(1);
+                        setPanOffset({ x: 0, y: 0 });
+                      }}
+                      className="p-1 hover:text-white text-neutral-400 ml-1 cursor-pointer"
+                      title="Reset View"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
 
-                  <span className="text-[11px] font-mono text-emerald-400 bg-emerald-950/80 px-2.5 py-1 rounded-md border border-emerald-800">
-                    {boxes.length} Box{boxes.length === 1 ? '' : 'es'} Drawn
-                  </span>
-                </div>
-
-                {/* Viewport Zoom & Mode Controls */}
-                <div className="flex items-center gap-1.5 bg-neutral-900 border border-neutral-700 p-1 rounded-lg">
                   <button
                     type="button"
-                    onClick={() => setActiveTool('crop')}
-                    className={`px-2.5 py-1 rounded text-xs font-semibold flex items-center gap-1 transition cursor-pointer ${
-                      activeTool === 'crop'
-                        ? 'bg-emerald-600 text-white shadow-xs'
-                        : 'text-neutral-400 hover:text-white'
-                    }`}
-                    title="Click and drag to draw or adjust selection boxes"
-                  >
-                    <Crop className="w-3.5 h-3.5" />
-                    <span>Draw Boxes</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTool('pan')}
-                    className={`px-2.5 py-1 rounded text-xs font-semibold flex items-center gap-1 transition cursor-pointer ${
-                      activeTool === 'pan'
-                        ? 'bg-emerald-600 text-white shadow-xs'
-                        : 'text-neutral-400 hover:text-white'
-                    }`}
-                    title="Pan and drag zoomed canvas"
-                  >
-                    <Move className="w-3.5 h-3.5" />
-                    <span>Pan</span>
-                  </button>
-                  <div className="w-px h-4 bg-neutral-700 mx-1" />
-                  <button
-                    type="button"
-                    onClick={() => setZoomLevel((z) => Math.min(3.5, z + 0.25))}
-                    className="p-1 text-neutral-300 hover:text-white hover:bg-neutral-800 rounded cursor-pointer"
-                    title="Zoom in"
-                  >
-                    <ZoomIn className="w-3.5 h-3.5" />
-                  </button>
-                  <span className="text-[10px] font-mono w-10 text-center text-neutral-300">
-                    {Math.round(zoomLevel * 100)}%
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setZoomLevel((z) => {
-                        const next = Math.max(1, z - 0.25);
-                        if (next === 1) setPanOffset({ x: 0, y: 0 });
-                        return next;
-                      })
-                    }
-                    className="p-1 text-neutral-300 hover:text-white hover:bg-neutral-800 rounded cursor-pointer"
-                    title="Zoom out"
-                  >
-                    <ZoomOut className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setZoomLevel(1);
-                      setPanOffset({ x: 0, y: 0 });
-                    }}
-                    className="p-1 text-neutral-300 hover:text-white hover:bg-neutral-800 rounded cursor-pointer"
-                    title="Reset view"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    disabled={isProcessing || boxes.length === 0}
+                    disabled={isProcessing || strokes.length === 0}
                     onClick={handleStartOCR}
-                    className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold rounded-lg shadow-md flex items-center gap-1.5 transition cursor-pointer text-xs"
+                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-lg font-bold text-xs shadow-md transition cursor-pointer flex items-center gap-1.5"
                   >
                     {isProcessing ? (
                       <>
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        <span>Scanning...</span>
+                        <span>Processing...</span>
                       </>
                     ) : (
                       <>
                         <Scan className="w-3.5 h-3.5" />
-                        <span>Scan Selected Boxes ({boxes.length})</span>
+                        <span>Scan Highlighted Items ({strokes.length})</span>
                       </>
                     )}
                   </button>
                 </div>
               </div>
 
-              {/* Viewport Canvas with Multi-Bounding Boxes */}
+              {/* Viewport & Highlighter Canvas Area */}
               <div
                 ref={viewportRef}
-                onWheel={handleWheel}
-                onMouseDown={handleViewportMouseDown}
-                onTouchStart={handleViewportTouchStart}
-                className="flex-1 bg-[#101213] border border-neutral-700 rounded-xl relative overflow-hidden flex items-center justify-center select-none"
-                style={{
-                  cursor: activeTool === 'pan' ? 'grab' : 'crosshair',
-                  touchAction: 'none',
+                className={`relative flex-1 bg-neutral-950 rounded-xl overflow-hidden border border-neutral-800 flex items-center justify-center select-none ${
+                  activeTool === 'highlight' ? 'cursor-crosshair' : 'cursor-grab active:cursor-grabbing'
+                }`}
+                onMouseDown={(e) => handlePointerDown(e.clientX, e.clientY, e.button)}
+                onMouseMove={(e) => handlePointerMove(e.clientX, e.clientY)}
+                onMouseUp={handlePointerUp}
+                onTouchStart={(e) => {
+                  if (e.touches.length === 1) {
+                    handlePointerDown(e.touches[0].clientX, e.touches[0].clientY);
+                  }
                 }}
+                onTouchMove={(e) => {
+                  if (e.touches.length === 1) {
+                    handlePointerMove(e.touches[0].clientX, e.touches[0].clientY);
+                  }
+                }}
+                onTouchEnd={handlePointerUp}
               >
+                {/* Floating guidance overlay */}
+                <div className="absolute top-3 left-3 z-20 pointer-events-none bg-neutral-900/90 backdrop-blur-xs text-neutral-200 px-3 py-1.5 rounded-lg border border-neutral-700/80 text-[11px] font-mono flex items-center gap-2 shadow-lg">
+                  <Paintbrush className="w-3.5 h-3.5 text-yellow-400" />
+                  <span>Paint highlighter marker strokes over each line item to extract</span>
+                </div>
+
+                {/* Scaled & Panned Image + SVG Overlay Container */}
                 <div
-                  ref={imageWrapperRef}
-                  className="relative transition-transform duration-75 inline-block"
+                  className="relative transition-transform duration-75 origin-center inline-block"
                   style={{
                     transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoomLevel})`,
-                    transformOrigin: 'center center',
                   }}
                 >
                   <img
                     ref={imageElementRef}
                     src={imagePreview}
-                    alt="Uploaded Document"
+                    alt="Receipt for OCR"
                     draggable={false}
-                    className="max-h-[62vh] xl:max-h-[70vh] w-auto max-w-full object-contain pointer-events-none select-none rounded shadow-2xl"
+                    className="max-h-[66vh] w-auto max-w-full object-contain block pointer-events-none rounded shadow-2xl"
                   />
 
-                  {/* Render All Custom Multi-Selection Bounding Boxes */}
-                  {boxes.map((box, index) => {
-                    const isActive = box.id === activeBoxId;
-                    return (
-                      <div
-                        key={box.id}
-                        onMouseDown={(e) => handleBoxPointerDown(box, e.clientX, e.clientY, e)}
-                        onTouchStart={(e) => {
-                          if (e.touches.length === 1) {
-                            handleBoxPointerDown(box, e.touches[0].clientX, e.touches[0].clientY, e);
-                          }
-                        }}
-                        className={`absolute select-none pointer-events-auto cursor-move transition-colors ${
-                          isActive
-                            ? 'border-2 border-emerald-400 bg-emerald-500/25 ring-2 ring-emerald-300/40 shadow-2xl z-20'
-                            : 'border-2 border-amber-400/90 bg-amber-500/15 hover:border-amber-300 z-10'
-                        }`}
-                        style={{
-                          left: `${box.x}%`,
-                          top: `${box.y}%`,
-                          width: `${box.w}%`,
-                          height: `${box.h}%`,
-                          touchAction: 'none',
-                        }}
-                      >
-                        {/* Box Header Badge with Number and Delete Button */}
-                        <div className="absolute -top-6 left-0 flex items-center gap-1 z-30 pointer-events-auto">
-                          <span
-                            className={`text-[9px] font-mono font-bold px-1.5 py-0.2 rounded shadow-md uppercase tracking-wider ${
-                              isActive
-                                ? 'bg-emerald-600 text-white'
-                                : 'bg-neutral-800 text-neutral-200 border border-neutral-600'
-                            }`}
-                          >
-                            Box #{index + 1}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={(e) => handleDeleteBox(box.id, e)}
-                            className="w-4 h-4 rounded-full bg-red-600 hover:bg-red-500 text-white flex items-center justify-center text-[10px] shadow-md transition cursor-pointer"
-                            title="Remove this selection box"
-                          >
-                            ×
-                          </button>
-                        </div>
+                  {/* SVG Overlay for Freehand Highlighter Strokes */}
+                  <svg
+                    className="absolute inset-0 w-full h-full pointer-events-none"
+                    viewBox="0 0 100 100"
+                    preserveAspectRatio="none"
+                  >
+                    {/* Render saved completed strokes */}
+                    {strokes.map((stroke, idx) => (
+                      <g key={stroke.id}>
+                        {/* Semi-transparent highlighter brush stroke */}
+                        <path
+                          d={pointsToSvgPath(stroke.points)}
+                          stroke="rgba(250, 204, 21, 0.6)"
+                          strokeWidth="3.2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          fill="none"
+                        />
 
-                        {/* Corner & Edge Handles (Active Box Only) */}
-                        {isActive && (
-                          <>
-                            <div
-                              onMouseDown={(e) => handleHandlePointerDown(box, 'nw', e.clientX, e.clientY, e)}
-                              onTouchStart={(e) => {
-                                if (e.touches.length === 1) {
-                                  handleHandlePointerDown(box, 'nw', e.touches[0].clientX, e.touches[0].clientY, e);
-                                }
-                              }}
-                              className="absolute -top-2.5 -left-2.5 w-5 h-5 flex items-center justify-center cursor-nwse-resize z-20"
-                              style={{ touchAction: 'none' }}
-                            >
-                              <div className="w-3 h-3 bg-white border-2 border-emerald-600 rounded-full shadow-lg" />
-                            </div>
+                        {/* Subtle bounding region box */}
+                        <rect
+                          x={stroke.bbox.x}
+                          y={stroke.bbox.y}
+                          width={stroke.bbox.w}
+                          height={stroke.bbox.h}
+                          fill="rgba(16, 185, 129, 0.08)"
+                          stroke="rgba(16, 185, 129, 0.75)"
+                          strokeWidth="0.4"
+                          strokeDasharray="1,1"
+                          rx="0.5"
+                        />
 
-                            <div
-                              onMouseDown={(e) => handleHandlePointerDown(box, 'ne', e.clientX, e.clientY, e)}
-                              onTouchStart={(e) => {
-                                if (e.touches.length === 1) {
-                                  handleHandlePointerDown(box, 'ne', e.touches[0].clientX, e.touches[0].clientY, e);
-                                }
-                              }}
-                              className="absolute -top-2.5 -right-2.5 w-5 h-5 flex items-center justify-center cursor-nesw-resize z-20"
-                              style={{ touchAction: 'none' }}
-                            >
-                              <div className="w-3 h-3 bg-white border-2 border-emerald-600 rounded-full shadow-lg" />
-                            </div>
+                        {/* Number badge pill */}
+                        <rect
+                          x={stroke.bbox.x}
+                          y={Math.max(0.5, stroke.bbox.y - 2.8)}
+                          width="3.2"
+                          height="2.4"
+                          fill="#10b981"
+                          rx="0.5"
+                        />
+                        <text
+                          x={stroke.bbox.x + 1.6}
+                          y={Math.max(2.0, stroke.bbox.y - 1.3)}
+                          fontSize="1.6"
+                          fill="#ffffff"
+                          fontWeight="bold"
+                          textAnchor="middle"
+                          dominantBaseline="middle"
+                        >
+                          #{idx + 1}
+                        </text>
+                      </g>
+                    ))}
 
-                            <div
-                              onMouseDown={(e) => handleHandlePointerDown(box, 'se', e.clientX, e.clientY, e)}
-                              onTouchStart={(e) => {
-                                if (e.touches.length === 1) {
-                                  handleHandlePointerDown(box, 'se', e.touches[0].clientX, e.touches[0].clientY, e);
-                                }
-                              }}
-                              className="absolute -bottom-2.5 -right-2.5 w-5 h-5 flex items-center justify-center cursor-nwse-resize z-20"
-                              style={{ touchAction: 'none' }}
-                            >
-                              <div className="w-3 h-3 bg-white border-2 border-emerald-600 rounded-full shadow-lg" />
-                            </div>
-
-                            <div
-                              onMouseDown={(e) => handleHandlePointerDown(box, 'sw', e.clientX, e.clientY, e)}
-                              onTouchStart={(e) => {
-                                if (e.touches.length === 1) {
-                                  handleHandlePointerDown(box, 'sw', e.touches[0].clientX, e.touches[0].clientY, e);
-                                }
-                              }}
-                              className="absolute -bottom-2.5 -left-2.5 w-5 h-5 flex items-center justify-center cursor-nesw-resize z-20"
-                              style={{ touchAction: 'none' }}
-                            >
-                              <div className="w-3 h-3 bg-white border-2 border-emerald-600 rounded-full shadow-lg" />
-                            </div>
-
-                            {/* North handle */}
-                            <div
-                              onMouseDown={(e) => handleHandlePointerDown(box, 'n', e.clientX, e.clientY, e)}
-                              className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-6 h-3 flex items-center justify-center cursor-ns-resize z-10"
-                            >
-                              <div className="w-3 h-1 bg-emerald-300 rounded-full" />
-                            </div>
-                            {/* South handle */}
-                            <div
-                              onMouseDown={(e) => handleHandlePointerDown(box, 's', e.clientX, e.clientY, e)}
-                              className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-6 h-3 flex items-center justify-center cursor-ns-resize z-10"
-                            >
-                              <div className="w-3 h-1 bg-emerald-300 rounded-full" />
-                            </div>
-                            {/* West handle */}
-                            <div
-                              onMouseDown={(e) => handleHandlePointerDown(box, 'w', e.clientX, e.clientY, e)}
-                              className="absolute top-1/2 -left-1.5 -translate-y-1/2 w-3 h-6 flex items-center justify-center cursor-ew-resize z-10"
-                            >
-                              <div className="w-1 h-3 bg-emerald-300 rounded-full" />
-                            </div>
-                            {/* East handle */}
-                            <div
-                              onMouseDown={(e) => handleHandlePointerDown(box, 'e', e.clientX, e.clientY, e)}
-                              className="absolute top-1/2 -right-1.5 -translate-y-1/2 w-3 h-6 flex items-center justify-center cursor-ew-resize z-10"
-                            >
-                              <div className="w-1 h-3 bg-emerald-300 rounded-full" />
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    );
-                  })}
+                    {/* Render active in-progress drawing stroke */}
+                    {currentStroke && (
+                      <path
+                        d={pointsToSvgPath(currentStroke)}
+                        stroke="rgba(250, 204, 21, 0.85)"
+                        strokeWidth="3.2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        fill="none"
+                      />
+                    )}
+                  </svg>
                 </div>
               </div>
             </div>
@@ -1143,7 +911,7 @@ export const ReceiptCaptureModal: React.FC<ReceiptCaptureModalProps> = ({
                     className="flex-1 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer"
                   >
                     <Crop className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>Re-Draw / Adjust Boxes ({boxes.length})</span>
+                    <span>Re-Paint / Adjust Highlights ({strokes.length})</span>
                   </button>
                   <button
                     type="button"
@@ -1155,7 +923,7 @@ export const ReceiptCaptureModal: React.FC<ReceiptCaptureModalProps> = ({
                 </div>
               </div>
 
-              {/* Right Column: Multi-Box Extracted Line Items & Financial Data */}
+              {/* Right Column: Multi-Stroke Extracted Line Items & Financial Data */}
               <div className="lg:w-7/12 flex flex-col justify-center space-y-4">
                 {errorMsg && (
                   <div className="p-3 bg-amber-950/80 border border-amber-600 text-amber-200 rounded-xl text-xs flex items-center gap-2">
@@ -1172,10 +940,10 @@ export const ReceiptCaptureModal: React.FC<ReceiptCaptureModalProps> = ({
                     </div>
                     <div className="space-y-1">
                       <h3 className="font-bold text-sm text-white">
-                        {boxes.length} Bounding Box{boxes.length > 1 ? 'es' : ''} Configured
+                        {strokes.length} Highlighted Item{strokes.length > 1 ? 's' : ''} Ready
                       </h3>
                       <p className="text-xs text-neutral-400 max-w-md mx-auto">
-                        OCR will scan specifically inside your drawn boxes to isolate each item name and its corresponding price.
+                        OCR will scan specifically inside your highlighted strokes to isolate each item name and its corresponding price.
                       </p>
                     </div>
 
@@ -1193,7 +961,7 @@ export const ReceiptCaptureModal: React.FC<ReceiptCaptureModalProps> = ({
                       ) : (
                         <>
                           <Scan className="w-4 h-4" />
-                          <span>Scan Line Items ({boxes.length})</span>
+                          <span>Scan Highlighted Items ({strokes.length})</span>
                         </>
                       )}
                     </button>
@@ -1209,66 +977,107 @@ export const ReceiptCaptureModal: React.FC<ReceiptCaptureModalProps> = ({
                         <div>
                           <span className="font-bold text-sm text-white block">Detected Financial Data</span>
                           <span className="text-[11px] text-neutral-400 font-mono">
-                            {boxes.length} Line Item{boxes.length > 1 ? 's' : ''} Extracted
+                            {selectedStrokes.length} of {strokes.length} Items Selected
                           </span>
                         </div>
                       </div>
-                      <span className="text-[10px] px-2.5 py-1 rounded-full font-bold bg-emerald-900/60 text-emerald-300 border border-emerald-700 uppercase">
-                        {parsedResult.type === 'income' ? 'Inflow (Income)' : 'Outflow (Expense)'}
-                      </span>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={handleToggleSelectAll}
+                          className="text-[11px] text-neutral-300 hover:text-white px-2 py-1 rounded bg-neutral-800 border border-neutral-700 cursor-pointer"
+                        >
+                          {strokes.every((s) => s.selected !== false) ? 'Deselect All' : 'Select All'}
+                        </button>
+                        <span className="text-[10px] px-2.5 py-1 rounded-full font-bold bg-emerald-900/60 text-emerald-300 border border-emerald-700 uppercase">
+                          {parsedResult?.type === 'income' ? 'Inflow (Income)' : 'Outflow (Expense)'}
+                        </span>
+                      </div>
                     </div>
 
-                    {/* Extracted Line Items Table */}
+                    {/* Extracted Line Items Table with Selection Checkboxes */}
                     <div className="space-y-2">
                       <div className="flex items-center justify-between text-xs text-neutral-400 px-1">
                         <span className="font-semibold text-neutral-300 uppercase tracking-wider text-[10px]">
-                          Extracted Line Items (Click to edit)
+                          Select Items to Log (Click to edit text/price)
                         </span>
                         <span>Price ({currencySymbol})</span>
                       </div>
 
                       <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
-                        {boxes.map((box, idx) => (
-                          <div
-                            key={box.id}
-                            className="p-2.5 bg-neutral-950 rounded-lg border border-neutral-800 hover:border-neutral-700 flex items-center gap-2 transition"
-                          >
-                            <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800 shrink-0">
-                              #{idx + 1}
-                            </span>
+                        {strokes.map((stroke, idx) => {
+                          const isSelected = stroke.selected !== false;
 
-                            <input
-                              type="text"
-                              value={box.extractedName || ''}
-                              placeholder="Item Name"
-                              onChange={(e) => handleUpdateBoxItem(box.id, 'name', e.target.value)}
-                              className="flex-1 bg-neutral-900 border border-neutral-700 rounded px-2 py-1 text-xs text-white focus:outline-emerald-500"
-                            />
-
-                            <div className="relative w-28 shrink-0">
-                              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-neutral-400 text-xs font-mono">
-                                {currencySymbol}
-                              </span>
-                              <input
-                                type="number"
-                                step="any"
-                                value={box.extractedPrice ?? ''}
-                                placeholder="0.00"
-                                onChange={(e) => handleUpdateBoxItem(box.id, 'price', e.target.value)}
-                                className="w-full pl-6 pr-2 py-1 bg-neutral-900 border border-neutral-700 rounded text-xs font-mono font-bold text-emerald-400 text-right focus:outline-emerald-500"
-                              />
-                            </div>
-
-                            <button
-                              type="button"
-                              onClick={() => handleApplySingleItem(box)}
-                              className="px-2 py-1 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 hover:text-white rounded text-[11px] font-semibold transition shrink-0 cursor-pointer"
-                              title="Log specifically this line item"
+                          return (
+                            <div
+                              key={stroke.id}
+                              className={`p-2.5 rounded-lg border flex items-center gap-2 transition ${
+                                isSelected
+                                  ? 'bg-neutral-950 border-emerald-800/80 hover:border-emerald-700'
+                                  : 'bg-neutral-950/50 border-neutral-800 opacity-60'
+                              }`}
                             >
-                              Use Item
-                            </button>
-                          </div>
-                        ))}
+                              {/* Selection Checkbox */}
+                              <button
+                                type="button"
+                                onClick={() => handleToggleSelectStroke(stroke.id)}
+                                className="p-0.5 text-neutral-400 hover:text-white cursor-pointer shrink-0"
+                                title={isSelected ? 'Deselect row' : 'Select row'}
+                              >
+                                {isSelected ? (
+                                  <CheckSquare className="w-4 h-4 text-emerald-400" />
+                                ) : (
+                                  <Square className="w-4 h-4 text-neutral-500" />
+                                )}
+                              </button>
+
+                              <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800 shrink-0">
+                                #{idx + 1}
+                              </span>
+
+                              <input
+                                type="text"
+                                value={stroke.extractedName || ''}
+                                placeholder="Item Name"
+                                onChange={(e) => handleUpdateStrokeItem(stroke.id, 'name', e.target.value)}
+                                className="flex-1 bg-neutral-900 border border-neutral-700 rounded px-2 py-1 text-xs text-white focus:outline-emerald-500"
+                              />
+
+                              <div className="relative w-28 shrink-0">
+                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-neutral-400 text-xs font-mono">
+                                  {currencySymbol}
+                                </span>
+                                <input
+                                  type="number"
+                                  step="any"
+                                  value={stroke.extractedPrice ?? ''}
+                                  placeholder="0.00"
+                                  onChange={(e) => handleUpdateStrokeItem(stroke.id, 'price', e.target.value)}
+                                  className="w-full pl-6 pr-2 py-1 bg-neutral-900 border border-neutral-700 rounded text-xs font-mono font-bold text-emerald-400 text-right focus:outline-emerald-500"
+                                />
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() => handleApplySingleItem(stroke)}
+                                className="px-2 py-1 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 hover:text-white rounded text-[11px] font-semibold transition shrink-0 cursor-pointer"
+                                title="Log specifically this line item"
+                              >
+                                Use Item
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteStroke(stroke.id)}
+                                className="p-1 text-neutral-500 hover:text-red-400 rounded transition shrink-0 cursor-pointer"
+                                title="Remove item"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
 
@@ -1277,15 +1086,15 @@ export const ReceiptCaptureModal: React.FC<ReceiptCaptureModalProps> = ({
                       <div className="bg-neutral-950 p-2.5 rounded-lg border border-neutral-800">
                         <span className="text-[9px] text-neutral-400 uppercase font-semibold block">Vendor / Store</span>
                         <span className="font-bold text-white text-xs truncate block mt-0.5">
-                          {parsedResult.name || 'Store Vendor'}
+                          {parsedResult?.name || 'Store Vendor'}
                         </span>
                       </div>
 
                       <div className="bg-neutral-950 p-2.5 rounded-lg border border-neutral-800">
-                        <span className="text-[9px] text-neutral-400 uppercase font-semibold block">Combined Total</span>
+                        <span className="text-[9px] text-neutral-400 uppercase font-semibold block">Selected Total</span>
                         <span className="font-mono font-bold text-emerald-400 text-sm block mt-0.5">
                           {currencySymbol}{' '}
-                          {boxes.reduce((s, b) => s + (b.extractedPrice || 0), 0).toLocaleString(undefined, {
+                          {selectedTotal.toLocaleString(undefined, {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2,
                           })}
@@ -1295,14 +1104,14 @@ export const ReceiptCaptureModal: React.FC<ReceiptCaptureModalProps> = ({
                       <div className="bg-neutral-950 p-2.5 rounded-lg border border-neutral-800">
                         <span className="text-[9px] text-neutral-400 uppercase font-semibold block">Document Date</span>
                         <span className="font-mono text-neutral-200 text-xs block mt-0.5">
-                          {parsedResult.date || 'Today'}
+                          {parsedResult?.date || 'Today'}
                         </span>
                       </div>
 
                       <div className="bg-neutral-950 p-2.5 rounded-lg border border-neutral-800">
                         <span className="text-[9px] text-neutral-400 uppercase font-semibold block">Suggested Category</span>
                         <span className="font-semibold text-neutral-200 text-xs block mt-0.5 truncate">
-                          {parsedResult.suggestedCategory || 'Food'}
+                          {parsedResult?.suggestedCategory || 'Food'}
                         </span>
                       </div>
                     </div>
@@ -1311,13 +1120,14 @@ export const ReceiptCaptureModal: React.FC<ReceiptCaptureModalProps> = ({
                     <div className="pt-2 flex flex-col sm:flex-row items-center gap-2">
                       <button
                         type="button"
-                        onClick={handleApplyAllItems}
-                        className="w-full sm:flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-lg flex items-center justify-center gap-2 transition cursor-pointer text-xs sm:text-sm"
+                        disabled={selectedStrokes.length === 0}
+                        onClick={handleApplySelectedItems}
+                        className="w-full sm:flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold rounded-xl shadow-lg flex items-center justify-center gap-2 transition cursor-pointer text-xs sm:text-sm"
                       >
                         <CheckCircle2 className="w-4 h-4" />
                         <span>
-                          Auto-Fill All Items ({currencySymbol}{' '}
-                          {boxes.reduce((s, b) => s + (b.extractedPrice || 0), 0).toLocaleString(undefined, {
+                          Auto-Fill Selected Items ({selectedStrokes.length} items · {currencySymbol}{' '}
+                          {selectedTotal.toLocaleString(undefined, {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2,
                           })}
@@ -1333,7 +1143,7 @@ export const ReceiptCaptureModal: React.FC<ReceiptCaptureModalProps> = ({
                         }}
                         className="px-4 py-3 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 font-semibold rounded-xl transition cursor-pointer text-xs"
                       >
-                        Adjust Boxes
+                        Adjust Highlights
                       </button>
                     </div>
                   </div>

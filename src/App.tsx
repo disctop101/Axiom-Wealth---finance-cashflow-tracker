@@ -83,6 +83,7 @@ import { PaywallModal } from './components/PaywallModal';
 import { ExportSheetsModal } from './components/ExportSheetsModal';
 import { CategoryDetailModal } from './components/CategoryDetailModal';
 import { HelpModal } from './components/HelpModal';
+import { ContextualGuideModal } from './components/ContextualGuideModal';
 import { AuthModal } from './components/AuthModal';
 import { QuickLogModal } from './components/QuickLogModal';
 import { MobileNavDrawer } from './components/MobileNavDrawer';
@@ -182,17 +183,16 @@ export default function App() {
 
   // Modals state
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
-  const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
-  const [helpTargetTab, setHelpTargetTab] = useState<AppNavTab>('dashboard');
+  const [isMasterHelpOpen, setIsMasterHelpOpen] = useState(false);
+  const [contextualGuideTab, setContextualGuideTab] = useState<AppNavTab | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
-  const handleOpenHelpForTab = useCallback((tab?: AppNavTab) => {
-    if (tab) {
-      setHelpTargetTab(tab);
-    } else {
-      setHelpTargetTab(activeTab);
-    }
-    setIsHelpModalOpen(true);
+  const handleOpenMasterHelp = useCallback(() => {
+    setIsMasterHelpOpen(true);
+  }, []);
+
+  const handleOpenContextualGuide = useCallback((tab?: AppNavTab) => {
+    setContextualGuideTab(tab || activeTab);
   }, [activeTab]);
 
   // Interactive Category Drill-Down Modal state
@@ -1112,7 +1112,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f4f6f8] text-neutral-900 font-sans antialiased flex flex-col">
+    <div className="min-h-screen bg-[#f4f6f8] dark:bg-[#121416] text-neutral-900 dark:text-neutral-100 font-sans antialiased flex flex-col transition-colors duration-150">
       {/* Floating Button to restore navigation if hidden (Distraction-Free Mode) */}
       {isNavHidden && (
         <aside aria-label="Quick Actions" className="fixed top-3 right-4 z-50 print:hidden">
@@ -1146,7 +1146,7 @@ export default function App() {
           transactions={transactions}
           onPayRecurringExpense={handlePayRecurringExpense}
           onQuickLog={handleQuickLog}
-          onOpenHelp={() => handleOpenHelpForTab(activeTab)}
+          onOpenHelp={handleOpenMasterHelp}
         />
       )}
 
@@ -1162,12 +1162,12 @@ export default function App() {
               </span>
               <div>
                 <span className="font-bold text-white">
-                  {userAccess.isAdminUser && previewAsCustomer
+                  {userAccess.isAdmin && previewAsCustomer
                     ? 'Customer Preview Active'
                     : 'Axiom Wealth Free Tier'}
                 </span>
                 <span className="text-neutral-300 ml-1.5">
-                  {userAccess.isAdminUser && previewAsCustomer
+                  {userAccess.isAdmin && previewAsCustomer
                     ? 'Admin bypass is suspended so you can test paywalls and standard customer checkout.'
                     : 'Upgrade to Axiom Wealth Pro for unlimited cloud sync, real-time ledger automations and advanced reports.'}
                 </span>
@@ -1181,7 +1181,7 @@ export default function App() {
               >
                 View Paywall
               </button>
-              {userAccess.isAdminUser && previewAsCustomer && (
+              {userAccess.isAdmin && previewAsCustomer && (
                 <button
                   type="button"
                   onClick={() => handleTogglePreviewAsCustomer(false)}
@@ -1218,7 +1218,7 @@ export default function App() {
             onUpdateRecurringExpense={handleUpdateRecurringExpense}
             onDeleteRecurringExpense={handleDeleteRecurringExpense}
             onPayRecurringExpense={handlePayRecurringExpense}
-            onOpenHelp={() => handleOpenHelpForTab('dashboard')}
+            onOpenHelp={() => handleOpenContextualGuide('dashboard')}
           />
         )}
 
@@ -1241,7 +1241,7 @@ export default function App() {
             onUpdateRecurringExpense={handleUpdateRecurringExpense}
             onDeleteRecurringExpense={handleDeleteRecurringExpense}
             onPayRecurringExpense={handlePayRecurringExpense}
-            onOpenHelp={() => handleOpenHelpForTab('income-expenses')}
+            onOpenHelp={() => handleOpenContextualGuide('income-expenses')}
           />
         )}
 
@@ -1267,7 +1267,7 @@ export default function App() {
             onAddTransaction={handleAddTransaction}
             activeSubTab={wealthSubTab}
             onSubTabChange={setWealthSubTab}
-            onOpenHelp={() => handleOpenHelpForTab('wealth')}
+            onOpenHelp={() => handleOpenContextualGuide('wealth')}
           />
         )}
 
@@ -1295,7 +1295,7 @@ export default function App() {
             subscriptionPlan={subscriptionState.plan}
             onResetTestSubscription={handleResetTestSubscription}
             onInjectMockData={handleInjectMockData}
-            onOpenHelp={() => handleOpenHelpForTab('settings')}
+            onOpenHelp={() => handleOpenContextualGuide('settings')}
           />
         )}
 
@@ -1307,7 +1307,7 @@ export default function App() {
             assetTransactions={assetTransactions}
             liabilities={liabilities}
             currencySymbol={currency.symbol}
-            onOpenHelp={() => handleOpenHelpForTab('analytics')}
+            onOpenHelp={() => handleOpenContextualGuide('analytics')}
           />
         )}
 
@@ -1319,7 +1319,7 @@ export default function App() {
             monthlyNetIncome={computedTotals.netIncome}
             onLogTransactionAndAsset={handleLogActiveTransactionAndAsset}
             onNavigateToTab={(tab) => setActiveTab(tab as AppNavTab)}
-            onOpenHelp={() => handleOpenHelpForTab('purchase-checker')}
+            onOpenHelp={() => handleOpenContextualGuide('purchase-checker')}
           />
         )}
 
@@ -1329,7 +1329,7 @@ export default function App() {
             currencySymbol={currency?.symbol || '$'}
             onLogTransactionAndAsset={handleLogActiveTransactionAndAsset}
             onNavigateToTab={(tab) => setActiveTab(tab as AppNavTab)}
-            onOpenHelp={() => handleOpenHelpForTab('stock-dividend-calculator')}
+            onOpenHelp={() => handleOpenContextualGuide('stock-dividend-calculator')}
           />
         )}
 
@@ -1345,7 +1345,7 @@ export default function App() {
               setActiveTab('income-expenses');
               setIncomeExpensesSubTab('budgets');
             }}
-            onOpenHelp={() => handleOpenHelpForTab('notifications')}
+            onOpenHelp={() => handleOpenContextualGuide('notifications')}
           />
         )}
       </main>
@@ -1382,15 +1382,22 @@ export default function App() {
         onNavigateToEntries={() => setActiveTab('income-expenses')}
       />
 
-      {/* Global Help & Operational Guide Modal */}
-      <HelpModal
-        isOpen={isHelpModalOpen}
-        onClose={() => setIsHelpModalOpen(false)}
+      {/* Contextual Single-Page Operational Guide Modal */}
+      <ContextualGuideModal
+        isOpen={!!contextualGuideTab}
+        onClose={() => setContextualGuideTab(null)}
+        activeTab={contextualGuideTab || activeTab}
         userName={userName}
-        activeTab={helpTargetTab}
+      />
+
+      {/* Master Help & Comprehensive Guide Modal (Triggered only from Profile Menu) */}
+      <HelpModal
+        isOpen={isMasterHelpOpen}
+        onClose={() => setIsMasterHelpOpen(false)}
+        userName={userName}
+        activeTab={activeTab}
         onNavigateTab={(tab) => {
           setActiveTab(tab as AppNavTab);
-          setHelpTargetTab(tab as AppNavTab);
         }}
       />
 
@@ -1400,7 +1407,7 @@ export default function App() {
         onClose={() => setIsPaywallOpen(false)}
         onSubscribe={handleSubscribe}
         onRestore={handleRestoreSubscription}
-        isAdminPreview={userAccess.isAdminUser && previewAsCustomer}
+        isAdminPreview={userAccess.isAdmin && previewAsCustomer}
       />
 
       {/* Authentication & MFA Security Modal */}
@@ -1431,7 +1438,7 @@ export default function App() {
         userName={userName}
         onOpenAuthModal={() => setIsAuthModalOpen(true)}
         onSignOut={handleSignOut}
-        onOpenHelp={() => handleOpenHelpForTab(activeTab)}
+        onOpenHelp={() => handleOpenContextualGuide(activeTab)}
       />
 
       {/* Mobile Fixed Bottom Navigation Bar (md:hidden) */}

@@ -108,15 +108,15 @@ export const CashFlowTrendChart: React.FC<CashFlowTrendChartProps> = ({
   const activePoint = hoveredIdx !== null ? points[hoveredIdx] : null;
 
   return (
-    <div className="bg-white border border-neutral-300 rounded shadow-xs p-4 flex flex-col justify-between select-none">
+    <div className="bg-white dark:bg-[#1a1e20] border border-neutral-300 dark:border-neutral-700/80 rounded shadow-xs p-4 flex flex-col justify-between select-none transition-colors">
       {/* Header */}
-      <div className="flex items-center justify-between pb-2.5 mb-2 border-b border-neutral-200">
+      <div className="flex items-center justify-between pb-2.5 mb-2 border-b border-neutral-200 dark:border-neutral-700/80">
         <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
+          <div className="p-1.5 rounded bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
             <Activity className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="font-bold text-xs uppercase tracking-wider text-neutral-800">
+            <h3 className="font-bold text-xs uppercase tracking-wider text-neutral-800 dark:text-neutral-100">
               {title}
             </h3>
             <p className="text-[10px] text-neutral-400 font-mono">
@@ -129,7 +129,7 @@ export const CashFlowTrendChart: React.FC<CashFlowTrendChartProps> = ({
           <span className="text-[10px] text-neutral-400 block font-mono uppercase">Cumulative Net</span>
           <span
             className={`font-mono font-bold text-xs ${
-              totalNet >= 0 ? 'text-emerald-700' : 'text-red-600'
+              totalNet >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'
             }`}
           >
             {totalNet >= 0 ? '+' : ''}
@@ -163,7 +163,7 @@ export const CashFlowTrendChart: React.FC<CashFlowTrendChartProps> = ({
               y1={zeroY}
               x2={svgWidth - paddingX}
               y2={zeroY}
-              stroke="#94a3b8"
+              className="stroke-neutral-400 dark:stroke-neutral-600"
               strokeWidth="1"
               strokeDasharray="4 3"
             />
@@ -171,7 +171,7 @@ export const CashFlowTrendChart: React.FC<CashFlowTrendChartProps> = ({
               x={paddingX - 6}
               y={zeroY + 3}
               textAnchor="end"
-              fill="#64748b"
+              className="fill-neutral-500 dark:fill-neutral-400"
               fontSize="9"
               fontFamily="monospace"
               fontWeight="bold"
@@ -187,7 +187,7 @@ export const CashFlowTrendChart: React.FC<CashFlowTrendChartProps> = ({
               <path
                 d={linePath}
                 fill="none"
-                stroke="#059669"
+                stroke="#10b981"
                 strokeWidth="2.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -224,8 +224,8 @@ export const CashFlowTrendChart: React.FC<CashFlowTrendChartProps> = ({
                     cx={pt.x}
                     cy={pt.y}
                     r={isHovered ? 5.5 : 3.8}
-                    fill={isPositive ? '#059669' : '#dc2626'}
-                    stroke="#ffffff"
+                    fill={isPositive ? '#10b981' : '#ef4444'}
+                    className="stroke-white dark:stroke-[#1a1e20]"
                     strokeWidth={isHovered ? 2.5 : 1.8}
                   />
 
@@ -235,7 +235,7 @@ export const CashFlowTrendChart: React.FC<CashFlowTrendChartProps> = ({
                       x={pt.x}
                       y={svgHeight - 12}
                       textAnchor="middle"
-                      fill="#64748b"
+                      className="fill-neutral-500 dark:fill-neutral-400"
                       fontSize="9"
                       fontFamily="monospace"
                     >
@@ -249,8 +249,8 @@ export const CashFlowTrendChart: React.FC<CashFlowTrendChartProps> = ({
 
           {/* Active Hover Tooltip Pill */}
           {activePoint && (
-            <div className="mt-2 p-2 bg-neutral-900 text-white rounded shadow-md text-xs flex items-center justify-between gap-3 animate-in fade-in duration-100 border border-neutral-700">
-              <div className="flex items-center gap-1.5 font-mono text-[11px] text-neutral-300">
+            <div className="mt-2 p-2 bg-neutral-900 dark:bg-neutral-800 text-white rounded shadow-md text-xs flex items-center justify-between gap-3 animate-in fade-in duration-100 border border-neutral-700 dark:border-neutral-600">
+              <div className="flex items-center gap-1.5 font-mono text-[11px] text-neutral-300 dark:text-neutral-200">
                 <Calendar className="w-3.5 h-3.5 text-neutral-400" />
                 <span>{activePoint.date}</span>
               </div>

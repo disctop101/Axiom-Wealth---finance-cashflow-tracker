@@ -1052,7 +1052,7 @@ export const RecurringExpensesModule: React.FC<RecurringExpensesModuleProps> = (
   };
 
   return (
-    <div className="bg-white border border-neutral-300 shadow-xs rounded-xs overflow-hidden text-xs">
+    <div className="bg-white dark:bg-[#1e2324] border border-neutral-300 dark:border-neutral-700 shadow-xs rounded-xs overflow-hidden text-xs">
       {/* Header */}
       <div className="bg-[#2d3134] text-white p-3 flex items-center justify-between border-b border-neutral-700">
         <div className="flex items-center gap-2">
@@ -1092,16 +1092,16 @@ export const RecurringExpensesModule: React.FC<RecurringExpensesModuleProps> = (
       <div className="p-4 space-y-4">
         {/* Add / Edit Form */}
         {isAddingNew && (
-          <form onSubmit={handleSave} className="bg-neutral-50 border-2 border-emerald-500/60 p-3.5 rounded-lg space-y-3">
-            <div className="flex items-center justify-between border-b border-neutral-200 pb-2">
-              <span className="font-bold text-xs text-neutral-800 flex items-center gap-1.5">
+          <form onSubmit={handleSave} className="bg-neutral-50 dark:bg-[#161a1b] border-2 border-emerald-500/60 p-3.5 rounded-lg space-y-3">
+            <div className="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-700 pb-2">
+              <span className="font-bold text-xs text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5">
                 <CalendarClock className="w-3.5 h-3.5 text-emerald-600" />
                 {editingId ? 'Edit Recurring Schedule' : 'New Recurring Schedule'}
               </span>
               <button
                 type="button"
                 onClick={resetForm}
-                className="text-neutral-500 hover:text-neutral-800 text-[11px] underline cursor-pointer"
+                className="text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 text-[11px] underline cursor-pointer"
               >
                 Cancel
               </button>
@@ -1109,7 +1109,7 @@ export const RecurringExpensesModule: React.FC<RecurringExpensesModuleProps> = (
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               <div>
-                <label className="block text-[11px] font-semibold text-neutral-700 mb-0.5">
+                <label className="block text-[11px] font-semibold text-neutral-700 dark:text-neutral-300 mb-0.5">
                   Schedule Name *
                 </label>
                 <input
@@ -1118,17 +1118,17 @@ export const RecurringExpensesModule: React.FC<RecurringExpensesModuleProps> = (
                   value={formName}
                   onChange={(e) => setFormName(e.target.value)}
                   placeholder="e.g. Apartment Rent, Internet, Electric Utility"
-                  className="w-full bg-white border border-neutral-300 rounded px-2.5 py-1.5 text-xs text-neutral-900 focus:outline-hidden focus:border-emerald-500"
+                  className="w-full bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded px-2.5 py-1.5 text-xs text-neutral-900 dark:text-neutral-100 focus:outline-hidden focus:border-emerald-500"
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-semibold text-neutral-700 mb-0.5">
+                <label className="block text-[11px] font-semibold text-neutral-700 dark:text-neutral-300 mb-0.5">
                   Category *
                 </label>
                 <select
                   value={formCategory}
                   onChange={(e) => setFormCategory(e.target.value)}
-                  className="w-full bg-white border border-neutral-300 rounded px-2.5 py-1.5 text-xs text-neutral-900 focus:outline-hidden focus:border-emerald-500 cursor-pointer"
+                  className="w-full bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded px-2.5 py-1.5 text-xs text-neutral-900 dark:text-neutral-100 focus:outline-hidden focus:border-emerald-500 cursor-pointer"
                 >
                   {EXPENSE_CATEGORIES.map((c) => (
                     <option key={c} value={c}>
@@ -1141,7 +1141,7 @@ export const RecurringExpensesModule: React.FC<RecurringExpensesModuleProps> = (
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
               <div>
-                <label className="block text-[11px] font-semibold text-neutral-700 mb-0.5">
+                <label className="block text-[11px] font-semibold text-neutral-700 dark:text-neutral-300 mb-0.5">
                   Master Amount ({currencySymbol}) *
                 </label>
                 <input
@@ -1152,17 +1152,17 @@ export const RecurringExpensesModule: React.FC<RecurringExpensesModuleProps> = (
                   value={formAmount || ''}
                   onChange={(e) => setFormAmount(parseFloat(e.target.value) || 0)}
                   placeholder="0.00"
-                  className="w-full bg-white border border-neutral-300 rounded px-2.5 py-1.5 text-xs font-mono text-neutral-900 focus:outline-hidden focus:border-emerald-500"
+                  className="w-full bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded px-2.5 py-1.5 text-xs font-mono text-neutral-900 dark:text-neutral-100 focus:outline-hidden focus:border-emerald-500"
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-semibold text-neutral-700 mb-0.5">
+                <label className="block text-[11px] font-semibold text-neutral-700 dark:text-neutral-300 mb-0.5">
                   Frequency *
                 </label>
                 <select
                   value={formFrequency}
                   onChange={(e) => setFormFrequency(e.target.value as RecurrenceFrequency)}
-                  className="w-full bg-white border border-neutral-300 rounded px-2.5 py-1.5 text-xs text-neutral-900 focus:outline-hidden focus:border-emerald-500 cursor-pointer"
+                  className="w-full bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded px-2.5 py-1.5 text-xs text-neutral-900 dark:text-neutral-100 focus:outline-hidden focus:border-emerald-500 cursor-pointer"
                 >
                   <option value="daily">Daily</option>
                   <option value="weekly">Weekly</option>
@@ -1171,7 +1171,7 @@ export const RecurringExpensesModule: React.FC<RecurringExpensesModuleProps> = (
                 </select>
               </div>
               <div>
-                <label className="block text-[11px] font-semibold text-neutral-700 mb-0.5">
+                <label className="block text-[11px] font-semibold text-neutral-700 dark:text-neutral-300 mb-0.5">
                   Next Due Date *
                 </label>
                 <input
@@ -1179,20 +1179,20 @@ export const RecurringExpensesModule: React.FC<RecurringExpensesModuleProps> = (
                   required
                   value={formDueDate}
                   onChange={(e) => setFormDueDate(e.target.value)}
-                  className="w-full bg-white border border-neutral-300 rounded px-2.5 py-1.5 text-xs text-neutral-900 focus:outline-hidden focus:border-emerald-500"
+                  className="w-full bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded px-2.5 py-1.5 text-xs text-neutral-900 dark:text-neutral-100 focus:outline-hidden focus:border-emerald-500"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               <div>
-                <label className="block text-[11px] font-semibold text-neutral-700 mb-0.5">
+                <label className="block text-[11px] font-semibold text-neutral-700 dark:text-neutral-300 mb-0.5">
                   Payment Method
                 </label>
                 <select
                   value={formPaymentMethod}
                   onChange={(e) => setFormPaymentMethod(e.target.value as PaymentMethodType)}
-                  className="w-full bg-white border border-neutral-300 rounded px-2.5 py-1.5 text-xs text-neutral-900 focus:outline-hidden focus:border-emerald-500 cursor-pointer"
+                  className="w-full bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded px-2.5 py-1.5 text-xs text-neutral-900 dark:text-neutral-100 focus:outline-hidden focus:border-emerald-500 cursor-pointer"
                 >
                   <option value="Cash">Cash</option>
                   <option value="Card">Card</option>
@@ -1200,7 +1200,7 @@ export const RecurringExpensesModule: React.FC<RecurringExpensesModuleProps> = (
                 </select>
               </div>
               <div>
-                <label className="block text-[11px] font-semibold text-neutral-700 mb-0.5">
+                <label className="block text-[11px] font-semibold text-neutral-700 dark:text-neutral-300 mb-0.5">
                   Notes / Reference (Optional)
                 </label>
                 <input
@@ -1208,16 +1208,16 @@ export const RecurringExpensesModule: React.FC<RecurringExpensesModuleProps> = (
                   value={formNotes}
                   onChange={(e) => setFormNotes(e.target.value)}
                   placeholder="e.g. Account number, billing reference"
-                  className="w-full bg-white border border-neutral-300 rounded px-2.5 py-1.5 text-xs text-neutral-900 focus:outline-hidden focus:border-emerald-500"
+                  className="w-full bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded px-2.5 py-1.5 text-xs text-neutral-900 dark:text-neutral-100 focus:outline-hidden focus:border-emerald-500"
                 />
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-neutral-200">
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-neutral-200 dark:border-neutral-700">
               <button
                 type="button"
                 onClick={resetForm}
-                className="px-3 py-1 bg-neutral-200 hover:bg-neutral-300 text-neutral-700 rounded text-xs transition cursor-pointer"
+                className="px-3 py-1 bg-neutral-200 dark:bg-neutral-700 hover:bg-neutral-300 dark:hover:bg-neutral-600 text-neutral-700 dark:text-neutral-200 rounded text-xs transition cursor-pointer"
               >
                 Cancel
               </button>
@@ -1255,49 +1255,49 @@ export const RecurringExpensesModule: React.FC<RecurringExpensesModuleProps> = (
               return (
                 <div
                   key={item.id}
-                  className="bg-neutral-50 border border-neutral-200 hover:border-neutral-300 p-3 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition"
+                  className="bg-neutral-50 dark:bg-[#1a1e20] border border-neutral-200 dark:border-neutral-700/80 hover:border-neutral-300 dark:hover:border-neutral-600 p-3 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition"
                 >
                   <div className="space-y-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-bold text-neutral-900 text-xs">
+                      <span className="font-bold text-neutral-900 dark:text-neutral-100 text-xs">
                         {item.name}
                       </span>
-                      <span className="text-[10px] px-2 py-0.5 rounded bg-neutral-200 text-neutral-700 font-medium">
+                      <span className="text-[10px] px-2 py-0.5 rounded bg-neutral-200 dark:bg-neutral-800 border border-transparent dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 font-medium">
                         {item.category}
                       </span>
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 capitalize font-medium">
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 capitalize font-medium">
                         {item.frequency}
                       </span>
                       {/* Due Status Badge */}
                       <span
                         className={`text-[10px] px-2 py-0.5 rounded font-bold border ${
                           isOverdue
-                            ? 'bg-red-100 text-red-800 border-red-300'
+                            ? 'bg-red-100 text-red-800 border-red-300 dark:bg-red-950/80 dark:text-red-300 dark:border-red-800'
                             : isDueToday
-                            ? 'bg-amber-100 text-amber-800 border-amber-300'
+                            ? 'bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950/80 dark:text-amber-300 dark:border-amber-800'
                             : isAlmostDue
-                            ? 'bg-yellow-100 text-yellow-800 border-yellow-300'
-                            : 'bg-neutral-100 text-neutral-600 border-neutral-200'
+                            ? 'bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-950/80 dark:text-yellow-300 dark:border-yellow-800'
+                            : 'bg-neutral-100 text-neutral-600 border-neutral-200 dark:bg-neutral-800 dark:text-neutral-400 dark:border-neutral-700'
                         }`}
                       >
                         {statusInfo.statusLabel}
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-3 text-[10px] text-neutral-500 flex-wrap">
+                    <div className="flex items-center gap-3 text-[10px] text-neutral-500 dark:text-neutral-400 flex-wrap">
                       <span>
                         Next Due:{' '}
-                        <span className="text-neutral-800 font-mono font-medium">
+                        <span className="text-neutral-800 dark:text-neutral-200 font-mono font-medium">
                           {item.nextDueDate}
                         </span>
                       </span>
                       {item.paymentMethod && (
                         <span>
-                          Method: <span className="text-neutral-700 font-medium">{item.paymentMethod}</span>
+                          Method: <span className="text-neutral-700 dark:text-neutral-300 font-medium">{item.paymentMethod}</span>
                         </span>
                       )}
                       {item.lastPaidDate && (
-                        <span className="text-emerald-700 font-medium">
+                        <span className="text-emerald-700 dark:text-emerald-400 font-medium">
                           Last paid: {item.lastPaidDate}
                           {item.lastPaidAmount !== undefined && (
                             <> ({formatCurrency(item.lastPaidAmount, currencySymbol)})</>
@@ -1309,12 +1309,12 @@ export const RecurringExpensesModule: React.FC<RecurringExpensesModuleProps> = (
                   </div>
 
                   {/* Actions & Amount */}
-                  <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-neutral-200">
+                  <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-neutral-200 dark:border-neutral-700">
                     <div className="text-left sm:text-right">
-                      <span className="text-[10px] text-neutral-400 block uppercase tracking-wider font-semibold">
+                      <span className="text-[10px] text-neutral-400 dark:text-neutral-500 block uppercase tracking-wider font-semibold">
                         Scheduled
                       </span>
-                      <span className="font-mono font-bold text-neutral-900 text-sm">
+                      <span className="font-mono font-bold text-neutral-900 dark:text-neutral-100 text-sm">
                         {formatCurrency(item.amount, currencySymbol)}
                       </span>
                     </div>
@@ -1331,7 +1331,7 @@ export const RecurringExpensesModule: React.FC<RecurringExpensesModuleProps> = (
                       <button
                         type="button"
                         onClick={() => handleStartEdit(item)}
-                        className="p-1.5 bg-neutral-200 hover:bg-neutral-300 text-neutral-700 rounded transition cursor-pointer"
+                        className="p-1.5 bg-neutral-200 dark:bg-neutral-800 hover:bg-neutral-300 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-200 rounded transition cursor-pointer"
                         title="Edit schedule details"
                       >
                         <Edit3 className="w-3.5 h-3.5" />
@@ -1340,7 +1340,7 @@ export const RecurringExpensesModule: React.FC<RecurringExpensesModuleProps> = (
                         <button
                           type="button"
                           onClick={() => onDeleteRecurringExpense(item.id)}
-                          className="p-1.5 bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 rounded transition cursor-pointer"
+                          className="p-1.5 bg-red-50 dark:bg-red-950/60 hover:bg-red-100 dark:hover:bg-red-900/60 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 rounded transition cursor-pointer"
                           title="Delete recurring schedule"
                         >
                           <Trash2 className="w-3.5 h-3.5" />

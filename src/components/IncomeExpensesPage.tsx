@@ -51,6 +51,7 @@ import {
   ArrowDown,
   Camera,
   HelpCircle,
+  BookOpen,
 } from 'lucide-react';
 import { ConfirmModal } from './ConfirmModal';
 import { InteractiveFinanceChart } from './InteractiveFinanceChart';
@@ -904,8 +905,8 @@ export const IncomeExpensesPage: React.FC<IncomeExpensesPageProps> = ({
               onClick={onOpenHelp}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white border border-neutral-600 rounded-lg text-xs font-semibold transition cursor-pointer shrink-0 shadow-xs"
             >
-              <HelpCircle className="w-3.5 h-3.5 text-sky-400" />
-              <span>Help &amp; Guide</span>
+              <BookOpen className="w-3.5 h-3.5 text-sky-400" />
+              <span>Guide</span>
             </button>
           </Tooltip>
         )}
@@ -1434,7 +1435,7 @@ export const IncomeExpensesPage: React.FC<IncomeExpensesPageProps> = ({
 
         {/* ================= 4. TIME-BASED CATEGORY BUDGET LIMITS ================= */}
         <div
-          className={`lg:col-span-7 bg-white border border-neutral-300 shadow-xs flex flex-col justify-between ${
+          className={`lg:col-span-7 bg-white dark:bg-[#1e2324] border border-neutral-300 dark:border-neutral-700 shadow-xs flex flex-col justify-between ${
             currentTab !== 'budgets' ? 'hidden lg:flex' : ''
           }`}
         >
@@ -1452,18 +1453,18 @@ export const IncomeExpensesPage: React.FC<IncomeExpensesPageProps> = ({
 
             <div className="p-4 space-y-3">
               {/* Sub-bar with tracked count and instructions */}
-              <div className="text-[11px] text-neutral-600 bg-neutral-50 p-2 rounded border border-neutral-200 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+              <div className="text-[11px] text-neutral-600 dark:text-neutral-300 bg-neutral-50 dark:bg-[#16191b] p-2 rounded border border-neutral-200 dark:border-neutral-700/80 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                 <span>Set maximum spending targets per category. Progress bars update in real time.</span>
-                <span className="font-bold text-neutral-800 shrink-0">11 tracked categories</span>
+                <span className="font-bold text-neutral-800 dark:text-neutral-200 shrink-0">11 tracked categories</span>
               </div>
 
               {/* Month Selection Tool & Pacing Toggle Bar */}
-              <div className="bg-neutral-50/80 p-2.5 rounded border border-neutral-200 space-y-2.5">
+              <div className="bg-neutral-50/80 dark:bg-[#16191b] p-2.5 rounded border border-neutral-200 dark:border-neutral-700/80 space-y-2.5">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   {/* Month Selection Tool */}
                   <div className="flex items-center gap-1.5 text-xs">
-                    <span className="font-bold text-neutral-700 uppercase tracking-wider text-[10px] flex items-center gap-1">
-                      <CalendarCheck className="w-3.5 h-3.5 text-blue-600" />
+                    <span className="font-bold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider text-[10px] flex items-center gap-1">
+                      <CalendarCheck className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                       <span>Budget Month:</span>
                     </span>
 
@@ -1477,7 +1478,7 @@ export const IncomeExpensesPage: React.FC<IncomeExpensesPageProps> = ({
                           setBudgetMonth((m) => m - 1);
                         }
                       }}
-                      className="p-1 rounded bg-white border border-neutral-300 text-neutral-700 hover:bg-neutral-100"
+                      className="p-1 rounded bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 cursor-pointer"
                       title="Previous Month"
                     >
                       <ChevronLeft className="w-3.5 h-3.5" />
@@ -1486,7 +1487,7 @@ export const IncomeExpensesPage: React.FC<IncomeExpensesPageProps> = ({
                     <select
                       value={budgetMonth}
                       onChange={(e) => setBudgetMonth(parseInt(e.target.value) || 1)}
-                      className="px-2 py-1 rounded bg-white border border-neutral-300 font-semibold text-neutral-800 focus:outline-hidden"
+                      className="px-2 py-1 rounded bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 font-semibold text-neutral-800 dark:text-neutral-200 focus:outline-hidden cursor-pointer"
                     >
                       {MONTH_NAMES.map((m, idx) => (
                         <option key={m} value={idx + 1}>
@@ -1498,7 +1499,7 @@ export const IncomeExpensesPage: React.FC<IncomeExpensesPageProps> = ({
                     <select
                       value={budgetYear}
                       onChange={(e) => setBudgetYear(parseInt(e.target.value) || currentYear)}
-                      className="px-2 py-1 rounded bg-white border border-neutral-300 font-mono font-semibold text-neutral-800 focus:outline-hidden"
+                      className="px-2 py-1 rounded bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 font-mono font-semibold text-neutral-800 dark:text-neutral-200 focus:outline-hidden cursor-pointer"
                     >
                       {budgetYearOptions.map((y) => (
                         <option key={y} value={y}>
@@ -1517,7 +1518,7 @@ export const IncomeExpensesPage: React.FC<IncomeExpensesPageProps> = ({
                           setBudgetMonth((m) => m + 1);
                         }
                       }}
-                      className="p-1 rounded bg-white border border-neutral-300 text-neutral-700 hover:bg-neutral-100"
+                      className="p-1 rounded bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 cursor-pointer"
                       title="Next Month"
                     >
                       <ChevronRight className="w-3.5 h-3.5" />
@@ -1529,7 +1530,7 @@ export const IncomeExpensesPage: React.FC<IncomeExpensesPageProps> = ({
                         setBudgetMonth(currentMonthNum);
                         setBudgetYear(currentYear);
                       }}
-                      className="text-[10px] text-blue-700 hover:underline font-semibold ml-1 cursor-pointer whitespace-nowrap"
+                      className="text-[10px] text-blue-700 dark:text-blue-400 hover:underline font-semibold ml-1 cursor-pointer whitespace-nowrap"
                       title={`Reset budget view to current month (${currentMonthShort} ${currentYear})`}
                     >
                       Current
@@ -1538,10 +1539,10 @@ export const IncomeExpensesPage: React.FC<IncomeExpensesPageProps> = ({
 
                   {/* Budget Pacing Toggle Switch: Day, Week, Month, Year */}
                   <div className="flex items-center gap-1">
-                    <span className="text-[10px] text-neutral-500 uppercase font-mono font-bold mr-1">
+                    <span className="text-[10px] text-neutral-500 dark:text-neutral-400 uppercase font-mono font-bold mr-1">
                       Pacing:
                     </span>
-                    <div className="flex rounded bg-neutral-200 p-0.5 text-xs font-semibold">
+                    <div className="flex rounded bg-neutral-200 dark:bg-neutral-800 p-0.5 text-xs font-semibold">
                       {(['daily', 'weekly', 'month', 'year'] as const).map((p) => {
                         const labels = {
                           daily: 'Daily',
@@ -1555,10 +1556,10 @@ export const IncomeExpensesPage: React.FC<IncomeExpensesPageProps> = ({
                             key={p}
                             type="button"
                             onClick={() => setBudgetPacing(p)}
-                            className={`px-2 py-0.5 rounded text-[11px] transition ${
+                            className={`px-2 py-0.5 rounded text-[11px] transition cursor-pointer ${
                               isActive
-                                ? 'bg-neutral-800 text-white shadow-xs font-bold'
-                                : 'text-neutral-600 hover:text-neutral-900'
+                                ? 'bg-neutral-800 text-white dark:bg-neutral-700 dark:text-white shadow-xs font-bold'
+                                : 'text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white'
                             }`}
                           >
                             {labels[p]}
@@ -1570,7 +1571,7 @@ export const IncomeExpensesPage: React.FC<IncomeExpensesPageProps> = ({
                 </div>
 
                 {/* Duplication & Rollout Action Buttons */}
-                <div className="flex flex-wrap items-center justify-between pt-2 border-t border-neutral-200 gap-1.5 text-xs">
+                <div className="flex flex-wrap items-center justify-between pt-2 border-t border-neutral-200 dark:border-neutral-700 gap-1.5 text-xs">
                   <div className="flex flex-wrap items-center gap-1.5">
                     {/* Copy Previous Month */}
                     <button
@@ -1588,10 +1589,10 @@ export const IncomeExpensesPage: React.FC<IncomeExpensesPageProps> = ({
                           setTimeout(() => setBudgetFeedback(null), 3500);
                         }
                       }}
-                      className="inline-flex items-center gap-1 px-2 py-1 rounded bg-white border border-neutral-300 text-neutral-700 hover:bg-neutral-100 font-medium text-[11px] shadow-2xs"
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700 font-medium text-[11px] shadow-2xs cursor-pointer"
                       title="Copy previous month's category budgets"
                     >
-                      <Copy className="w-3 h-3 text-blue-600" />
+                      <Copy className="w-3 h-3 text-blue-600 dark:text-blue-400" />
                       <span>Copy Prev Month</span>
                     </button>
 
@@ -1608,10 +1609,10 @@ export const IncomeExpensesPage: React.FC<IncomeExpensesPageProps> = ({
                           setTimeout(() => setBudgetFeedback(null), 3500);
                         }
                       }}
-                      className="inline-flex items-center gap-1 px-2 py-1 rounded bg-white border border-neutral-300 text-neutral-700 hover:bg-neutral-100 font-medium text-[11px] shadow-2xs"
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700 font-medium text-[11px] shadow-2xs cursor-pointer"
                       title="Copy all months from previous year"
                     >
-                      <Repeat className="w-3 h-3 text-emerald-600" />
+                      <Repeat className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                       <span>Copy Prev Year ({budgetYear - 1})</span>
                     </button>
 
@@ -1628,30 +1629,30 @@ export const IncomeExpensesPage: React.FC<IncomeExpensesPageProps> = ({
                           setTimeout(() => setBudgetFeedback(null), 3500);
                         }
                       }}
-                      className="inline-flex items-center gap-1 px-2 py-1 rounded bg-white border border-neutral-300 text-neutral-700 hover:bg-neutral-100 font-medium text-[11px] shadow-2xs"
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700 font-medium text-[11px] shadow-2xs cursor-pointer"
                       title="Apply this month's budget to all 12 months"
                     >
-                      <Sparkles className="w-3 h-3 text-amber-600" />
+                      <Sparkles className="w-3 h-3 text-amber-600 dark:text-amber-400" />
                       <span>Roll to All 12 Months</span>
                     </button>
                   </div>
 
-                  <span className="text-[10px] font-mono text-neutral-500">
+                  <span className="text-[10px] font-mono text-neutral-500 dark:text-neutral-400">
                     Period Key: <b>{`${budgetYear}-${String(budgetMonth).padStart(2, '0')}`}</b>
                   </span>
                 </div>
 
                 {/* Feedback Toast Banner */}
                 {budgetFeedback && (
-                  <div className="bg-emerald-50 border border-emerald-300 text-emerald-800 px-2.5 py-1 rounded text-xs flex items-center justify-between animate-in fade-in">
+                  <div className="bg-emerald-50 dark:bg-emerald-950/80 border border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-300 px-2.5 py-1 rounded text-xs flex items-center justify-between animate-in fade-in">
                     <span className="flex items-center gap-1.5 font-medium">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                       {budgetFeedback}
                     </span>
                     <button
                       type="button"
                       onClick={() => setBudgetFeedback(null)}
-                      className="text-emerald-700 hover:text-emerald-900"
+                      className="text-emerald-700 dark:text-emerald-300 hover:text-emerald-900 dark:hover:text-emerald-100"
                     >
                       <X className="w-3 h-3" />
                     </button>
@@ -1738,26 +1739,26 @@ export const IncomeExpensesPage: React.FC<IncomeExpensesPageProps> = ({
                           pacingSuffix,
                         })
                       }
-                      className="p-2.5 border border-neutral-200 rounded hover:border-emerald-500 hover:shadow-xs transition bg-white cursor-pointer group relative"
+                      className="p-2.5 border border-neutral-200 dark:border-neutral-700/80 rounded hover:border-emerald-500 dark:hover:border-emerald-500 hover:shadow-xs transition bg-white dark:bg-[#1a1e20] cursor-pointer group relative"
                       title={`Click to view itemized transaction drilldown for ${cat.name}`}
                     >
                       <div className="flex items-center justify-between text-xs mb-1">
                         <div className="flex items-center gap-2">
-                          <span className="font-bold text-neutral-900 group-hover:text-emerald-700 transition">
+                          <span className="font-bold text-neutral-900 dark:text-neutral-100 group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition">
                             {cat.name}
                           </span>
-                          <span className="text-[10px] text-neutral-400 font-normal group-hover:text-emerald-600 transition">
+                          <span className="text-[10px] text-neutral-400 dark:text-neutral-500 font-normal group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition">
                             (click to inspect items)
                           </span>
                           {isOver && (
-                            <span className="text-[10px] px-1.5 py-0.2 bg-red-100 text-red-700 font-bold rounded flex items-center gap-1 border border-red-200">
+                            <span className="text-[10px] px-1.5 py-0.2 bg-red-100 dark:bg-red-950/80 text-red-700 dark:text-red-300 font-bold rounded flex items-center gap-1 border border-red-200 dark:border-red-800">
                               <AlertTriangle className="w-3 h-3" />
                               Over Budget
                             </span>
                           )}
                           {isNear && (
-                            <span className="text-[10px] px-1.5 py-0.2 bg-amber-100 text-amber-800 font-bold rounded border border-amber-300 flex items-center gap-1">
-                              <AlertTriangle className="w-3 h-3 text-amber-600" />
+                            <span className="text-[10px] px-1.5 py-0.2 bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 font-bold rounded border border-amber-300 dark:border-amber-700 flex items-center gap-1">
+                              <AlertTriangle className="w-3 h-3 text-amber-600 dark:text-amber-400" />
                               <span>75% Cap Hit</span>
                             </span>
                           )}
@@ -1766,8 +1767,8 @@ export const IncomeExpensesPage: React.FC<IncomeExpensesPageProps> = ({
                         {/* Budget limit / edit trigger */}
                         <div className="flex items-center gap-2 text-[11px]">
                           <div className="flex items-center gap-1 font-mono">
-                            <span className="text-neutral-500">Budget:</span>
-                            <span className="font-bold text-neutral-800">
+                            <span className="text-neutral-500 dark:text-neutral-400">Budget:</span>
+                            <span className="font-bold text-neutral-800 dark:text-neutral-200">
                               {formatCurrency(pacedTarget, currencySymbol)}
                               {pacingSuffix}
                             </span>
@@ -1781,7 +1782,7 @@ export const IncomeExpensesPage: React.FC<IncomeExpensesPageProps> = ({
                                   scope: 'month',
                                 });
                               }}
-                              className="text-neutral-400 hover:text-black p-1 rounded transition hover:bg-neutral-100 cursor-pointer"
+                              className="text-neutral-400 hover:text-black dark:hover:text-white p-1 rounded transition hover:bg-neutral-100 dark:hover:bg-neutral-800 cursor-pointer"
                               title={`Edit budget target for ${cat.name}`}
                             >
                               <Edit2 className="w-3 h-3" />
@@ -1791,7 +1792,7 @@ export const IncomeExpensesPage: React.FC<IncomeExpensesPageProps> = ({
                       </div>
 
                       {/* Progress Bar matching screenshot image_149afb.png */}
-                      <div className="w-full h-2 bg-neutral-100 rounded overflow-hidden flex border border-neutral-200">
+                      <div className="w-full h-2 bg-neutral-100 dark:bg-neutral-800 rounded overflow-hidden flex border border-neutral-200 dark:border-neutral-700">
                         <div
                           className={`h-full transition-all duration-300 ${
                             isOver ? 'bg-red-600' : isNear ? 'bg-amber-500' : 'bg-emerald-600'
@@ -1801,7 +1802,7 @@ export const IncomeExpensesPage: React.FC<IncomeExpensesPageProps> = ({
                       </div>
 
                       {/* Spent and Left status row */}
-                      <div className="flex justify-between items-center text-[10px] text-neutral-500 mt-1 font-mono">
+                      <div className="flex justify-between items-center text-[10px] text-neutral-500 dark:text-neutral-400 mt-1 font-mono">
                         <span>
                           Spent: {formatCurrency(pacedSpent, currencySymbol)}
                           {pacingSuffix}
@@ -1828,7 +1829,7 @@ export const IncomeExpensesPage: React.FC<IncomeExpensesPageProps> = ({
       {/* ================= 5. RUNNING CASHFLOW BREAKDOWN (INCOME & EXPENSES) ================= */}
       {/* Matches reference screenshot image_149e08.png with Inflow, Outflow, and Net Cashflow */}
       <div
-        className={`bg-white border border-neutral-300 shadow-xs ${
+        className={`bg-white dark:bg-[#1e2324] border border-neutral-300 dark:border-neutral-700 shadow-xs ${
           currentTab !== 'analytics' ? 'hidden lg:block' : ''
         }`}
       >
@@ -1848,7 +1849,7 @@ export const IncomeExpensesPage: React.FC<IncomeExpensesPageProps> = ({
           <div className="flex rounded bg-neutral-800 p-0.5 border border-neutral-600 self-start sm:self-auto text-xs">
             <button
               onClick={() => setBreakdownView('daily')}
-              className={`px-3 py-1 rounded font-semibold transition ${
+              className={`px-3 py-1 rounded font-semibold transition cursor-pointer ${
                 breakdownView === 'daily'
                   ? 'bg-neutral-600 text-white shadow-xs'
                   : 'text-neutral-400 hover:text-white'
@@ -1858,7 +1859,7 @@ export const IncomeExpensesPage: React.FC<IncomeExpensesPageProps> = ({
             </button>
             <button
               onClick={() => setBreakdownView('weekly')}
-              className={`px-3 py-1 rounded font-semibold transition ${
+              className={`px-3 py-1 rounded font-semibold transition cursor-pointer ${
                 breakdownView === 'weekly'
                   ? 'bg-neutral-600 text-white shadow-xs'
                   : 'text-neutral-400 hover:text-white'
@@ -1868,7 +1869,7 @@ export const IncomeExpensesPage: React.FC<IncomeExpensesPageProps> = ({
             </button>
             <button
               onClick={() => setBreakdownView('monthly')}
-              className={`px-3 py-1 rounded font-semibold transition ${
+              className={`px-3 py-1 rounded font-semibold transition cursor-pointer ${
                 breakdownView === 'monthly'
                   ? 'bg-neutral-600 text-white shadow-xs'
                   : 'text-neutral-400 hover:text-white'
@@ -1893,16 +1894,16 @@ export const IncomeExpensesPage: React.FC<IncomeExpensesPageProps> = ({
               return (
                 <div
                   key={idx}
-                  className="border border-neutral-200 bg-neutral-50 p-3 rounded hover:border-neutral-400 transition flex flex-col justify-between"
+                  className="border border-neutral-200 dark:border-neutral-700/80 bg-neutral-50 dark:bg-[#1a1e20] p-3 rounded hover:border-neutral-400 dark:hover:border-neutral-600 transition flex flex-col justify-between"
                 >
                   <div>
                     {/* Card Header matching screenshot */}
-                    <div className="flex justify-between items-center text-xs pb-1.5 border-b border-neutral-200">
-                      <div className="flex items-center gap-1.5 font-bold text-neutral-800">
-                        <CalendarDays className="w-3.5 h-3.5 text-neutral-500" />
+                    <div className="flex justify-between items-center text-xs pb-1.5 border-b border-neutral-200 dark:border-neutral-700">
+                      <div className="flex items-center gap-1.5 font-bold text-neutral-800 dark:text-neutral-200">
+                        <CalendarDays className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400" />
                         <span>{group.periodName}</span>
                       </div>
-                      <span className="text-[10px] text-neutral-500 font-mono">
+                      <span className="text-[10px] text-neutral-500 dark:text-neutral-400 font-mono">
                         {group.count} item{group.count === 1 ? '' : 's'} ({group.incomeCount} in · {group.expenseCount} out)
                       </span>
                     </div>
@@ -1911,28 +1912,28 @@ export const IncomeExpensesPage: React.FC<IncomeExpensesPageProps> = ({
                     <div className="mt-2.5 space-y-1 text-xs">
                       {/* Period Inflow */}
                       <div className="flex justify-between items-baseline font-mono">
-                        <span className="text-[11px] text-neutral-500 font-sans">Period Inflow:</span>
-                        <span className="font-bold text-emerald-700 text-sm">
+                        <span className="text-[11px] text-neutral-500 dark:text-neutral-400 font-sans">Period Inflow:</span>
+                        <span className="font-bold text-emerald-700 dark:text-emerald-400 text-sm">
                           +{formatCurrency(group.inflow, currencySymbol)}
                         </span>
                       </div>
 
                       {/* Period Outflow (with parens matching reference image) */}
                       <div className="flex justify-between items-baseline font-mono">
-                        <span className="text-[11px] text-neutral-500 font-sans">Period Outflow:</span>
-                        <span className="font-bold text-red-700 text-sm">
+                        <span className="text-[11px] text-neutral-500 dark:text-neutral-400 font-sans">Period Outflow:</span>
+                        <span className="font-bold text-red-700 dark:text-red-400 text-sm">
                           {formatCurrency(-group.outflow, currencySymbol)}
                         </span>
                       </div>
 
                       {/* Net Cashflow summary badge */}
-                      <div className="flex justify-between items-baseline font-mono pt-1 border-t border-neutral-200/60">
-                        <span className="text-[11px] text-neutral-600 font-bold font-sans">Net Cashflow:</span>
+                      <div className="flex justify-between items-baseline font-mono pt-1 border-t border-neutral-200/60 dark:border-neutral-700/60">
+                        <span className="text-[11px] text-neutral-600 dark:text-neutral-300 font-bold font-sans">Net Cashflow:</span>
                         <span
                           className={`font-black text-xs px-1.5 py-0.2 rounded ${
                             group.net >= 0
-                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                              : 'bg-red-100 text-red-800 border border-red-200'
+                              ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                              : 'bg-red-100 text-red-800 dark:bg-red-950/80 dark:text-red-300 border border-red-200 dark:border-red-800'
                           }`}
                         >
                           {group.net >= 0 ? '+' : ''}
@@ -1942,29 +1943,29 @@ export const IncomeExpensesPage: React.FC<IncomeExpensesPageProps> = ({
                     </div>
 
                     {/* Itemized Transactions Preview: Income and Expense entries */}
-                    <div className="mt-3 pt-2 border-t border-neutral-200/80 space-y-1.5">
+                    <div className="mt-3 pt-2 border-t border-neutral-200/80 dark:border-neutral-700/80 space-y-1.5">
                       {visibleItems.map((item) => (
                         <div
                           key={item.id}
-                          className="flex justify-between items-center text-[11px] text-neutral-700 bg-white/70 px-1.5 py-1 rounded border border-neutral-200/50"
+                          className="flex justify-between items-center text-[11px] text-neutral-700 dark:text-neutral-200 bg-white/70 dark:bg-neutral-800/90 px-1.5 py-1 rounded border border-neutral-200/50 dark:border-neutral-700/80"
                         >
                           <div className="flex items-center gap-1.5 truncate max-w-[155px]">
                             <span
                               className={`w-3.5 h-3.5 rounded text-[10px] font-bold flex items-center justify-center shrink-0 ${
                                 item.type === 'income'
-                                  ? 'bg-emerald-100 text-emerald-700'
-                                  : 'bg-red-100 text-red-700'
+                                  ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300'
+                                  : 'bg-red-100 text-red-700 dark:bg-red-950/80 dark:text-red-300'
                               }`}
                             >
                               {item.type === 'income' ? '+' : '−'}
                             </span>
-                            <span className="truncate font-medium text-neutral-800">
+                            <span className="truncate font-medium text-neutral-800 dark:text-neutral-200">
                               {item.name || item.category}
                             </span>
                           </div>
                           <span
                             className={`font-mono text-[11px] font-semibold shrink-0 ${
-                              item.type === 'income' ? 'text-emerald-700' : 'text-neutral-800'
+                              item.type === 'income' ? 'text-emerald-700 dark:text-emerald-400' : 'text-neutral-800 dark:text-neutral-200'
                             }`}
                           >
                             {item.type === 'income' ? '+' : ''}
@@ -1981,7 +1982,7 @@ export const IncomeExpensesPage: React.FC<IncomeExpensesPageProps> = ({
                       <button
                         type="button"
                         onClick={() => toggleCardExpanded(group.label)}
-                        className="text-[10px] font-medium text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+                        className="text-[10px] font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline cursor-pointer"
                       >
                         {isExpanded
                           ? 'Collapse entries'
@@ -1998,19 +1999,19 @@ export const IncomeExpensesPage: React.FC<IncomeExpensesPageProps> = ({
 
       {/* ================= MODAL: BUDGET TARGET & SCOPE ASSIGNMENT ================= */}
       {editingBudgetItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full border border-neutral-300 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200 bg-neutral-50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className="bg-white dark:bg-[#1e2324] rounded-lg shadow-xl max-w-md w-full border border-neutral-300 dark:border-neutral-700 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-[#16191b]">
               <div className="flex items-center gap-2">
-                <Target className="w-5 h-5 text-amber-600" />
-                <h3 className="font-bold text-neutral-900 text-sm">
+                <Target className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                <h3 className="font-bold text-neutral-900 dark:text-neutral-100 text-sm">
                   Assign Category Budget: {editingBudgetItem.category}
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setEditingBudgetItem(null)}
-                className="text-neutral-400 hover:text-neutral-600 p-1 rounded-md"
+                className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 p-1 rounded-md cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -2039,7 +2040,7 @@ export const IncomeExpensesPage: React.FC<IncomeExpensesPageProps> = ({
               className="p-4 space-y-4 text-xs"
             >
               <div>
-                <label className="block font-semibold text-neutral-700 mb-1">
+                <label className="block font-semibold text-neutral-700 dark:text-neutral-300 mb-1">
                   Budget Target Amount ({currencySymbol}) *
                 </label>
                 <input
@@ -2053,13 +2054,13 @@ export const IncomeExpensesPage: React.FC<IncomeExpensesPageProps> = ({
                   onChange={(e) =>
                     setEditingBudgetItem({ ...editingBudgetItem, amount: e.target.value })
                   }
-                  className="w-full px-3 py-2 border border-neutral-300 rounded font-mono text-sm font-bold text-neutral-900 focus:outline-hidden focus:border-neutral-800"
+                  className="w-full px-3 py-2 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded font-mono text-sm font-bold text-neutral-900 dark:text-neutral-100 focus:outline-hidden focus:border-neutral-800 dark:focus:border-neutral-500"
                 />
               </div>
 
               {/* Budget Scope Selection */}
-              <div className="space-y-2 bg-neutral-50 p-3 rounded border border-neutral-200">
-                <span className="block font-bold text-neutral-800 uppercase tracking-wider text-[10px]">
+              <div className="space-y-2 bg-neutral-50 dark:bg-[#16191b] p-3 rounded border border-neutral-200 dark:border-neutral-700">
+                <span className="block font-bold text-neutral-800 dark:text-neutral-200 uppercase tracking-wider text-[10px]">
                   Assignment Scope:
                 </span>
 
@@ -2075,16 +2076,16 @@ export const IncomeExpensesPage: React.FC<IncomeExpensesPageProps> = ({
                     className="mt-0.5 text-blue-600 focus:ring-blue-500"
                   />
                   <div>
-                    <span className="font-semibold text-neutral-900 block">
+                    <span className="font-semibold text-neutral-900 dark:text-neutral-100 block">
                       Apply strictly to {MONTH_NAMES[budgetMonth - 1]} {budgetYear} only
                     </span>
-                    <span className="text-[11px] text-neutral-500">
+                    <span className="text-[11px] text-neutral-500 dark:text-neutral-400">
                       Keeps budgets for other months untouched.
                     </span>
                   </div>
                 </label>
 
-                <label className="flex items-start gap-2.5 cursor-pointer pt-1 border-t border-neutral-200">
+                <label className="flex items-start gap-2.5 cursor-pointer pt-1 border-t border-neutral-200 dark:border-neutral-700">
                   <input
                     type="radio"
                     name="budgetScope"
@@ -2096,27 +2097,27 @@ export const IncomeExpensesPage: React.FC<IncomeExpensesPageProps> = ({
                     className="mt-0.5 text-blue-600 focus:ring-blue-500"
                   />
                   <div>
-                    <span className="font-semibold text-neutral-900 block">
+                    <span className="font-semibold text-neutral-900 dark:text-neutral-100 block">
                       Roll out for the entire year ({budgetYear} - all 12 months)
                     </span>
-                    <span className="text-[11px] text-neutral-500">
+                    <span className="text-[11px] text-neutral-500 dark:text-neutral-400">
                       Sets this limit across every month of {budgetYear} and updates default target.
                     </span>
                   </div>
                 </label>
               </div>
 
-              <div className="flex justify-end gap-2 pt-2 border-t border-neutral-200">
+              <div className="flex justify-end gap-2 pt-2 border-t border-neutral-200 dark:border-neutral-700">
                 <button
                   type="button"
                   onClick={() => setEditingBudgetItem(null)}
-                  className="px-3 py-1.5 text-neutral-700 bg-white border border-neutral-300 rounded hover:bg-neutral-50 font-medium"
+                  className="px-3 py-1.5 text-neutral-700 dark:text-neutral-300 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded hover:bg-neutral-50 dark:hover:bg-neutral-700 font-medium cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 text-white bg-neutral-900 hover:bg-black rounded font-bold shadow-xs"
+                  className="px-4 py-1.5 text-white bg-neutral-900 dark:bg-emerald-600 hover:bg-black dark:hover:bg-emerald-500 rounded font-bold shadow-xs cursor-pointer"
                 >
                   Save Budget Target
                 </button>
@@ -2381,7 +2382,7 @@ export const IncomeExpensesPage: React.FC<IncomeExpensesPageProps> = ({
       {/* Category Budget Drilldown Pop-Up Modal */}
       {budgetDrilldownModal?.isOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white border border-neutral-300 rounded-lg shadow-2xl max-w-2xl w-full flex flex-col overflow-hidden max-h-[85vh]">
+          <div className="bg-white dark:bg-[#1e2324] border border-neutral-300 dark:border-neutral-700 rounded-lg shadow-2xl max-w-2xl w-full flex flex-col overflow-hidden max-h-[85vh]">
             {/* Modal Header */}
             <div className="bg-[#212529] text-white p-4 flex items-center justify-between border-b border-neutral-700">
               <div>
@@ -2406,32 +2407,32 @@ export const IncomeExpensesPage: React.FC<IncomeExpensesPageProps> = ({
             </div>
 
             {/* Summary Metrics */}
-            <div className="bg-neutral-50 p-3.5 border-b border-neutral-200 grid grid-cols-3 gap-2 text-xs font-mono text-center">
-              <div className="bg-white p-2 border border-neutral-200 rounded">
-                <span className="text-[10px] text-neutral-500 block uppercase font-sans">Budget Target</span>
-                <span className="font-bold text-neutral-800 text-sm">
+            <div className="bg-neutral-50 dark:bg-[#16191b] p-3.5 border-b border-neutral-200 dark:border-neutral-700 grid grid-cols-3 gap-2 text-xs font-mono text-center">
+              <div className="bg-white dark:bg-[#1a1e20] p-2 border border-neutral-200 dark:border-neutral-700 rounded">
+                <span className="text-[10px] text-neutral-500 dark:text-neutral-400 block uppercase font-sans">Budget Target</span>
+                <span className="font-bold text-neutral-800 dark:text-neutral-200 text-sm">
                   {formatCurrency(budgetDrilldownModal.pacedTarget, currencySymbol)}
                   {budgetDrilldownModal.pacingSuffix}
                 </span>
               </div>
-              <div className="bg-white p-2 border border-neutral-200 rounded">
-                <span className="text-[10px] text-neutral-500 block uppercase font-sans">Total Spent</span>
-                <span className="font-bold text-red-600 text-sm">
+              <div className="bg-white dark:bg-[#1a1e20] p-2 border border-neutral-200 dark:border-neutral-700 rounded">
+                <span className="text-[10px] text-neutral-500 dark:text-neutral-400 block uppercase font-sans">Total Spent</span>
+                <span className="font-bold text-red-600 dark:text-red-400 text-sm">
                   {formatCurrency(budgetDrilldownModal.pacedSpent, currencySymbol)}
                   {budgetDrilldownModal.pacingSuffix}
                 </span>
               </div>
-              <div className="bg-white p-2 border border-neutral-200 rounded">
-                <span className="text-[10px] text-neutral-500 block uppercase font-sans">Budget Status</span>
+              <div className="bg-white dark:bg-[#1a1e20] p-2 border border-neutral-200 dark:border-neutral-700 rounded">
+                <span className="text-[10px] text-neutral-500 dark:text-neutral-400 block uppercase font-sans">Budget Status</span>
                 <span
                   className={`font-bold text-sm ${
-                    budgetDrilldownModal.remaining < 0 ? 'text-red-600' : 'text-emerald-700'
+                    budgetDrilldownModal.remaining < 0 ? 'text-red-600 dark:text-red-400' : 'text-emerald-700 dark:text-emerald-400'
                   }`}
                 >
                   {budgetDrilldownModal.remaining >= 0
                     ? `${formatCurrency(budgetDrilldownModal.remaining, currencySymbol)} left`
                     : `${formatCurrency(Math.abs(budgetDrilldownModal.remaining), currencySymbol)} over`}
-                  <span className="text-[10px] block text-neutral-500 font-normal">
+                  <span className="text-[10px] block text-neutral-500 dark:text-neutral-400 font-normal">
                     ({budgetDrilldownModal.percent.toFixed(0)}% used)
                   </span>
                 </span>
@@ -2439,7 +2440,7 @@ export const IncomeExpensesPage: React.FC<IncomeExpensesPageProps> = ({
             </div>
 
             {/* Filtered Transactions List */}
-            <div className="p-4 overflow-y-auto flex-1">
+            <div className="p-4 overflow-y-auto flex-1 bg-white dark:bg-[#1e2324]">
               {(() => {
                 const modalCat = budgetDrilldownModal.category;
                 const modalMonthKey = budgetDrilldownModal.monthKey;
@@ -2457,10 +2458,10 @@ export const IncomeExpensesPage: React.FC<IncomeExpensesPageProps> = ({
 
                 if (matchedTxs.length === 0) {
                   return (
-                    <div className="text-center py-10 text-neutral-500">
-                      <ReceiptText className="w-10 h-10 mx-auto text-neutral-300 mb-2" />
-                      <p className="font-semibold text-sm text-neutral-700">No transactions recorded</p>
-                      <p className="text-xs text-neutral-400 mt-1 max-w-md mx-auto">
+                    <div className="text-center py-10 text-neutral-500 dark:text-neutral-400">
+                      <ReceiptText className="w-10 h-10 mx-auto text-neutral-300 dark:text-neutral-600 mb-2" />
+                      <p className="font-semibold text-sm text-neutral-700 dark:text-neutral-300">No transactions recorded</p>
+                      <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1 max-w-md mx-auto">
                         There are no expense transactions logged for <b>{modalCat}</b> during{' '}
                         <b>
                           {budgetDrilldownModal.monthName} {modalYear}
@@ -2475,32 +2476,32 @@ export const IncomeExpensesPage: React.FC<IncomeExpensesPageProps> = ({
 
                 return (
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between text-xs font-bold text-neutral-700 uppercase tracking-wider">
+                    <div className="flex items-center justify-between text-xs font-bold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider">
                       <span>Itemized Expenses ({matchedTxs.length})</span>
-                      <span className="font-mono text-red-600">
+                      <span className="font-mono text-red-600 dark:text-red-400">
                         Sum: {formatCurrency(-totalMatchedSpent, currencySymbol)}
                       </span>
                     </div>
 
-                    <div className="divide-y divide-neutral-100 border border-neutral-200 rounded overflow-hidden shadow-2xs">
+                    <div className="divide-y divide-neutral-100 dark:divide-neutral-700/80 border border-neutral-200 dark:border-neutral-700 rounded overflow-hidden shadow-2xs">
                       {matchedTxs.map((t) => (
                         <div
                           key={t.id}
-                          className="p-3 bg-white hover:bg-neutral-50 flex items-center justify-between text-xs transition"
+                          className="p-3 bg-white dark:bg-[#1a1e20] hover:bg-neutral-50 dark:hover:bg-neutral-800/80 flex items-center justify-between text-xs transition"
                         >
                           <div className="space-y-0.5">
                             <div className="flex items-center gap-2">
-                              <span className="font-bold text-neutral-900">{t.name}</span>
-                              <span className="text-[10px] px-1.5 py-0.2 rounded bg-neutral-100 text-neutral-600 font-mono uppercase border border-neutral-200">
+                              <span className="font-bold text-neutral-900 dark:text-neutral-100">{t.name}</span>
+                              <span className="text-[10px] px-1.5 py-0.2 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 font-mono uppercase border border-neutral-200 dark:border-neutral-700">
                                 {t.subCategory}
                               </span>
                             </div>
                             {t.description && (
-                              <p className="text-[11px] text-neutral-500 italic">{t.description}</p>
+                              <p className="text-[11px] text-neutral-500 dark:text-neutral-400 italic">{t.description}</p>
                             )}
-                            <p className="text-[10px] text-neutral-400 font-mono">Logged Date: {t.date}</p>
+                            <p className="text-[10px] text-neutral-400 dark:text-neutral-500 font-mono">Logged Date: {t.date}</p>
                           </div>
-                          <div className="text-right font-mono font-bold text-red-600 text-sm">
+                          <div className="text-right font-mono font-bold text-red-600 dark:text-red-400 text-sm">
                             {formatCurrency(-t.amount, currencySymbol)}
                           </div>
                         </div>
@@ -2512,7 +2513,7 @@ export const IncomeExpensesPage: React.FC<IncomeExpensesPageProps> = ({
             </div>
 
             {/* Modal Footer */}
-            <div className="bg-neutral-100 px-4 py-2.5 border-t border-neutral-200 flex justify-end">
+            <div className="bg-neutral-100 dark:bg-[#16191b] px-4 py-2.5 border-t border-neutral-200 dark:border-neutral-700 flex justify-end">
               <button
                 type="button"
                 onClick={() => setBudgetDrilldownModal(null)}
