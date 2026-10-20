@@ -48,11 +48,9 @@ const STORAGE_KEYS = {
   SIMULATE_TRIAL_EXPIRED: 'axiom_wealth_sim_trial_expired',
 };
 
-export const DEFAULT_OWNER_EMAIL = 'emmanuelfajutagana@gmail.com';
-export const PRIMARY_OWNER_EMAILS = [
-  'emmanuelfajutagana@gmail.com',
-  'fajutaganaemmanuel@gmail.com',
-];
+// Owner/admin email is supplied via environment config (VITE_OWNER_EMAIL), never hardcoded.
+export const DEFAULT_OWNER_EMAIL: string = ((import.meta as any).env?.VITE_OWNER_EMAIL as string | undefined) || '';
+export const PRIMARY_OWNER_EMAILS: string[] = DEFAULT_OWNER_EMAIL ? [DEFAULT_OWNER_EMAIL.toLowerCase()] : [];
 
 /**
  * Returns the configured owner email address (case-insensitive).
@@ -82,10 +80,8 @@ export function isOwnerUser(user: User | null | undefined): boolean {
   const userEmail = user.email.trim().toLowerCase();
   const ownerEmail = getOwnerEmail();
   return (
-    userEmail === ownerEmail ||
-    PRIMARY_OWNER_EMAILS.includes(userEmail) ||
-    userEmail.includes('fajutagana') ||
-    userEmail.endsWith('@axiomwealth.com')
+    (!!ownerEmail && userEmail === ownerEmail) ||
+    PRIMARY_OWNER_EMAILS.includes(userEmail)
   );
 }
 

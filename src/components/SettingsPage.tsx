@@ -900,7 +900,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                 <CreditCard className="w-4 h-4 text-emerald-400" />
                 <h2 className="text-xs font-bold uppercase tracking-wider">Subscription &amp; Membership</h2>
               </div>
-              <span className="text-[10px] text-neutral-400 font-mono">RevenueCat Billing</span>
+              <span className="text-[10px] text-neutral-400 font-mono">Stripe Test Mode</span>
             </div>
 
             <div className="p-4 sm:p-5 space-y-4 text-xs">
@@ -929,6 +929,34 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                     <span>Growth Checkpoint &bull; Apex Plans</span>
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+          {/* Data Management: Wipe All Data (User Utility) */}
+          <div className="bg-white border border-red-200 rounded-lg shadow-xs overflow-hidden">
+            <div className="bg-[#2d3134] text-white px-4 py-2.5 border-b border-neutral-700 flex items-center gap-2">
+              <Trash2 className="w-4 h-4 text-red-400" />
+              <h2 className="text-xs font-bold uppercase tracking-wider">Data Management</h2>
+            </div>
+            <div className="p-4 sm:p-5 text-xs">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-red-50 rounded-lg border border-red-200">
+                <div>
+                  <div className="font-bold text-red-700 flex items-center gap-1.5">
+                    <Trash2 className="w-4 h-4 text-red-600" />
+                    <span>Wipe All Logged Data (Pure Zero Reset)</span>
+                  </div>
+                  <div className="text-red-600/80 text-[11px] mt-0.5">
+                    Permanently deletes all transactions, assets, liabilities and cash balances from this device and your cloud ledger. This cannot be undone.
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsWipeModalOpen(true)}
+                  className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-red-700 hover:bg-red-800 text-white rounded font-bold text-xs shadow-xs transition cursor-pointer self-start sm:self-auto shrink-0"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Wipe All Data</span>
+                </button>
               </div>
             </div>
           </div>
@@ -974,8 +1002,8 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                   </div>
                   <p className="text-[11px] text-neutral-300 max-w-xl leading-relaxed">
                     {previewAsCustomer
-                      ? 'Admin bypass is currently DISABLED. You are viewing the app as a standard customer to test paywalls, free tier restrictions, and the exact RevenueCat subscription purchase journey.'
-                      : 'Admin bypass is ENABLED. Your owner email grants unrestricted access directly to all dashboard features, completely skipping RevenueCat subscription checks.'}
+                      ? 'Admin bypass is currently DISABLED. You are viewing the app as a standard customer to test paywalls, free tier restrictions, and the exact subscription purchase journey.'
+                      : 'Admin bypass is ENABLED. Your owner email grants unrestricted access directly to all dashboard features, completely skipping subscription checks.'}
                   </p>
                 </div>
 
@@ -1007,7 +1035,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                 <div>
                   <div className="font-bold text-neutral-200">Configured Admin Owner Email</div>
                   <div className="text-[11px] text-neutral-400">
-                    Any logged-in user whose email matches this address receives the automatic RevenueCat bypass.
+                    Any logged-in user whose email matches this address receives the automatic admin bypass.
                   </div>
                 </div>
 
@@ -1169,26 +1197,6 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                 </button>
               </div>
 
-              {/* Danger Zone: Wipe All Data */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-red-950/40 rounded-lg border border-red-800/80 mt-4">
-                <div>
-                  <div className="font-bold text-red-300 flex items-center gap-1.5">
-                    <Trash2 className="w-4 h-4 text-red-400" />
-                    <span>Wipe All Logged Data (Pure Zero Reset)</span>
-                  </div>
-                  <div className="text-red-300/70 text-[11px] mt-0.5">
-                    Completely deletes all transaction items, zeroes out beginning balances and cash equivalents from local storage and Cloud Firestore.
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsWipeModalOpen(true)}
-                  className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-red-700 hover:bg-red-800 text-white rounded font-bold text-xs shadow-xs transition cursor-pointer self-start sm:self-auto shrink-0"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  <span>Wipe All Data</span>
-                </button>
-              </div>
             </div>
           </div>
         </section>

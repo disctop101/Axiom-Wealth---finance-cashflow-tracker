@@ -5,6 +5,7 @@ import './index.css';
 import { TooltipProvider } from './context/TooltipContext.tsx';
 import { ThemeProvider } from './context/ThemeContext.tsx';
 import { PwaProvider } from './context/PwaContext.tsx';
+import { PrivacyPolicyPage, TermsPage } from './components/PublicPages.tsx';
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
@@ -146,7 +147,12 @@ createRoot(document.getElementById('root')!).render(
     <ThemeProvider>
       <TooltipProvider>
         <PwaProvider>
-          <App />
+          {(() => {
+            const path = window.location.pathname.replace(/\/+$/, '').toLowerCase();
+            if (path === '/privacy' || path === '/privacy-policy') return <PrivacyPolicyPage />;
+            if (path === '/terms') return <TermsPage />;
+            return <App />;
+          })()}
         </PwaProvider>
       </TooltipProvider>
     </ThemeProvider>

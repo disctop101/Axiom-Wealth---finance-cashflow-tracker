@@ -24,7 +24,15 @@
     <meta name="twitter:card" content="summary_large_image" />
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Static fallback (replaced by the app once JS loads) so crawlers and reviewers can read the app purpose without logging in -->
+      <main style="font-family:system-ui,sans-serif;max-width:720px;margin:48px auto;padding:0 16px;color:#e5e7eb;background:#121416">
+        <h1>Axiom Wealth: Personal Financial Ledger &amp; Cashflow Tracker</h1>
+        <p>Axiom Wealth is a personal finance web app that helps individuals record income and expenses, track assets and liabilities, and view personal cashflow statements and a balance sheet.</p>
+        <p>Sign in with Google or email to access your private ledger. Your data is stored on your device by default.</p>
+        <p><a href="/privacy" style="color:#34d399">Privacy Policy</a> &middot; <a href="/terms" style="color:#34d399">Terms of Service</a></p>
+      </main>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

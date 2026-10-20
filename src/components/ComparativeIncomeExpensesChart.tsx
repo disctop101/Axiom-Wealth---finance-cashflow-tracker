@@ -17,7 +17,7 @@ interface ComparativeIncomeExpensesChartProps {
 
 export const ComparativeIncomeExpensesChart: React.FC<ComparativeIncomeExpensesChartProps> = ({
   data,
-  currencySymbol = '₱',
+  currencySymbol = '$',
   title = 'Comparative Income vs. Expenses',
 }) => {
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);

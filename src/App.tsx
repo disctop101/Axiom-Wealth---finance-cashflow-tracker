@@ -86,6 +86,7 @@ import { CategoryDetailModal } from './components/CategoryDetailModal';
 import { HelpModal } from './components/HelpModal';
 import { ContextualGuideModal } from './components/ContextualGuideModal';
 import { AuthModal } from './components/AuthModal';
+import { LandingPage } from './components/PublicPages';
 import { QuickLogModal } from './components/QuickLogModal';
 import { PwaInstallPrompt } from './components/PwaInstallPrompt';
 import { MobileNavDrawer } from './components/MobileNavDrawer';
@@ -239,6 +240,7 @@ export default function App() {
   const [isMasterHelpOpen, setIsMasterHelpOpen] = useState(false);
   const [contextualGuideTab, setContextualGuideTab] = useState<AppNavTab | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [landingAuthMode, setLandingAuthMode] = useState<'signin' | 'signup' | null>(null);
 
   const handleOpenMasterHelp = useCallback(() => {
     setIsMasterHelpOpen(true);
@@ -1094,8 +1096,8 @@ export default function App() {
     saveLocalTransactions(DEFAULT_TRANSACTIONS);
     saveLocalBudgets(DEFAULT_BUDGETS);
     saveLocalCurrency(DEFAULT_CURRENCY);
-    saveLocalUserName('Emmanuel Fajutagana');
-    setUserName('Emmanuel Fajutagana');
+    saveLocalUserName('');
+    setUserName('');
   };
 
   // Rolling Liquid Cash & Equivalents Balance:
@@ -1180,23 +1182,29 @@ export default function App() {
     );
   }
 
-  // Require all users to sign up / create an account before accessing the dashboard
+  // Compliance / login gate: the dashboard stays locked behind authentication, but visitors first see a
+  // public landing page that explains the app's purpose and links to the Privacy Policy and Terms.
   if (!user) {
     return (
-      <div className="min-h-screen bg-[#121416] flex flex-col items-center justify-center p-3 sm:p-4 text-white">
+      <>
+        <LandingPage
+          onSignIn={() => setLandingAuthMode('signin')}
+          onSignUp={() => setLandingAuthMode('signup')}
+        />
         <AuthModal
-          isOpen={true}
-          isMandatory={true}
-          initialMode="signup"
-          onClose={() => {}}
+          key={landingAuthMode ?? 'closed'}
+          isOpen={landingAuthMode !== null}
+          isMandatory={false}
+          initialMode={landingAuthMode === 'signin' ? 'signin' : 'signup'}
+          onClose={() => setLandingAuthMode(null)}
           onSuccess={(authUser) => {
             setUser(authUser);
+            setLandingAuthMode(null);
           }}
         />
-      </div>
+      </>
     );
   }
-
   return (
     <div className="min-h-screen bg-[#f4f6f8] dark:bg-[#121416] text-neutral-900 dark:text-neutral-100 font-sans antialiased flex flex-col transition-colors duration-150">
       {/* Floating Button to restore navigation if hidden (Distraction-Free Mode) */}

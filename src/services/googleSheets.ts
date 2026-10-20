@@ -90,33 +90,37 @@ export async function exportToGoogleSheets(
   const spreadsheetUrl = spreadsheet.spreadsheetUrl || `https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit`;
 
   // 2. Prepare tabular data for "Financial Statements"
+  const sumByCategory = (type: 'income' | 'expense', category: string) =>
+    data.transactions
+      .filter((t) => t.type === type && t.category === category)
+      .reduce((acc, t) => acc + t.amount, 0);
+
+  const expenseCategories = Array.from(
+    new Set(data.transactions.filter((t) => t.type === 'expense').map((t) => t.category))
+  ).filter(Boolean);
+
+  const categoryRows = expenseCategories.map((cat) => [
+    cat,
+    -sumByCategory('expense', cat),
+    '',
+    `${cat} expenses`,
+    -sumByCategory('expense', cat),
+  ]);
+
   const finSheetRows = [
     ['FINANCIAL STATEMENT', '', '', `START: ${data.period.startMonth} ${data.period.startYear}`, '', `END: ${data.period.endMonth} ${data.period.endYear}`],
     ['', '', '', '', '', ''],
     ['INCOME STATEMENT (PERSONAL)', '', '', 'CASH FLOW STATEMENT', ''],
     [`Period of ${data.period.startMonth} to ${data.period.endMonth} ${data.period.endYear}`, '', '', `Period of ${data.period.startMonth} to ${data.period.endMonth} ${data.period.endYear}`, ''],
-    ['Period Income', 'Amount (PHP)', '', 'Cash Inflows', 'Amount (PHP)'],
-    ['Salary/Wages', 152000, '', 'Salary/Wages received', 152000],
-    ['Income (Earned)', data.totals.totalEarned, '', 'Cash received from Account Receivables', 5600],
-    ['Interest/Dividends', 0, '', 'Cash received from Investments', 0],
-    ['Investments', 0, '', 'Cash from investing', 5600],
-    ['Income (Portfolio/Passive)', data.totals.totalPassive, '', 'Cash received from Account Payables', 23400],
-    ['Account Payables', 23400, '', 'Cash from financing', 23400],
-    ['Account Receivables', 5600, '', '', ''],
-    ['Other Income:', data.totals.totalOtherIncome, '', 'Cash Outflows', 'Amount (PHP)'],
-    ['Total Income:', data.totals.totalIncome, '', 'Payments made to Bank Transactions', -95],
-    ['', '', '', 'Transportation expenses', -5250],
-    ['Period Expenses', 'Amount (PHP)', '', 'Utilities expenses', -25900],
-    ['Utilities', -25900, '', 'Food expenses', -44321],
-    ['Food', -44321, '', 'Health Care expenses', -28969],
-    ['Health Care', -28969, '', 'Personal Care expenses', -2841],
-    ['Personal Care', -2841, '', 'Miscellaneous expenses', -26019],
-    ['Fixed Expenses', -data.totals.totalFixedExpenses, '', 'Recurring Expenses', -135415],
-    ['Entertainment', -2020, '', 'Payments made to Account Payables', -48358],
-    ['Transportation', -5250, '', 'Cash from financing', -48358],
-    ['Account Payables', -48358, '', '', ''],
-    ['Bank Transaction', -95, '', 'Total Cash Inflows', data.totals.totalInflows],
-    ['Miscellaneous', -26019, '', 'Total Cash Outflows', -data.totals.totalOutflows],
+    ['Period Income', 'Amount', '', 'Cash Inflows', 'Amount'],
+    ['Income (Earned)', data.totals.totalEarned, '', 'Total Cash Inflows', data.totals.totalInflows],
+    ['Income (Portfolio/Passive)', data.totals.totalPassive, '', '', ''],
+    ['Other Income:', data.totals.totalOtherIncome, '', 'Cash Outflows', 'Amount'],
+    ['Total Income:', data.totals.totalIncome, '', 'Total Cash Outflows', -data.totals.totalOutflows],
+    ['', '', '', '', ''],
+    ['Period Expenses', 'Amount', '', 'Outflows by Category', 'Amount'],
+    ...categoryRows,
+    ['Fixed Expenses', -data.totals.totalFixedExpenses, '', '', ''],
     ['Variable Expenses', -data.totals.totalVariableExpenses, '', 'Net Cash Flow', data.totals.netCashFlow],
     ['Total Expenses', -data.totals.totalExpenses, '', 'Beginning Balance', data.period.beginningBalance],
     ['Net Income (Income - Expenses)', data.totals.netIncome, '', 'Ending Balance', data.totals.endingBalance],
@@ -124,20 +128,14 @@ export async function exportToGoogleSheets(
     ['Ending Balance', data.totals.endingBalance, '', '', ''],
     ['', '', '', '', ''],
     ['PERSONAL BALANCE SHEET', '', '', '', ''],
-    ['Assets', 'Value (PHP)', '', 'Liabilities', 'Value (PHP)'],
-    ['Cash and cash equivalents', data.totals.endingBalance, '', 'Mortgage balance', 100000],
-    ['Investment accounts', 482, '', 'Car loan', 0],
-    ['Real estate', 0, '', 'Student loan', 0],
-    ['Vehicles', 0, '', 'Credit card balances', 0],
-    ['Other assets', 192000, '', 'Other debts', 90000],
+    ['Assets', 'Value', '', 'Liabilities', 'Value'],
     ['Total Assets', data.totals.totalAssets, '', 'Total Liabilities', data.totals.totalLiabilities],
     ['Net Worth (Assets - Liabilities)', data.totals.netWorth, '', '', ''],
   ];
-
   // 3. Prepare Assets Detail sheet
   const assetRows = [
     ['PERSONAL ASSET INVENTORY', '', '', '', ''],
-    ['Asset Name', 'Category', 'Value (PHP)', 'Institution / Custodian', 'Notes'],
+    ['Asset Name', 'Category', 'Value', 'Institution / Custodian', 'Notes'],
     ...data.assets.map((a) => [a.name, a.category, (a as any).value ?? a.initialValue, a.institution || '-', a.notes || '-']),
     ['Total Assets', '', data.totals.totalAssets, '', ''],
   ];
@@ -145,7 +143,7 @@ export async function exportToGoogleSheets(
   // 4. Prepare Liabilities Detail sheet
   const liabilityRows = [
     ['PERSONAL LIABILITIES & DEBT TRACKER', '', '', '', '', ''],
-    ['Liability / Debt Name', 'Category', 'Outstanding Balance (PHP)', 'Interest Rate (%)', 'Monthly Payment (PHP)', 'Lender', 'Notes'],
+    ['Liability / Debt Name', 'Category', 'Outstanding Balance', 'Interest Rate (%)', 'Monthly Payment', 'Lender', 'Notes'],
     ...data.liabilities.map((l) => [
       l.name,
       l.category,

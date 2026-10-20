@@ -113,7 +113,7 @@ export const ExportSheetsModal: React.FC<ExportSheetsModalProps> = ({
                   <li>
                     <strong>Liabilities &amp; Debts:</strong> Detailed breakdown of {data.liabilities.length} liabilities, amortization, and lenders.
                   </li>
-                  <li>All figures formatted in Philippine Peso (₱).</li>
+                  <li>All figures are formatted in your selected display currency.</li>
                 </ul>
               </div>
 

@@ -9,8 +9,8 @@ export interface CurrencyConfig {
 }
 
 export const AVAILABLE_CURRENCIES: CurrencyConfig[] = [
-  { code: 'PHP', symbol: '₱', name: 'Philippine Peso (₱)' },
   { code: 'USD', symbol: '$', name: 'US Dollar ($)' },
+  { code: 'PHP', symbol: '₱', name: 'Philippine Peso (₱)' },
   { code: 'EUR', symbol: '€', name: 'Euro (€)' },
   { code: 'GBP', symbol: '£', name: 'British Pound (£)' },
   { code: 'JPY', symbol: '¥', name: 'Japanese Yen (¥)' },
@@ -190,7 +190,7 @@ export interface PeriodSettings {
 // Format currency with active symbol and negative parenthesis
 export function formatCurrency(
   amount: number,
-  symbol = '₱',
+  symbol = '$',
   options?: { showParensForNegative?: boolean; showDashForZero?: boolean }
 ): string {
   const { showParensForNegative = true, showDashForZero = true } = options || {};
@@ -216,7 +216,7 @@ export function formatCurrency(
 }
 
 export const formatPHP = (amount: number, options?: { showParensForNegative?: boolean; showDashForZero?: boolean }) =>
-  formatCurrency(amount, '₱', options);
+  formatCurrency(amount, '$', options);
 
 export const MONTH_NAMES = [
   'January',

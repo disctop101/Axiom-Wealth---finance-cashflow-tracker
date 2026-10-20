@@ -169,17 +169,17 @@ const StockDividendCalculatorContent: React.FC<StockDividendCalculatorPageProps>
 
   // ================= 1. STOCK TRADE & CUSTOM FEE SIMULATOR STATE =================
   const [tradeAction, setTradeAction] = useState<'BUY' | 'SELL'>('BUY');
-  const [tradeStockCode, setTradeStockCode] = useState<string>('SMPH');
-  const [tradeCompanyName, setTradeCompanyName] = useState<string>('SM Prime Holdings, Inc.');
-  const [tradePricePerShare, setTradePricePerShare] = useState<number>(32.50);
-  const [tradeShares, setTradeShares] = useState<number>(1000);
-  const [buyingPowerBudget, setBuyingPowerBudget] = useState<number>(100000);
+  const [tradeStockCode, setTradeStockCode] = useState<string>('');
+  const [tradeCompanyName, setTradeCompanyName] = useState<string>('');
+  const [tradePricePerShare, setTradePricePerShare] = useState<number>(0);
+  const [tradeShares, setTradeShares] = useState<number>(0);
+  const [buyingPowerBudget, setBuyingPowerBudget] = useState<number>(0);
 
   // Dynamic Custom Fees
   const [customFees, setCustomFees] = useState<CustomFeeItem[]>(DEFAULT_FEES);
   const [newFeeName, setNewFeeName] = useState<string>('');
   const [newFeeType, setNewFeeType] = useState<'percent' | 'flat'>('percent');
-  const [newFeeValue, setNewFeeValue] = useState<number>(0.1);
+  const [newFeeValue, setNewFeeValue] = useState<number>(0);
   const [newFeeAppliesTo, setNewFeeAppliesTo] = useState<'both' | 'buy' | 'sell'>('both');
 
   // Pipeline logging states for trade
@@ -325,7 +325,7 @@ const StockDividendCalculatorContent: React.FC<StockDividendCalculatorPageProps>
     };
     setCustomFees([...customFees, item]);
     setNewFeeName('');
-    setNewFeeValue(0.1);
+    setNewFeeValue(0);
   };
 
   const handleRemoveFee = (id: string) => {
@@ -337,11 +337,11 @@ const StockDividendCalculatorContent: React.FC<StockDividendCalculatorPageProps>
   };
 
   // ================= 2. DIVIDEND YIELD & ROI CALCULATOR STATE =================
-  const [divStockPrice, setDivStockPrice] = useState<number>(32.50);
-  const [divShares, setDivShares] = useState<number>(1000);
-  const [annualBaseDividend, setAnnualBaseDividend] = useState<number>(1.20);
+  const [divStockPrice, setDivStockPrice] = useState<number>(0);
+  const [divShares, setDivShares] = useState<number>(0);
+  const [annualBaseDividend, setAnnualBaseDividend] = useState<number>(0);
   const [dividendFrequency, setDividendFrequency] = useState<number>(4);
-  const [withholdingTaxPercent, setWithholdingTaxPercent] = useState<number>(10.0);
+  const [withholdingTaxPercent, setWithholdingTaxPercent] = useState<number>(0);
 
   // Dividend & ROI Calculations with strict null checks and division by zero protection
   const dividendMath = useMemo(() => {
@@ -387,12 +387,12 @@ const StockDividendCalculatorContent: React.FC<StockDividendCalculatorPageProps>
   }, [isMounted, divStockPrice, divShares, annualBaseDividend, dividendFrequency, withholdingTaxPercent]);
 
   // ================= 3. MULTI-YEAR COMPOUNDING ENGINE STATE =================
-  const [compoundTicker, setCompoundTicker] = useState<string>('AAPL / SM');
-  const [compoundSharePrice, setCompoundSharePrice] = useState<number>(150);
-  const [compoundShares, setCompoundShares] = useState<number>(500);
-  const [expectedGrowthRate, setExpectedGrowthRate] = useState<number>(8.0);
-  const [compoundDividendYield, setCompoundDividendYield] = useState<number>(4.5);
-  const [dividendGrowthRate, setDividendGrowthRate] = useState<number>(5.0);
+  const [compoundTicker, setCompoundTicker] = useState<string>('');
+  const [compoundSharePrice, setCompoundSharePrice] = useState<number>(0);
+  const [compoundShares, setCompoundShares] = useState<number>(0);
+  const [expectedGrowthRate, setExpectedGrowthRate] = useState<number>(0);
+  const [compoundDividendYield, setCompoundDividendYield] = useState<number>(0);
+  const [dividendGrowthRate, setDividendGrowthRate] = useState<number>(0);
   const [timeframeYears, setTimeframeYears] = useState<number>(10);
   const [reinvestDividends, setReinvestDividends] = useState<boolean>(true);
   const [monthlyContribution, setMonthlyContribution] = useState<number>(0);
@@ -690,7 +690,7 @@ const StockDividendCalculatorContent: React.FC<StockDividendCalculatorPageProps>
                     type="text"
                     value={tradeStockCode}
                     onChange={(e) => setTradeStockCode(e.target.value.toUpperCase())}
-                    placeholder="e.g. SMPH, AAPL"
+                    placeholder="e.g. AAPL"
                     className="w-full px-2.5 py-1.5 bg-neutral-50 border border-neutral-300 rounded text-xs font-mono font-bold text-neutral-800 focus:bg-white focus:outline-hidden"
                   />
                 </div>
@@ -716,7 +716,8 @@ const StockDividendCalculatorContent: React.FC<StockDividendCalculatorPageProps>
                     type="number"
                     step="0.01"
                     min="0"
-                    value={tradePricePerShare}
+                    value={tradePricePerShare || ''}
+                    placeholder="e.g. 150.00"
                     onChange={(e) => setTradePricePerShare(Math.max(0, Number(e.target.value) || 0))}
                     className="w-full px-2.5 py-1.5 bg-neutral-50 border border-neutral-300 rounded text-xs font-mono font-bold text-neutral-800 focus:bg-white focus:outline-hidden"
                   />
@@ -726,9 +727,10 @@ const StockDividendCalculatorContent: React.FC<StockDividendCalculatorPageProps>
                   <input
                     type="number"
                     step="1"
-                    min="1"
-                    value={tradeShares}
-                    onChange={(e) => setTradeShares(Math.max(1, Number(e.target.value) || 1))}
+                    min="0"
+                    value={tradeShares || ''}
+                    placeholder="e.g. 100"
+                    onChange={(e) => setTradeShares(Math.max(0, Number(e.target.value) || 0))}
                     className="w-full px-2.5 py-1.5 bg-neutral-50 border border-neutral-300 rounded text-xs font-mono font-bold text-neutral-800 focus:bg-white focus:outline-hidden"
                   />
                 </div>
@@ -743,7 +745,8 @@ const StockDividendCalculatorContent: React.FC<StockDividendCalculatorPageProps>
                   type="number"
                   step="100"
                   min="0"
-                  value={buyingPowerBudget}
+                  value={buyingPowerBudget || ''}
+                  placeholder="e.g. 10000"
                   onChange={(e) => setBuyingPowerBudget(Math.max(0, Number(e.target.value) || 0))}
                   className="w-full px-2.5 py-1.5 bg-neutral-50 border border-neutral-300 rounded text-xs font-mono text-neutral-800 focus:bg-white focus:outline-hidden"
                 />
@@ -972,8 +975,8 @@ const StockDividendCalculatorContent: React.FC<StockDividendCalculatorPageProps>
                       type="number"
                       step="0.001"
                       min="0"
-                      placeholder="Rate / Value"
-                      value={newFeeValue}
+                      placeholder="e.g. 0.1"
+                      value={newFeeValue || ''}
                       onChange={(e) => setNewFeeValue(Number(e.target.value) || 0)}
                       className="w-full px-2.5 py-1.5 bg-white border border-neutral-300 rounded text-xs font-mono focus:outline-hidden"
                     />
@@ -1078,7 +1081,8 @@ const StockDividendCalculatorContent: React.FC<StockDividendCalculatorPageProps>
                     type="number"
                     step="0.01"
                     min="0"
-                    value={divStockPrice}
+                    value={divStockPrice || ''}
+                    placeholder="e.g. 150.00"
                     onChange={(e) => setDivStockPrice(Math.max(0, Number(e.target.value) || 0))}
                     className="w-full px-2.5 py-1.5 bg-neutral-50 border border-neutral-300 rounded text-xs font-mono font-bold focus:bg-white focus:outline-hidden"
                   />
@@ -1088,9 +1092,10 @@ const StockDividendCalculatorContent: React.FC<StockDividendCalculatorPageProps>
                   <input
                     type="number"
                     step="1"
-                    min="1"
-                    value={divShares}
-                    onChange={(e) => setDivShares(Math.max(1, Number(e.target.value) || 1))}
+                    min="0"
+                    value={divShares || ''}
+                    placeholder="e.g. 100"
+                    onChange={(e) => setDivShares(Math.max(0, Number(e.target.value) || 0))}
                     className="w-full px-2.5 py-1.5 bg-neutral-50 border border-neutral-300 rounded text-xs font-mono font-bold focus:bg-white focus:outline-hidden"
                   />
                 </div>
@@ -1104,7 +1109,8 @@ const StockDividendCalculatorContent: React.FC<StockDividendCalculatorPageProps>
                   type="number"
                   step="0.01"
                   min="0"
-                  value={annualBaseDividend}
+                  value={annualBaseDividend || ''}
+                  placeholder="e.g. 1.20"
                   onChange={(e) => setAnnualBaseDividend(Math.max(0, Number(e.target.value) || 0))}
                   className="w-full px-2.5 py-1.5 bg-neutral-50 border border-neutral-300 rounded text-xs font-mono font-bold focus:bg-white focus:outline-hidden"
                 />
@@ -1133,7 +1139,8 @@ const StockDividendCalculatorContent: React.FC<StockDividendCalculatorPageProps>
                     step="0.5"
                     min="0"
                     max="100"
-                    value={withholdingTaxPercent}
+                    value={withholdingTaxPercent || ''}
+                    placeholder="e.g. 10"
                     onChange={(e) => setWithholdingTaxPercent(Math.max(0, Number(e.target.value) || 0))}
                     className="w-full px-2.5 py-1.5 bg-neutral-50 border border-neutral-300 rounded text-xs font-mono focus:bg-white focus:outline-hidden"
                   />
@@ -1283,7 +1290,7 @@ const StockDividendCalculatorContent: React.FC<StockDividendCalculatorPageProps>
                   type="text"
                   value={compoundTicker}
                   onChange={(e) => setCompoundTicker(e.target.value)}
-                  placeholder="e.g. AAPL, MSFT, SM, BDO"
+                  placeholder="e.g. AAPL"
                   className="w-full px-2.5 py-1.5 bg-neutral-50 border border-neutral-300 rounded text-xs font-semibold text-neutral-800 focus:bg-white focus:outline-hidden"
                 />
               </div>
@@ -1298,7 +1305,8 @@ const StockDividendCalculatorContent: React.FC<StockDividendCalculatorPageProps>
                     type="number"
                     step="0.01"
                     min="0"
-                    value={compoundSharePrice}
+                    value={compoundSharePrice || ''}
+                    placeholder="e.g. 150.00"
                     onChange={(e) => setCompoundSharePrice(Math.max(0, Number(e.target.value) || 0))}
                     className="w-full px-2.5 py-1.5 bg-neutral-50 border border-neutral-300 rounded text-xs font-mono font-bold text-neutral-800 focus:bg-white focus:outline-hidden"
                   />
@@ -1310,9 +1318,10 @@ const StockDividendCalculatorContent: React.FC<StockDividendCalculatorPageProps>
                   <input
                     type="number"
                     step="1"
-                    min="1"
-                    value={compoundShares}
-                    onChange={(e) => setCompoundShares(Math.max(1, Number(e.target.value) || 1))}
+                    min="0"
+                    value={compoundShares || ''}
+                    placeholder="e.g. 100"
+                    onChange={(e) => setCompoundShares(Math.max(0, Number(e.target.value) || 0))}
                     className="w-full px-2.5 py-1.5 bg-neutral-50 border border-neutral-300 rounded text-xs font-mono font-bold text-neutral-800 focus:bg-white focus:outline-hidden"
                   />
                 </div>
@@ -1328,7 +1337,8 @@ const StockDividendCalculatorContent: React.FC<StockDividendCalculatorPageProps>
                     type="number"
                     step="0.1"
                     min="0"
-                    value={compoundDividendYield}
+                    value={compoundDividendYield || ''}
+                    placeholder="e.g. 3.5"
                     onChange={(e) => setCompoundDividendYield(Math.max(0, Number(e.target.value) || 0))}
                     className="w-full px-2.5 py-1.5 bg-neutral-50 border border-neutral-300 rounded text-xs font-mono text-neutral-800 focus:bg-white focus:outline-hidden"
                   />
@@ -1341,7 +1351,8 @@ const StockDividendCalculatorContent: React.FC<StockDividendCalculatorPageProps>
                     type="number"
                     step="0.1"
                     min="0"
-                    value={dividendGrowthRate}
+                    value={dividendGrowthRate || ''}
+                    placeholder="e.g. 5"
                     onChange={(e) => setDividendGrowthRate(Math.max(0, Number(e.target.value) || 0))}
                     className="w-full px-2.5 py-1.5 bg-neutral-50 border border-neutral-300 rounded text-xs font-mono text-neutral-800 focus:bg-white focus:outline-hidden"
                   />
@@ -1357,7 +1368,8 @@ const StockDividendCalculatorContent: React.FC<StockDividendCalculatorPageProps>
                   type="number"
                   step="0.1"
                   min="0"
-                  value={expectedGrowthRate}
+                  value={expectedGrowthRate || ''}
+                  placeholder="e.g. 8"
                   onChange={(e) => setExpectedGrowthRate(Math.max(0, Number(e.target.value) || 0))}
                   className="w-full px-2.5 py-1.5 bg-neutral-50 border border-neutral-300 rounded text-xs font-mono text-neutral-800 focus:bg-white focus:outline-hidden"
                 />

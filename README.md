@@ -135,7 +135,7 @@ npm run preview
 
 ## 🔐 Security & Access Control
 
-- **Admin Owner Bypass**: Authenticated owner emails (`emmanuelfajutagana@gmail.com`) automatically receive an unrestricted bypass for development and testing.
+- **Admin Owner Bypass**: The authenticated owner email configured via `VITE_OWNER_EMAIL` automatically receive an unrestricted bypass for development and testing.
 - **Preview as Customer**: Admins can toggle customer preview mode in *Developer Settings* to experience the exact paywall and free-tier limitations presented to standard users.
 - **Master Password Protected Data Wipe**: Zeroing out ledger data requires account credential reauthentication or the master authorization passphrase to safeguard against accidental data loss.
 

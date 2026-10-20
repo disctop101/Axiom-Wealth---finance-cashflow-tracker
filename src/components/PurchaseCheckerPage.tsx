@@ -239,7 +239,7 @@ export const PurchaseCheckerPage: React.FC<PurchaseCheckerPageProps> = ({
                     setItemPrice(isNaN(parsed) ? '' : parsed);
                   }
                 }}
-                placeholder="0.00"
+                placeholder="e.g. 1200.00"
                 className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 rounded focus:outline-hidden focus:border-emerald-600 font-mono text-sm font-bold text-neutral-900 dark:text-neutral-100"
               />
             </div>

@@ -76,7 +76,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   currencySymbol,
   onSelectCategory,
   onResetToDefault,
-  userName = 'Emmanuel Fajutagana',
+  userName = '',
   onUpdateUserName,
   onWipeAllTransactions,
   activeSubTab,
@@ -203,7 +203,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   // Dynamic Name Editing State
   const [isEditingName, setIsEditingName] = React.useState(false);
-  const [tempName, setTempName] = React.useState(userName || 'Emmanuel Fajutagana');
+  const [tempName, setTempName] = React.useState(userName || '');
 
   React.useEffect(() => {
     if (userName) setTempName(userName);
@@ -216,9 +216,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
     }
   };
 
-  const rawName = (userName && userName.trim()) || 'Emmanuel Fajutagana';
+  const rawName = (userName && userName.trim()) || 'My Personal Ledger';
   const possessiveName = rawName.endsWith('s') || rawName.endsWith('S') ? `${rawName}'` : `${rawName}'s`;
-  const displayTitle = `${possessiveName} Financial Statement`;
+  const hasCustomName = !!(userName && userName.trim());
+  const displayTitle = hasCustomName ? `${possessiveName} Financial Statement` : 'My Personal Financial Statement';
 
   // Global Time Window Preset State: 'day' | 'week' | 'month' | 'year' | 'all'
   const [timePreset, setTimePreset] = React.useState<'day' | 'week' | 'month' | 'year' | 'all'>('month');

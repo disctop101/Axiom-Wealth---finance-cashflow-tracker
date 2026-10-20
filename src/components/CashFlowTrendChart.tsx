@@ -18,7 +18,7 @@ interface CashFlowTrendChartProps {
 
 export const CashFlowTrendChart: React.FC<CashFlowTrendChartProps> = ({
   data,
-  currencySymbol = '₱',
+  currencySymbol = '$',
   title = 'Cash Flow Trend Line',
 }) => {
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);

@@ -24,7 +24,7 @@ export const PeriodExpenseChart: React.FC<PeriodExpenseChartProps> = ({
   incomes = [],
   assets = [],
   liabilities = [],
-  currencySymbol = '₱',
+  currencySymbol = '$',
   onSelectCategory,
 }) => {
   // Four individual toggles: 'income' | 'expenses' | 'assets' | 'liabilities' (Default: 'expenses')

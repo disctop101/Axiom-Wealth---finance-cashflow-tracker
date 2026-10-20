@@ -66,6 +66,13 @@ export function saveLocalUserName(name: string) {
 // --- Local Storage Helpers ---
 export function loadLocalCurrency(): CurrencyConfig {
   try {
+    // One-time migration: previous builds defaulted to PHP. Reset to USD default once.
+    const MIGRATION_KEY = 'axiom_currency_default_usd_v1';
+    if (!localStorage.getItem(MIGRATION_KEY)) {
+      localStorage.setItem(MIGRATION_KEY, 'true');
+      localStorage.setItem(STORAGE_KEYS.CURRENCY, JSON.stringify(DEFAULT_CURRENCY));
+      return DEFAULT_CURRENCY;
+    }
     const raw = localStorage.getItem(STORAGE_KEYS.CURRENCY);
     return raw ? JSON.parse(raw) : DEFAULT_CURRENCY;
   } catch {

@@ -163,7 +163,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
           {/* Amount */}
           <div>
             <label className="block font-medium text-neutral-700 mb-1">
-              Amount (Philippine Peso ₱) *
+              Amount *
             </label>
             <input
               type="number"
