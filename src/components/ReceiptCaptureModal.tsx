@@ -534,9 +534,6 @@ export const ReceiptCaptureModal: React.FC<ReceiptCaptureModalProps> = ({
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="font-bold text-xs sm:text-sm text-white truncate">Receipt Capture &amp; OCR Engine</h2>
-                <span className="text-[9px] bg-emerald-600/30 text-emerald-300 border border-emerald-600 px-1.5 py-0.2 rounded font-mono font-bold">
-                  FREEHAND HIGHLIGHTER
-                </span>
               </div>
             </div>
           </div>
@@ -553,6 +550,15 @@ export const ReceiptCaptureModal: React.FC<ReceiptCaptureModalProps> = ({
 
         {/* Modal Body */}
         <div className="flex-1 p-3 sm:p-5 overflow-hidden flex flex-col min-h-0 bg-[#121415]">
+          {/* Universal Hidden File Input (accessible across choice screen & active viewfinder) */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleFileSelect}
+            className="hidden"
+          />
+
           {/* ================= STATE 1: UPLOAD / CAMERA CHOICE ================= */}
           {!imagePreview && !isWebcamActive && (
             <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-6 max-w-xl mx-auto w-full">
@@ -592,14 +598,6 @@ export const ReceiptCaptureModal: React.FC<ReceiptCaptureModalProps> = ({
                   <Upload className="w-4 h-4 text-emerald-400" />
                   <span>Choose from Gallery</span>
                 </button>
-
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                />
               </div>
             </div>
           )}
@@ -638,11 +636,7 @@ export const ReceiptCaptureModal: React.FC<ReceiptCaptureModalProps> = ({
                 </div>
 
                 {/* Top Subtle Status Badge */}
-                <div className="relative z-10 flex items-center justify-between">
-                  <span className="text-[11px] font-mono font-bold bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-emerald-400 border border-emerald-500/40 flex items-center gap-1.5 shadow-lg">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-                    REC • READY
-                  </span>
+                <div className="relative z-10 flex items-center justify-end">
                   <span className="text-[11px] font-mono text-white/70 bg-black/50 backdrop-blur-md px-2.5 py-1 rounded-full">
                     ALIGN RECEIPT
                   </span>
