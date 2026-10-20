@@ -1173,8 +1173,12 @@ export default function App() {
   if (!authInitialized) {
     return (
       <div className="min-h-screen bg-[#121416] flex flex-col items-center justify-center p-4 text-white">
-        <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 mb-4 animate-pulse">
-          <Sparkles className="w-6 h-6" />
+        <div className="w-16 h-16 rounded-2xl bg-emerald-950/80 border border-emerald-500/50 p-2.5 flex items-center justify-center mb-4 shadow-2xl animate-pulse">
+          <img
+            src="/logo.png"
+            alt="Axiom Wealth"
+            className="w-full h-full object-contain"
+          />
         </div>
         <h1 className="text-xl font-black uppercase tracking-wider text-white">Axiom Wealth</h1>
         <p className="text-xs text-neutral-400 font-mono mt-1">Initializing secure session...</p>

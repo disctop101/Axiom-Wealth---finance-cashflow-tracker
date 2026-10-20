@@ -35,6 +35,10 @@ import {
   Landmark,
   Clock,
   BookOpen,
+  ChevronDown,
+  ChevronUp,
+  Filter,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { Tooltip } from './Tooltip';
 
@@ -129,7 +133,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           currencySymbol,
           periodLabel: !filterByPeriod
             ? 'All-Time Financial History (All Logged Records)'
-            : `${period.startMonth} ${period.startYear} – ${period.endMonth} ${period.endYear}`,
+            : `${period.startMonth} ${period.startYear} to ${period.endMonth} ${period.endYear}`,
           recordsCount: periodTransactions.length,
           earnedIncomeItems: [
             { name: 'Salary / Wages', amount: salaryWages },
@@ -221,7 +225,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const hasCustomName = !!(userName && userName.trim());
   const displayTitle = hasCustomName ? `${possessiveName} Financial Statement` : 'My Personal Financial Statement';
 
-  // Global Time Window Preset State: 'day' | 'week' | 'month' | 'year' | 'all'
+  // Collapsible Statement Controls Accordion state (Collapsed by default on mobile < 768px)
+  const [isControlsExpanded, setIsControlsExpanded] = React.useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth >= 768;
+    }
+    return true;
+  });
   const [timePreset, setTimePreset] = React.useState<'day' | 'week' | 'month' | 'year' | 'all'>('month');
   const [exactDateRange, setExactDateRange] = React.useState<{ start: string; end: string } | null>(null);
 
@@ -1561,226 +1571,273 @@ export const Dashboard: React.FC<DashboardProps> = ({
   return (
     <div className="space-y-4 max-w-7xl mx-auto pb-12 select-none">
       {/* ================= TOP CONTROL BAR (OUTSIDE PRINTABLE FINANCIAL STATEMENT AREA) ================= */}
-      <div className="bg-[#1f2324] text-white p-3 sm:p-3.5 rounded-lg border border-neutral-700 shadow-md print:hidden space-y-3">
-        {/* Ledger Owner & Quick Mode Switcher */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2 border-b border-neutral-800">
-          {/* Dynamic Personalization / Ledger Owner Control */}
+      <div className="bg-[#1f2324] text-white rounded-lg border border-neutral-700 shadow-md print:hidden overflow-hidden">
+        {/* Accordion Summary Header Bar (Always visible, click to toggle full controls) */}
+        <div className="p-3 sm:p-3.5 bg-neutral-900/80 border-b border-neutral-800 flex flex-wrap items-center justify-between gap-2.5">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs uppercase font-bold text-neutral-400 tracking-wider">
-              Ledger Owner:
-            </span>
-            {isEditingName ? (
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <input
-                  type="text"
-                  value={tempName}
-                  onChange={(e) => setTempName(e.target.value)}
-                  placeholder="Enter ledger owner name"
-                  className="bg-neutral-800 text-white border border-neutral-600 rounded px-2.5 py-1 text-xs focus:outline-hidden focus:border-emerald-500 font-medium"
-                  autoFocus
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleSaveName();
-                    if (e.key === 'Escape') setIsEditingName(false);
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={handleSaveName}
-                  className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-semibold cursor-pointer"
-                >
-                  Save
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsEditingName(false)}
-                  className="px-2 py-1 bg-neutral-700 hover:bg-neutral-600 text-neutral-300 rounded text-xs cursor-pointer"
-                >
-                  Cancel
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 bg-neutral-800/90 border border-neutral-700 px-2.5 py-1 rounded">
-                <span className="text-xs font-bold text-emerald-300">
-                  {rawName}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setTempName(rawName);
-                    setIsEditingName(true);
-                  }}
-                  className="text-neutral-400 hover:text-white p-0.5 rounded transition cursor-pointer"
-                  title="Change personalized ledger name"
-                >
-                  <Edit3 className="w-3.5 h-3.5 text-neutral-400 hover:text-emerald-400" />
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Global Time Window Preset Bar (Day, Week, Month, Year, All Time, Current) */}
-          <div className="flex flex-wrap items-center gap-1 bg-[#282d30] p-1 rounded-lg border border-neutral-600 text-xs">
-            <span className="text-[10px] uppercase font-bold text-neutral-400 px-1 hidden sm:inline">
-              Time Window:
-            </span>
-            {(['day', 'week', 'month', 'year', 'all'] as const).map((p) => {
-              const labels = {
-                day: 'Day',
-                week: 'Week',
-                month: 'Month',
-                year: 'Year',
-                all: 'All Time',
-              };
-              const isSelected = (!filterByPeriod && p === 'all') || (filterByPeriod && timePreset === p);
-
-              return (
-                <button
-                  key={p}
-                  type="button"
-                  onClick={() => handleApplyPreset(p)}
-                  className={`px-2.5 py-1 rounded text-xs font-semibold transition cursor-pointer flex items-center gap-1 ${
-                    isSelected
-                      ? 'bg-emerald-600 text-white shadow-xs font-bold'
-                      : 'text-neutral-400 hover:text-white hover:bg-neutral-700/60'
-                  }`}
-                  title={p === 'all' ? 'Display complete ledger history across all time' : `Filter statement by ${labels[p]}`}
-                >
-                  <span>{labels[p]}</span>
-                </button>
-              );
-            })}
-
-            {/* Current Button alongside selector: dynamically jumps to present period */}
             <button
               type="button"
-              onClick={handleJumpToCurrent}
-              className="flex items-center gap-1 px-2.5 py-1 rounded text-xs font-bold bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white shadow-xs transition cursor-pointer ml-0.5"
-              title="Jump to present active period (Today / Current Week / Current Month / Current Year)"
+              onClick={() => setIsControlsExpanded((prev) => !prev)}
+              className="flex items-center gap-2 text-xs font-bold text-white hover:text-emerald-400 transition cursor-pointer"
+              title="Toggle statement controls and filters"
             >
-              <Clock className="w-3 h-3" />
-              <span>Current</span>
+              <div className="w-6 h-6 rounded-md bg-neutral-800 border border-neutral-700 flex items-center justify-center text-emerald-400">
+                <SlidersHorizontal className="w-3.5 h-3.5" />
+              </div>
+              <span className="uppercase tracking-wider">Statement Filters &amp; Controls</span>
+              {isControlsExpanded ? (
+                <ChevronUp className="w-4 h-4 text-neutral-400" />
+              ) : (
+                <ChevronDown className="w-4 h-4 text-neutral-400" />
+              )}
+            </button>
+
+            {/* Compact summary pill when collapsed */}
+            <span className="text-[11px] font-mono text-emerald-400 bg-emerald-950/70 border border-emerald-600/50 px-2.5 py-0.5 rounded-full flex items-center gap-1.5">
+              <Clock className="w-3 h-3 shrink-0" />
+              <span>
+                {!filterByPeriod
+                  ? 'All-Time Records'
+                  : `Active: ${period.startMonth} to ${period.endMonth} ${period.endYear}`}
+              </span>
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 ml-auto">
+            <button
+              type="button"
+              onClick={() => setIsControlsExpanded((prev) => !prev)}
+              className="px-2.5 py-1 text-[11px] font-semibold text-neutral-300 hover:text-white bg-neutral-800 hover:bg-neutral-700 rounded border border-neutral-700 transition cursor-pointer"
+            >
+              {isControlsExpanded ? 'Hide Controls' : 'Edit Filters'}
             </button>
           </div>
         </div>
 
-        {/* Date Filter Inputs & Action Buttons */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 text-xs">
-          {/* Start and End Selectors */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full lg:w-auto">
-            {/* Start Month & Year */}
-            <div className={`flex items-center justify-between bg-[#282d30] px-3 py-2 rounded border transition min-h-[42px] flex-1 sm:flex-initial sm:w-auto ${filterByPeriod ? 'border-neutral-600' : 'border-neutral-700 opacity-60'}`}>
-              <span className="text-neutral-400 font-semibold mr-2 uppercase text-[10px] shrink-0">
-                Start:
-              </span>
-              <div className="flex items-center gap-2 flex-1 sm:flex-initial justify-end">
-                <select
-                  value={period.startMonth}
-                  onChange={(e) => {
-                    setFilterByPeriod(true);
-                    setPeriod((prev) => ({ ...prev, startMonth: e.target.value }));
-                  }}
-                  className="bg-transparent text-white font-medium focus:outline-hidden cursor-pointer text-xs truncate"
-                >
-                  {MONTH_NAMES.map((m) => (
-                    <option key={m} value={m} className="bg-neutral-800 text-white">
-                      {m}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  type="number"
-                  value={period.startYear}
-                  onChange={(e) => {
-                    setFilterByPeriod(true);
-                    setPeriod((prev) => ({ ...prev, startYear: parseInt(e.target.value) || new Date().getFullYear() }));
-                  }}
-                  className="w-16 min-w-[3.5rem] bg-transparent text-white text-right font-medium focus:outline-hidden border-l border-neutral-700 pl-2 shrink-0"
-                />
+        {/* Collapsible Panel Body */}
+        {isControlsExpanded && (
+          <div className="p-3 sm:p-3.5 space-y-3 animate-in fade-in duration-150">
+            {/* Ledger Owner & Quick Mode Switcher */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2 border-b border-neutral-800">
+              {/* Dynamic Personalization / Ledger Owner Control */}
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs uppercase font-bold text-neutral-400 tracking-wider">
+                  Ledger Owner:
+                </span>
+                {isEditingName ? (
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <input
+                      type="text"
+                      value={tempName}
+                      onChange={(e) => setTempName(e.target.value)}
+                      placeholder="Enter ledger owner name"
+                      className="bg-neutral-800 text-white border border-neutral-600 rounded px-2.5 py-1 text-xs focus:outline-hidden focus:border-emerald-500 font-medium"
+                      autoFocus
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleSaveName();
+                        if (e.key === 'Escape') setIsEditingName(false);
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleSaveName}
+                      className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-semibold cursor-pointer"
+                    >
+                      Save
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingName(false)}
+                      className="px-2 py-1 bg-neutral-700 hover:bg-neutral-600 text-neutral-300 rounded text-xs cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 bg-neutral-800/90 border border-neutral-700 px-2.5 py-1 rounded">
+                    <span className="text-xs font-bold text-emerald-300">
+                      {rawName}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTempName(rawName);
+                        setIsEditingName(true);
+                      }}
+                      className="text-neutral-400 hover:text-white p-0.5 rounded transition cursor-pointer"
+                      title="Change personalized ledger name"
+                    >
+                      <Edit3 className="w-3.5 h-3.5 text-neutral-400 hover:text-emerald-400" />
+                    </button>
+                  </div>
+                )}
               </div>
-            </div>
 
-            {/* End Month & Year */}
-            <div className={`flex items-center justify-between bg-[#282d30] px-3 py-2 rounded border transition min-h-[42px] flex-1 sm:flex-initial sm:w-auto ${filterByPeriod ? 'border-neutral-600' : 'border-neutral-700 opacity-60'}`}>
-              <span className="text-neutral-400 font-semibold mr-2 uppercase text-[10px] shrink-0">
-                End:
-              </span>
-              <div className="flex items-center gap-2 flex-1 sm:flex-initial justify-end">
-                <select
-                  value={period.endMonth}
-                  onChange={(e) => {
-                    setFilterByPeriod(true);
-                    setPeriod((prev) => ({ ...prev, endMonth: e.target.value }));
-                  }}
-                  className="bg-transparent text-white font-medium focus:outline-hidden cursor-pointer text-xs truncate"
-                >
-                  {MONTH_NAMES.map((m) => (
-                    <option key={m} value={m} className="bg-neutral-800 text-white">
-                      {m}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  type="number"
-                  value={period.endYear}
-                  onChange={(e) => {
-                    setFilterByPeriod(true);
-                    setPeriod((prev) => ({ ...prev, endYear: parseInt(e.target.value) || new Date().getFullYear() }));
-                  }}
-                  className="w-16 min-w-[3.5rem] bg-transparent text-white text-right font-medium focus:outline-hidden border-l border-neutral-700 pl-2 shrink-0"
-                />
-              </div>
-            </div>
-          </div>
+              {/* Global Time Window Preset Bar (Day, Week, Month, Year, All Time, Current) */}
+              <div className="flex flex-wrap items-center gap-1 bg-[#282d30] p-1 rounded-lg border border-neutral-600 text-xs">
+                <span className="text-[10px] uppercase font-bold text-neutral-400 px-1 hidden sm:inline">
+                  Time Window:
+                </span>
+                {(['day', 'week', 'month', 'year', 'all'] as const).map((p) => {
+                  const labels = {
+                    day: 'Day',
+                    week: 'Week',
+                    month: 'Month',
+                    year: 'Year',
+                    all: 'All Time',
+                  };
+                  const isSelected = (!filterByPeriod && p === 'all') || (filterByPeriod && timePreset === p);
 
-          {/* Action Buttons in a responsive grid for mobile, flex for desktop */}
-          <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
-            {/* Contextual Guide Popup Button */}
-            {onOpenHelp && (
-              <Tooltip content="Open operational guide and button explanations for Financial Statements" position="bottom">
+                  return (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => handleApplyPreset(p)}
+                      className={`px-2.5 py-1 rounded text-xs font-semibold transition cursor-pointer flex items-center gap-1 ${
+                        isSelected
+                          ? 'bg-emerald-600 text-white shadow-xs font-bold'
+                          : 'text-neutral-400 hover:text-white hover:bg-neutral-700/60'
+                      }`}
+                      title={p === 'all' ? 'Display complete ledger history across all time' : `Filter statement by ${labels[p]}`}
+                    >
+                      <span>{labels[p]}</span>
+                    </button>
+                  );
+                })}
+
+                {/* Current Button alongside selector: dynamically jumps to present period */}
                 <button
                   type="button"
-                  onClick={onOpenHelp}
-                  className="flex-1 sm:flex-initial min-h-[40px] flex items-center justify-center gap-1.5 px-3 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white rounded text-xs font-semibold transition border border-neutral-600 shadow-xs cursor-pointer"
-                  title="Open operational guide"
+                  onClick={handleJumpToCurrent}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded text-xs font-bold bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white shadow-xs transition cursor-pointer ml-0.5"
+                  title="Jump to present active period (Today / Current Week / Current Month / Current Year)"
                 >
-                  <BookOpen className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Guide</span>
+                  <Clock className="w-3 h-3" />
+                  <span>Current</span>
                 </button>
-              </Tooltip>
-            )}
+              </div>
+            </div>
 
-            {/* Current Month Quick Filter Button */}
-            <Tooltip content="Set period filter to the current system month and year" position="bottom">
-              <button
-                type="button"
-                onClick={handleSetCurrentMonth}
-                className="flex-1 sm:flex-initial min-h-[40px] flex items-center justify-center gap-1.5 px-3 py-2 bg-neutral-700 hover:bg-neutral-600 text-white rounded text-xs font-semibold transition border border-neutral-500 shadow-xs cursor-pointer"
-                title="Set period filter to the current system month and year"
-              >
-                <Calendar className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Current Month</span>
-              </button>
-            </Tooltip>
+            {/* Date Filter Inputs & Action Buttons */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 text-xs">
+              {/* Start and End Selectors */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full lg:w-auto">
+                {/* Start Month & Year */}
+                <div className={`flex items-center justify-between bg-[#282d30] px-3 py-2 rounded border transition min-h-[42px] flex-1 sm:flex-initial sm:w-auto ${filterByPeriod ? 'border-neutral-600' : 'border-neutral-700 opacity-60'}`}>
+                  <span className="text-neutral-400 font-semibold mr-2 uppercase text-[10px] shrink-0">
+                    Start:
+                  </span>
+                  <div className="flex items-center gap-2 flex-1 sm:flex-initial justify-end">
+                    <select
+                      value={period.startMonth}
+                      onChange={(e) => {
+                        setFilterByPeriod(true);
+                        setPeriod((prev) => ({ ...prev, startMonth: e.target.value }));
+                      }}
+                      className="bg-transparent text-white font-medium focus:outline-hidden cursor-pointer text-xs truncate"
+                    >
+                      {MONTH_NAMES.map((m) => (
+                        <option key={m} value={m} className="bg-neutral-800 text-white">
+                          {m}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      type="number"
+                      value={period.startYear}
+                      onChange={(e) => {
+                        setFilterByPeriod(true);
+                        setPeriod((prev) => ({ ...prev, startYear: parseInt(e.target.value) || new Date().getFullYear() }));
+                      }}
+                      className="w-16 min-w-[3.5rem] bg-transparent text-white text-right font-medium focus:outline-hidden border-l border-neutral-700 pl-2 shrink-0"
+                    />
+                  </div>
+                </div>
 
-            {/* PDF Export Button */}
-            <Tooltip content="Generate and download a high-resolution printable PDF statement" position="bottom">
-              <button
-                type="button"
-                onClick={handleExportPdf}
-                disabled={isExportingPdf}
-                className="w-full sm:w-auto min-h-[40px] flex items-center justify-center gap-1.5 px-3.5 py-2 bg-emerald-800 hover:bg-emerald-700 disabled:opacity-60 text-white rounded text-xs font-semibold transition shadow-xs border border-emerald-600 cursor-pointer"
-                title="Export statement as PDF document"
-              >
-                {isExportingPdf ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                ) : (
-                  <FileDown className="w-3.5 h-3.5" />
+                {/* End Month & Year */}
+                <div className={`flex items-center justify-between bg-[#282d30] px-3 py-2 rounded border transition min-h-[42px] flex-1 sm:flex-initial sm:w-auto ${filterByPeriod ? 'border-neutral-600' : 'border-neutral-700 opacity-60'}`}>
+                  <span className="text-neutral-400 font-semibold mr-2 uppercase text-[10px] shrink-0">
+                    End:
+                  </span>
+                  <div className="flex items-center gap-2 flex-1 sm:flex-initial justify-end">
+                    <select
+                      value={period.endMonth}
+                      onChange={(e) => {
+                        setFilterByPeriod(true);
+                        setPeriod((prev) => ({ ...prev, endMonth: e.target.value }));
+                      }}
+                      className="bg-transparent text-white font-medium focus:outline-hidden cursor-pointer text-xs truncate"
+                    >
+                      {MONTH_NAMES.map((m) => (
+                        <option key={m} value={m} className="bg-neutral-800 text-white">
+                          {m}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      type="number"
+                      value={period.endYear}
+                      onChange={(e) => {
+                        setFilterByPeriod(true);
+                        setPeriod((prev) => ({ ...prev, endYear: parseInt(e.target.value) || new Date().getFullYear() }));
+                      }}
+                      className="w-16 min-w-[3.5rem] bg-transparent text-white text-right font-medium focus:outline-hidden border-l border-neutral-700 pl-2 shrink-0"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons in a responsive grid for mobile, flex for desktop */}
+              <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+                {/* Contextual Guide Popup Button */}
+                {onOpenHelp && (
+                  <Tooltip content="Open operational guide and button explanations for Financial Statements" position="bottom">
+                    <button
+                      type="button"
+                      onClick={onOpenHelp}
+                      className="flex-1 sm:flex-initial min-h-[40px] flex items-center justify-center gap-1.5 px-3 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white rounded text-xs font-semibold transition border border-neutral-600 shadow-xs cursor-pointer"
+                      title="Open operational guide"
+                    >
+                      <BookOpen className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>Guide</span>
+                    </button>
+                  </Tooltip>
                 )}
-                <span>{isExportingPdf ? 'Exporting...' : 'Export PDF'}</span>
-              </button>
-            </Tooltip>
+
+                {/* Current Month Quick Filter Button */}
+                <Tooltip content="Set period filter to the current system month and year" position="bottom">
+                  <button
+                    type="button"
+                    onClick={handleSetCurrentMonth}
+                    className="flex-1 sm:flex-initial min-h-[40px] flex items-center justify-center gap-1.5 px-3 py-2 bg-neutral-700 hover:bg-neutral-600 text-white rounded text-xs font-semibold transition border border-neutral-500 shadow-xs cursor-pointer"
+                    title="Set period filter to the current system month and year"
+                  >
+                    <Calendar className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Current Month</span>
+                  </button>
+                </Tooltip>
+
+                {/* PDF Export Button */}
+                <Tooltip content="Generate and download a high-resolution printable PDF statement" position="bottom">
+                  <button
+                    type="button"
+                    onClick={handleExportPdf}
+                    disabled={isExportingPdf}
+                    className="w-full sm:w-auto min-h-[40px] flex items-center justify-center gap-1.5 px-3.5 py-2 bg-emerald-800 hover:bg-emerald-700 disabled:opacity-60 text-white rounded text-xs font-semibold transition shadow-xs border border-emerald-600 cursor-pointer"
+                    title="Export statement as PDF document"
+                  >
+                    {isExportingPdf ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <FileDown className="w-3.5 h-3.5" />
+                    )}
+                    <span>{isExportingPdf ? 'Exporting...' : 'Export PDF'}</span>
+                  </button>
+                </Tooltip>
+              </div>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* ================= PRINTABLE FINANCIAL STATEMENT AREA ================= */}
@@ -1795,7 +1852,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <p className="text-xs text-neutral-300 font-medium">
                 {!filterByPeriod
                   ? 'All-Time Financial History (All Logged Records)'
-                  : `Personal Cashflow & Balance Sheet Statement · ${period.startMonth} ${period.startYear} – ${period.endMonth} ${period.endYear}`}
+                  : `Personal Cashflow & Balance Sheet Statement · ${period.startMonth} ${period.startYear} to ${period.endMonth} ${period.endYear}`}
               </p>
             </div>
             <div className="text-left sm:text-right font-mono text-[11px] text-neutral-300 flex flex-col sm:items-end">
@@ -1806,7 +1863,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               }`}>
                 {!filterByPeriod
                   ? 'Quick Select: All Time History'
-                  : `Period: ${period.startMonth} ${period.startYear} – ${period.endMonth} ${period.endYear}`}
+                  : `Period: ${period.startMonth} ${period.startYear} to ${period.endMonth} ${period.endYear}`}
               </span>
               <span className="text-neutral-400 text-[10px] mt-0.5">
                 Currency: {currencySymbol} · Records: {periodTransactions.length}

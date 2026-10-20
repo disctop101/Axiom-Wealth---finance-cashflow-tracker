@@ -116,7 +116,7 @@ export const LandingPage: React.FC<{ onSignIn: () => void; onSignUp: () => void 
         <p className="text-sm sm:text-base text-neutral-300 max-w-2xl mx-auto leading-relaxed">
           {APP_NAME} is a personal finance web app for individuals who want to understand where their
           money goes. It helps you record your income and expenses, track what you own and owe, and
-          view clear cashflow statements and a balance sheet &mdash; so you can build better financial
+          view clear cashflow statements and a balance sheet so you can build better financial
           habits and learn how your cashflow really works.
         </p>
         <div className="flex flex-wrap justify-center gap-3 pt-2">
@@ -277,9 +277,9 @@ export const PrivacyPolicyPage: React.FC = () => (
 
       <Section title="6. Sharing">
         <p>
-          We share data only with service providers needed to operate the app &mdash; Google
+          We share data only with service providers needed to operate the app, including Google
           (Firebase Authentication, Firestore, Google Sheets when you request an export) and Stripe
-          (payments) &mdash; and when required by law. We never sell your information.
+          (payments), and when required by law. We never sell your information.
         </p>
       </Section>
 

@@ -693,39 +693,41 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
               </div>
 
               {/* Progressive Web App (PWA) & Offline Mode */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-neutral-50 rounded-lg border border-neutral-200">
-                <div>
-                  <div className="font-bold text-neutral-900 flex items-center gap-2">
-                    <Smartphone className="w-4 h-4 text-emerald-600" />
-                    <span>Progressive Web App (PWA)</span>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-neutral-50 dark:bg-neutral-850 rounded-lg border border-neutral-200 dark:border-neutral-700/80">
+                <div className="space-y-1 min-w-0 flex-1">
+                  <div className="font-bold text-neutral-900 dark:text-white flex flex-wrap items-center gap-2">
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <Smartphone className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                      <span>Progressive Web App (PWA)</span>
+                    </div>
                     <span
-                      className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                      className={`text-[10px] px-2 py-0.5 rounded-full font-bold shrink-0 ${
                         isInstalled
-                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                          : 'bg-neutral-200 text-neutral-700'
+                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-600'
+                          : 'bg-neutral-200 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 border border-neutral-300 dark:border-neutral-700'
                       }`}
                     >
                       {isInstalled ? 'STANDALONE APP' : 'WEB BROWSER'}
                     </span>
                     {offlineReady && (
-                      <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-cyan-100 text-cyan-800 border border-cyan-300">
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-cyan-100 text-cyan-800 dark:bg-cyan-950 dark:text-cyan-300 border border-cyan-300 dark:border-cyan-600 shrink-0">
                         OFFLINE CACHED
                       </span>
                     )}
                   </div>
-                  <div className="text-neutral-500 text-[11px] mt-0.5 max-w-xl">
+                  <div className="text-neutral-500 dark:text-neutral-400 text-[11px] leading-relaxed max-w-xl">
                     {isInstalled
                       ? 'Axiom Wealth is running as an installed native app with offline cache and instant loading.'
                       : 'Install Axiom Wealth to your desktop or mobile device for full offline access, faster boot times, and a standalone native app experience.'}
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+                <div className="flex items-center gap-2 self-start sm:self-auto shrink-0 w-full sm:w-auto">
                   {needRefresh && (
                     <button
                       type="button"
                       onClick={updateApp}
-                      className="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded font-bold text-xs shadow-xs transition cursor-pointer flex items-center gap-1.5"
+                      className="w-full sm:w-auto px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded font-bold text-xs shadow-xs transition cursor-pointer flex items-center justify-center gap-1.5"
                     >
                       <RotateCcw className="w-3.5 h-3.5" />
                       <span>Update App</span>
@@ -735,7 +737,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                     <button
                       type="button"
                       onClick={triggerInstall}
-                      className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded font-bold text-xs shadow-xs transition cursor-pointer flex items-center gap-1.5"
+                      className="w-full sm:w-auto px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded font-bold text-xs shadow-xs transition cursor-pointer flex items-center justify-center gap-1.5"
                     >
                       <Download className="w-3.5 h-3.5" />
                       <span>Install Axiom Wealth</span>

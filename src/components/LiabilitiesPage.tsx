@@ -437,25 +437,25 @@ export const LiabilitiesPage: React.FC<LiabilitiesPageProps> = ({
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 bg-white p-2.5 border border-neutral-300">
-        <div className="relative flex-1">
-          <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-400" />
+      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2.5 bg-white p-3 border border-neutral-300 w-full shadow-2xs">
+        <div className="relative flex-1 w-full">
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
           <input
             type="text"
             placeholder="Search by loan title, lender, or notes..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-8 pr-3 py-1.5 text-xs bg-neutral-50 border border-neutral-300 rounded focus:bg-white focus:outline-hidden"
+            className="w-full pl-9 pr-3 py-2 text-xs bg-neutral-50 border border-neutral-300 rounded focus:bg-white focus:outline-hidden"
           />
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex items-center gap-1.5">
-            <Filter className="w-3.5 h-3.5 text-neutral-500" />
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto">
+          <div className="flex items-center gap-2 flex-1 sm:flex-initial">
+            <Filter className="w-4 h-4 text-neutral-500 shrink-0" />
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="text-xs bg-neutral-50 border border-neutral-300 py-1.5 px-2.5 rounded focus:outline-hidden cursor-pointer"
+              className="text-xs bg-neutral-50 border border-neutral-300 py-2 px-3 rounded focus:outline-hidden cursor-pointer w-full sm:w-auto"
             >
               <option value="all">All Debt Categories</option>
               {CATEGORIES.map((c) => (
@@ -469,14 +469,14 @@ export const LiabilitiesPage: React.FC<LiabilitiesPageProps> = ({
           <button
             type="button"
             onClick={() => setShowSettled(!showSettled)}
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded border transition cursor-pointer ${
+            className={`inline-flex items-center justify-center gap-2 px-3 py-2 text-xs font-semibold rounded border transition cursor-pointer shrink-0 ${
               showSettled
                 ? 'bg-emerald-50 text-emerald-800 border-emerald-400'
                 : 'bg-neutral-100 text-neutral-700 border-neutral-300 hover:bg-neutral-200'
             }`}
             title="Toggle visibility of fully settled / paid-off liabilities"
           >
-            <CheckCircle2 className={`w-3.5 h-3.5 ${showSettled ? 'text-emerald-600' : 'text-neutral-400'}`} />
+            <CheckCircle2 className={`w-4 h-4 ${showSettled ? 'text-emerald-600' : 'text-neutral-400'}`} />
             <span>Show Settled Liabilities</span>
             <span
               className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold font-mono ${
@@ -490,72 +490,72 @@ export const LiabilitiesPage: React.FC<LiabilitiesPageProps> = ({
       </div>
 
       {/* Liabilities Table with Contrasting Grey Rows */}
-      <div className="border border-neutral-300 bg-white shadow-xs overflow-x-auto">
-        <table className="w-full text-left text-xs border-collapse">
+      <div className="border border-neutral-300 bg-white shadow-xs overflow-x-auto w-full">
+        <table className="w-full text-left text-xs border-collapse min-w-[700px]">
           <thead>
-            <tr className="bg-[#2d3134] text-white uppercase text-[11px] font-bold select-none">
+            <tr className="bg-[#2d3134] text-white uppercase text-[11px] font-bold select-none whitespace-nowrap">
               <th
-                className="py-2.5 px-3 cursor-pointer hover:bg-neutral-700 transition"
+                className="py-3 px-3.5 cursor-pointer hover:bg-neutral-700 transition"
                 onClick={() => handleSort('name')}
               >
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1.5">
                   <span>Debt / Obligation Name</span>
                   {sortField === 'name' ? (
-                    sortDirection === 'asc' ? <ArrowUp className="w-3 h-3 text-cyan-400" /> : <ArrowDown className="w-3 h-3 text-cyan-400" />
+                    sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-cyan-400" /> : <ArrowDown className="w-3.5 h-3.5 text-cyan-400" />
                   ) : (
-                    <ArrowUpDown className="w-3 h-3 text-neutral-400" />
+                    <ArrowUpDown className="w-3.5 h-3.5 text-neutral-400" />
                   )}
                 </div>
               </th>
               <th
-                className="py-2.5 px-3 cursor-pointer hover:bg-neutral-700 transition"
+                className="py-3 px-3.5 cursor-pointer hover:bg-neutral-700 transition"
                 onClick={() => handleSort('category')}
               >
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1.5">
                   <span>Category</span>
                   {sortField === 'category' ? (
-                    sortDirection === 'asc' ? <ArrowUp className="w-3 h-3 text-cyan-400" /> : <ArrowDown className="w-3 h-3 text-cyan-400" />
+                    sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-cyan-400" /> : <ArrowDown className="w-3.5 h-3.5 text-cyan-400" />
                   ) : (
-                    <ArrowUpDown className="w-3 h-3 text-neutral-400" />
+                    <ArrowUpDown className="w-3.5 h-3.5 text-neutral-400" />
                   )}
                 </div>
               </th>
               <th
-                className="py-2.5 px-3 font-mono cursor-pointer hover:bg-neutral-700 transition"
+                className="py-3 px-3.5 font-mono cursor-pointer hover:bg-neutral-700 transition"
                 onClick={() => handleSort('date')}
               >
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1.5">
                   <span>Origination Date</span>
                   {sortField === 'date' ? (
-                    sortDirection === 'asc' ? <ArrowUp className="w-3 h-3 text-cyan-400" /> : <ArrowDown className="w-3 h-3 text-cyan-400" />
+                    sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-cyan-400" /> : <ArrowDown className="w-3.5 h-3.5 text-cyan-400" />
                   ) : (
-                    <ArrowUpDown className="w-3 h-3 text-neutral-400" />
+                    <ArrowUpDown className="w-3.5 h-3.5 text-neutral-400" />
                   )}
                 </div>
               </th>
               <th
-                className="py-2.5 px-3 cursor-pointer hover:bg-neutral-700 transition"
+                className="py-3 px-3.5 cursor-pointer hover:bg-neutral-700 transition"
                 onClick={() => handleSort('lender')}
               >
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1.5">
                   <span>Lender / Creditor</span>
                   {sortField === 'lender' ? (
-                    sortDirection === 'asc' ? <ArrowUp className="w-3 h-3 text-cyan-400" /> : <ArrowDown className="w-3 h-3 text-cyan-400" />
+                    sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-cyan-400" /> : <ArrowDown className="w-3.5 h-3.5 text-cyan-400" />
                   ) : (
-                    <ArrowUpDown className="w-3 h-3 text-neutral-400" />
+                    <ArrowUpDown className="w-3.5 h-3.5 text-neutral-400" />
                   )}
                 </div>
               </th>
               <th
-                className="py-2.5 px-3 text-right cursor-pointer hover:bg-neutral-700 transition"
+                className="py-3 px-3.5 text-right cursor-pointer hover:bg-neutral-700 transition"
                 onClick={() => handleSort('payments')}
               >
-                <div className="flex items-center justify-end gap-1">
+                <div className="flex items-center justify-end gap-1.5">
                   <span>Payments Logged</span>
                   {sortField === 'payments' ? (
-                    sortDirection === 'asc' ? <ArrowUp className="w-3 h-3 text-cyan-400" /> : <ArrowDown className="w-3 h-3 text-cyan-400" />
+                    sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-cyan-400" /> : <ArrowDown className="w-3.5 h-3.5 text-cyan-400" />
                   ) : (
-                    <ArrowUpDown className="w-3 h-3 text-neutral-400" />
+                    <ArrowUpDown className="w-3.5 h-3.5 text-neutral-400" />
                   )}
                 </div>
               </th>
