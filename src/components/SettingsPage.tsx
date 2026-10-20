@@ -27,8 +27,11 @@ import {
   Palette,
   HelpCircle,
   BookOpen,
+  Smartphone,
+  Download,
 } from 'lucide-react';
 import { useTooltips } from '../context/TooltipContext';
+import { usePwa } from '../context/PwaContext';
 import { Tooltip } from './Tooltip';
 import {
   loadCategoryColors,
@@ -98,6 +101,9 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 }) => {
   // Master Tooltip Toggle State
   const { tooltipsEnabled, toggleTooltips } = useTooltips();
+
+  // PWA & Service Worker Status
+  const { isInstalled, canInstall, triggerInstall, needRefresh, updateApp, offlineReady } = usePwa();
 
   // Active Subtab State
   const isAdmin = isOwnerUser(user);
@@ -665,6 +671,58 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                   <ExternalLink className="w-3.5 h-3.5" />
                   <span>Launch Sheets Export</span>
                 </button>
+              </div>
+
+              {/* Progressive Web App (PWA) & Offline Mode */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-neutral-50 rounded-lg border border-neutral-200">
+                <div>
+                  <div className="font-bold text-neutral-900 flex items-center gap-2">
+                    <Smartphone className="w-4 h-4 text-emerald-600" />
+                    <span>Progressive Web App (PWA)</span>
+                    <span
+                      className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                        isInstalled
+                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                          : 'bg-neutral-200 text-neutral-700'
+                      }`}
+                    >
+                      {isInstalled ? 'STANDALONE APP' : 'WEB BROWSER'}
+                    </span>
+                    {offlineReady && (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-cyan-100 text-cyan-800 border border-cyan-300">
+                        OFFLINE CACHED
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-neutral-500 text-[11px] mt-0.5 max-w-xl">
+                    {isInstalled
+                      ? 'Axiom Wealth is running as an installed native app with offline cache and instant loading.'
+                      : 'Install Axiom Wealth to your desktop or mobile device for full offline access, faster boot times, and a standalone native app experience.'}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+                  {needRefresh && (
+                    <button
+                      type="button"
+                      onClick={updateApp}
+                      className="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded font-bold text-xs shadow-xs transition cursor-pointer flex items-center gap-1.5"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span>Update App</span>
+                    </button>
+                  )}
+                  {!isInstalled && (
+                    <button
+                      type="button"
+                      onClick={triggerInstall}
+                      className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded font-bold text-xs shadow-xs transition cursor-pointer flex items-center gap-1.5"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>Install Axiom Wealth</span>
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>

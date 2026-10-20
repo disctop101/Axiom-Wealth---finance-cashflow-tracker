@@ -4,6 +4,7 @@ import App from './App.tsx';
 import './index.css';
 import { TooltipProvider } from './context/TooltipContext.tsx';
 import { ThemeProvider } from './context/ThemeContext.tsx';
+import { PwaProvider } from './context/PwaContext.tsx';
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
@@ -144,7 +145,9 @@ createRoot(document.getElementById('root')!).render(
   <RootErrorBoundary>
     <ThemeProvider>
       <TooltipProvider>
-        <App />
+        <PwaProvider>
+          <App />
+        </PwaProvider>
       </TooltipProvider>
     </ThemeProvider>
   </RootErrorBoundary>

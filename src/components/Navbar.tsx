@@ -23,6 +23,7 @@ import {
   Sun,
   Shield,
   PlusCircle,
+  Download,
 } from 'lucide-react';
 import {
   CurrencyConfig,
@@ -39,6 +40,7 @@ import {
 } from './RecurringExpensesSection';
 import { useTooltips } from '../context/TooltipContext';
 import { useTheme } from '../context/ThemeContext';
+import { usePwa } from '../context/PwaContext';
 import { Tooltip } from './Tooltip';
 
 export type AppNavTab =
@@ -107,6 +109,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   const { tooltipsEnabled, toggleTooltips } = useTooltips();
   // Master Dark/Light Mode toggle
   const { theme, isDark, toggleTheme } = useTheme();
+  // PWA Install API
+  const { canInstall, isInstalled, triggerInstall } = usePwa();
 
   const navContainerRef = useRef<HTMLDivElement>(null);
 
@@ -434,6 +438,21 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </button>
               </Tooltip>
 
+              {/* PWA Install Button (Desktop & Tablet) */}
+              {!isInstalled && (
+                <Tooltip content="Install Axiom Wealth to desktop / home screen" position="bottom">
+                  <button
+                    type="button"
+                    onClick={triggerInstall}
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-emerald-400 hover:text-emerald-300 border border-neutral-700 hover:border-emerald-600 rounded text-xs font-medium transition cursor-pointer"
+                    title="Install Axiom Wealth PWA"
+                  >
+                    <Download className="w-3.5 h-3.5 shrink-0" />
+                    <span className="hidden xl:inline">Install App</span>
+                  </button>
+                </Tooltip>
+              )}
+
 
 
 
@@ -755,6 +774,26 @@ export const Navbar: React.FC<NavbarProps> = ({
                           {isDark ? 'DARK' : 'LIGHT'}
                         </span>
                       </button>
+
+                      {/* PWA Install App in Profile Dropdown */}
+                      {!isInstalled && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsProfileOpen(false);
+                            triggerInstall();
+                          }}
+                          className="w-full flex items-center justify-between px-3.5 py-2 text-left hover:bg-neutral-800 transition cursor-pointer"
+                        >
+                          <div className="flex items-center gap-2 text-neutral-200">
+                            <Download className="w-4 h-4 text-emerald-400" />
+                            <span>Install App</span>
+                          </div>
+                          <span className="text-[10px] text-emerald-400 font-mono bg-emerald-950/80 px-1.5 py-0.5 rounded border border-emerald-800">
+                            PWA
+                          </span>
+                        </button>
+                      )}
                     </div>
 
                     {/* Authentication Section */}
@@ -915,6 +954,23 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <span>Settings &amp; Utilities</span>
                 </div>
               </button>
+
+              {!isInstalled && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsProfileOpen(false);
+                    triggerInstall();
+                  }}
+                  className="w-full flex items-center justify-between py-2 text-neutral-200 text-xs hover:bg-neutral-800 px-2 rounded transition cursor-pointer"
+                >
+                  <div className="flex items-center gap-2">
+                    <Download className="w-4 h-4 text-emerald-400" />
+                    <span>Install App (PWA)</span>
+                  </div>
+                  <span className="text-[10px] text-emerald-400 font-mono">Install</span>
+                </button>
+              )}
 
               {user ? (
                 <button

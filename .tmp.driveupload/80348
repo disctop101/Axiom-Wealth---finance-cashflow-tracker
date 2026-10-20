@@ -1,0 +1,5 @@
+import { registerPlugin } from "./@capacitor_core.js";
+//#region node_modules/@capacitor-community/file-opener/dist/esm/index.js
+var FileOpener = registerPlugin("FileOpener");
+//#endregion
+export { FileOpener };

@@ -86,6 +86,7 @@ import { HelpModal } from './components/HelpModal';
 import { ContextualGuideModal } from './components/ContextualGuideModal';
 import { AuthModal } from './components/AuthModal';
 import { QuickLogModal } from './components/QuickLogModal';
+import { PwaInstallPrompt } from './components/PwaInstallPrompt';
 import { MobileNavDrawer } from './components/MobileNavDrawer';
 import {
   computeUserAccess,
@@ -1427,6 +1428,9 @@ export default function App() {
         currencySymbol={currency.symbol}
         onAddTransaction={handleAddTransaction}
       />
+
+      {/* Progressive Web App (PWA) Install Prompts & Offline Banners */}
+      <PwaInstallPrompt />
 
       {/* Mobile Navigation Drawer */}
       <MobileNavDrawer

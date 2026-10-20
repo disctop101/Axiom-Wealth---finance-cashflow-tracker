@@ -21,10 +21,12 @@ import {
   BookOpen,
   Moon,
   Sun,
+  Download,
 } from 'lucide-react';
 import { AppNavTab } from './Navbar';
 import { useTooltips } from '../context/TooltipContext';
 import { useTheme } from '../context/ThemeContext';
+import { usePwa } from '../context/PwaContext';
 
 interface MobileNavDrawerProps {
   isOpen: boolean;
@@ -53,6 +55,7 @@ export const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({
 }) => {
   const { tooltipsEnabled, toggleTooltips } = useTooltips();
   const { isDark, toggleTheme } = useTheme();
+  const { canInstall, isInstalled, triggerInstall } = usePwa();
 
   // Accordion open states
   const isToolsActive =
@@ -441,6 +444,33 @@ export const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({
                   {isDark ? 'DARK' : 'LIGHT'}
                 </span>
               </button>
+
+              {/* Install Axiom Wealth PWA Button */}
+              {!isInstalled && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    triggerInstall();
+                  }}
+                  className="w-full flex items-center justify-between px-3.5 py-2 rounded-lg text-xs font-semibold text-neutral-200 hover:bg-neutral-800/80 transition cursor-pointer"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-7 h-7 rounded-md bg-emerald-950/90 border border-emerald-700/60 flex items-center justify-center text-emerald-400 shrink-0">
+                      <Download className="w-4 h-4" />
+                    </div>
+                    <div className="text-left">
+                      <div className="text-xs font-bold text-white">Install Axiom Wealth</div>
+                      <div className="text-[10px] text-neutral-400">
+                        Add to home screen / standalone app
+                      </div>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-700">
+                    Install
+                  </span>
+                </button>
+              )}
             </div>
           )}
         </div>
