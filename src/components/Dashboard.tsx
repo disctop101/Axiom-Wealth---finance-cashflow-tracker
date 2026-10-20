@@ -1573,37 +1573,27 @@ export const Dashboard: React.FC<DashboardProps> = ({
       {/* ================= TOP CONTROL BAR (OUTSIDE PRINTABLE FINANCIAL STATEMENT AREA) ================= */}
       <div className="bg-[#1f2324] text-white rounded-lg border border-neutral-700 shadow-md print:hidden overflow-hidden">
         {/* Accordion Summary Header Bar (Always visible, click to toggle full controls) */}
-        <div className="p-3 sm:p-3.5 bg-neutral-900/80 border-b border-neutral-800 flex flex-wrap items-center justify-between gap-2.5">
-          <div className="flex flex-wrap items-center gap-2">
+        <div className="p-3 sm:p-3.5 bg-neutral-900/80 border-b border-neutral-800 flex items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2 min-w-0">
             <button
               type="button"
               onClick={() => setIsControlsExpanded((prev) => !prev)}
               className="flex items-center gap-2 text-xs font-bold text-white hover:text-emerald-400 transition cursor-pointer"
               title="Toggle statement controls and filters"
             >
-              <div className="w-6 h-6 rounded-md bg-neutral-800 border border-neutral-700 flex items-center justify-center text-emerald-400">
+              <div className="w-6 h-6 rounded-md bg-neutral-800 border border-neutral-700 flex items-center justify-center text-emerald-400 shrink-0">
                 <SlidersHorizontal className="w-3.5 h-3.5" />
               </div>
               <span className="uppercase tracking-wider">Statement Filters &amp; Controls</span>
               {isControlsExpanded ? (
-                <ChevronUp className="w-4 h-4 text-neutral-400" />
+                <ChevronUp className="w-4 h-4 text-neutral-400 shrink-0" />
               ) : (
-                <ChevronDown className="w-4 h-4 text-neutral-400" />
+                <ChevronDown className="w-4 h-4 text-neutral-400 shrink-0" />
               )}
             </button>
-
-            {/* Compact summary pill when collapsed */}
-            <span className="text-[11px] font-mono text-emerald-400 bg-emerald-950/70 border border-emerald-600/50 px-2.5 py-0.5 rounded-full flex items-center gap-1.5">
-              <Clock className="w-3 h-3 shrink-0" />
-              <span>
-                {!filterByPeriod
-                  ? 'All-Time Records'
-                  : `Active: ${period.startMonth} to ${period.endMonth} ${period.endYear}`}
-              </span>
-            </span>
           </div>
 
-          <div className="flex items-center gap-2 ml-auto">
+          <div className="flex items-center gap-2 shrink-0">
             <button
               type="button"
               onClick={() => setIsControlsExpanded((prev) => !prev)}

@@ -565,37 +565,37 @@ export const AssetsPage: React.FC<AssetsPageProps> = ({
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-        <div className="bg-white p-3 border border-neutral-300 shadow-xs">
-          <div className="text-neutral-500 font-medium">Auto-Computed Total Assets</div>
-          <div className="text-base sm:text-lg font-bold font-mono text-neutral-900 mt-1">
+        <div className="bg-white dark:bg-[#1a1f20] p-3 border border-neutral-300 dark:border-neutral-700 shadow-xs">
+          <div className="text-neutral-500 dark:text-neutral-400 font-medium">Auto-Computed Total Assets</div>
+          <div className="text-base sm:text-lg font-bold font-mono text-neutral-900 dark:text-white mt-1">
             {formatCurrency(totalAssetValue, currencySymbol)}
           </div>
-          <div className="text-[10px] text-emerald-600 mt-0.5">
+          <div className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-0.5">
             Synchronizes with Dashboard Balance Sheet
           </div>
         </div>
 
-        <div className="bg-white p-3 border border-neutral-300 shadow-xs flex flex-col justify-between">
+        <div className="bg-white dark:bg-[#1a1f20] p-3 border border-neutral-300 dark:border-neutral-700 shadow-xs flex flex-col justify-between">
           <div>
-            <div className="text-neutral-500 font-medium">Liquid Cash &amp; Bank</div>
-            <div className="text-base sm:text-lg font-bold font-mono text-emerald-700 mt-1">
+            <div className="text-neutral-500 dark:text-neutral-400 font-medium">Liquid Cash &amp; Bank</div>
+            <div className="text-base sm:text-lg font-bold font-mono text-emerald-700 dark:text-emerald-400 mt-1">
               {formatCurrency(effectiveLiquidCash, currencySymbol)}
             </div>
-            <div className="text-[10px] text-neutral-400 mt-0.5">Cash and cash equivalents</div>
+            <div className="text-[10px] text-neutral-400 dark:text-neutral-500 mt-0.5">Cash and cash equivalents</div>
           </div>
           <button
             type="button"
             onClick={() => openAdjustModal()}
-            className="mt-2.5 self-start inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-700 hover:bg-emerald-600 text-white rounded text-[11px] font-semibold transition shadow-xs"
+            className="mt-2.5 self-start inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-700 hover:bg-emerald-600 text-white rounded text-[11px] font-semibold transition shadow-xs cursor-pointer"
           >
             <Scale className="w-3.5 h-3.5" />
             <span>Adjust Balance</span>
           </button>
         </div>
 
-        <div className="bg-white p-3 border border-neutral-300 shadow-xs">
-          <div className="text-neutral-500 font-medium">Investments &amp; Equities</div>
-          <div className="text-base sm:text-lg font-bold font-mono text-blue-700 mt-1">
+        <div className="bg-white dark:bg-[#1a1f20] p-3 border border-neutral-300 dark:border-neutral-700 shadow-xs">
+          <div className="text-neutral-500 dark:text-neutral-400 font-medium">Investments &amp; Equities</div>
+          <div className="text-base sm:text-lg font-bold font-mono text-blue-700 dark:text-blue-400 mt-1">
             {formatCurrency(
               assets
                 .filter((a) => a.category === 'Stocks' || a.category === 'Investment accounts' || a.category === 'Retirement accounts')
@@ -603,12 +603,12 @@ export const AssetsPage: React.FC<AssetsPageProps> = ({
               currencySymbol
             )}
           </div>
-          <div className="text-[10px] text-neutral-400 mt-0.5">Stocks, mutual funds, REITs</div>
+          <div className="text-[10px] text-neutral-400 dark:text-neutral-500 mt-0.5">Stocks, mutual funds, REITs</div>
         </div>
 
-        <div className="bg-white p-3 border border-neutral-300 shadow-xs">
-          <div className="text-neutral-500 font-medium">Property, Real Estate &amp; Other</div>
-          <div className="text-base sm:text-lg font-bold font-mono text-neutral-800 mt-1">
+        <div className="bg-white dark:bg-[#1a1f20] p-3 border border-neutral-300 dark:border-neutral-700 shadow-xs">
+          <div className="text-neutral-500 dark:text-neutral-400 font-medium">Property, Real Estate &amp; Other</div>
+          <div className="text-base sm:text-lg font-bold font-mono text-neutral-800 dark:text-neutral-100 mt-1">
             {formatCurrency(
               assets
                 .filter(
@@ -621,22 +621,22 @@ export const AssetsPage: React.FC<AssetsPageProps> = ({
               currencySymbol
             )}
           </div>
-          <div className="text-[10px] text-neutral-400 mt-0.5">
+          <div className="text-[10px] text-neutral-400 dark:text-neutral-500 mt-0.5">
             {assets.length} accounts tracked
           </div>
         </div>
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="flex flex-col sm:flex-row gap-2 bg-white p-2.5 border border-neutral-300">
+      <div className="flex flex-col sm:flex-row gap-2 bg-white dark:bg-[#1a1f20] p-2.5 border border-neutral-300 dark:border-neutral-700">
         <div className="relative flex-1">
-          <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-400" />
+          <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500" />
           <input
             type="text"
             placeholder="Search by asset name, ticker/code, broker, institution..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-8 pr-3 py-1.5 text-xs bg-neutral-50 border border-neutral-300 rounded focus:bg-white focus:outline-hidden"
+            className="w-full pl-8 pr-3 py-1.5 text-xs bg-neutral-50 dark:bg-neutral-800/80 text-neutral-900 dark:text-neutral-100 border border-neutral-300 dark:border-neutral-700 rounded focus:bg-white dark:focus:bg-neutral-800 focus:outline-hidden"
           />
         </div>
 
@@ -647,18 +647,18 @@ export const AssetsPage: React.FC<AssetsPageProps> = ({
             className={`px-2.5 py-1 text-xs font-bold rounded flex items-center gap-1.5 transition cursor-pointer ${
               selectedCategory === 'Stocks'
                 ? 'bg-emerald-700 text-white shadow-xs'
-                : 'bg-neutral-100 hover:bg-neutral-200 text-neutral-700 border border-neutral-300'
+                : 'bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 border border-neutral-300 dark:border-neutral-700'
             }`}
           >
             <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
             <span>Stocks Ledger</span>
           </button>
 
-          <Filter className="w-3.5 h-3.5 text-neutral-500" />
+          <Filter className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400" />
           <select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
-            className="text-xs bg-neutral-50 border border-neutral-300 py-1.5 px-2.5 rounded focus:outline-hidden cursor-pointer"
+            className="text-xs bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 border border-neutral-300 dark:border-neutral-700 py-1.5 px-2.5 rounded focus:outline-hidden cursor-pointer"
           >
             <option value="all">All Asset Categories</option>
             {CATEGORIES.map((c) => (
@@ -673,7 +673,7 @@ export const AssetsPage: React.FC<AssetsPageProps> = ({
       {/* Conditionally Render Dedicated Stocks Portfolio Ledger OR General Asset Table */}
       {selectedCategory === 'Stocks' ? (
         /* ================= DEDICATED STOCKS PORTFOLIO LEDGER TABLE ================= */
-        <div className="border border-neutral-300 bg-white shadow-xs overflow-x-auto">
+        <div className="border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-[#1a1f20] shadow-xs overflow-x-auto">
           <div className="p-3 bg-neutral-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-neutral-700">
             <div className="flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-emerald-400" />
@@ -966,7 +966,7 @@ export const AssetsPage: React.FC<AssetsPageProps> = ({
         </div>
       ) : (
         /* ================= GENERAL ASSET TABLE WITH CONTRASTING GREY ROWS ================= */
-        <div className="border border-neutral-300 bg-white shadow-xs overflow-x-auto">
+        <div className="border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-[#1a1f20] shadow-xs overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="bg-[#2d3134] text-white uppercase text-[11px] font-bold select-none">
@@ -1051,10 +1051,10 @@ export const AssetsPage: React.FC<AssetsPageProps> = ({
                 <th className="py-2.5 px-3 text-center">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-neutral-200">
+            <tbody className="divide-y divide-neutral-200 dark:divide-neutral-700">
               {filteredAssets.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-neutral-500 italic">
+                  <td colSpan={7} className="py-8 text-center text-neutral-500 dark:text-neutral-400 italic">
                     No assets found. Click "Add New Asset" to create one.
                   </td>
                 </tr>
@@ -1079,17 +1079,17 @@ export const AssetsPage: React.FC<AssetsPageProps> = ({
                   return (
                     <tr
                       key={asset.id}
-                      className={`transition hover:bg-blue-50 cursor-pointer ${
-                        idx % 2 === 0 ? 'bg-white' : 'bg-[#f8f9fa]'
+                      className={`transition hover:bg-blue-50 dark:hover:bg-blue-950/30 cursor-pointer ${
+                        idx % 2 === 0 ? 'bg-white dark:bg-[#1a1f20]' : 'bg-[#f8f9fa] dark:bg-[#15191b]'
                       }`}
                       onClick={() => setSelectedAssetForHistory(asset)}
                       title="Click to view full transaction history"
                     >
                       <td className="py-2.5 px-3">
-                        <div className="font-semibold text-neutral-900 flex items-center gap-1.5 flex-wrap">
+                        <div className="font-semibold text-neutral-900 dark:text-white flex items-center gap-1.5 flex-wrap">
                           <span>{asset.name}</span>
                           {asset.stockCode && (
-                            <span className="text-[10px] font-mono px-1.5 py-0.2 bg-blue-100 text-blue-800 rounded font-bold border border-blue-200">
+                            <span className="text-[10px] font-mono px-1.5 py-0.2 bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 rounded font-bold border border-blue-200 dark:border-blue-800">
                               {asset.stockCode}
                             </span>
                           )}
@@ -1100,10 +1100,10 @@ export const AssetsPage: React.FC<AssetsPageProps> = ({
                                 e.stopPropagation();
                                 openAdjustModal(asset);
                               }}
-                              className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded text-[10px] font-bold transition shadow-2xs"
+                              className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-emerald-50 dark:bg-emerald-950/70 hover:bg-emerald-100 dark:hover:bg-emerald-900 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 rounded text-[10px] font-bold transition shadow-2xs"
                               title="Adjust Cash Balance against physical wallet/bank"
                             >
-                              <Scale className="w-3 h-3 text-emerald-600" />
+                              <Scale className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                               <span>Adjust Balance</span>
                             </button>
                           )}
@@ -1114,22 +1114,22 @@ export const AssetsPage: React.FC<AssetsPageProps> = ({
                         {isStockHolding && (
                           <div className="mt-1 flex flex-wrap items-center gap-1 text-[10px] font-mono">
                             {asset.broker && (
-                              <span className="px-1.5 py-0.2 bg-neutral-100 text-neutral-700 rounded border border-neutral-200">
+                              <span className="px-1.5 py-0.2 bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 rounded border border-neutral-200 dark:border-neutral-700">
                                 Broker: {asset.broker}
                               </span>
                             )}
                             {shares > 0 && (
-                              <span className="px-1.5 py-0.2 bg-blue-50 text-blue-800 rounded border border-blue-200">
+                              <span className="px-1.5 py-0.2 bg-blue-50 dark:bg-blue-950 text-blue-800 dark:text-blue-300 rounded border border-blue-200 dark:border-blue-800">
                                 {shares.toLocaleString()} shs @ {formatCurrency(avgCost, currencySymbol)}
                               </span>
                             )}
                             {curPrice > 0 && (
-                              <span className="px-1.5 py-0.2 bg-purple-50 text-purple-800 rounded border border-purple-200">
+                              <span className="px-1.5 py-0.2 bg-purple-50 dark:bg-purple-950 text-purple-800 dark:text-purple-300 rounded border border-purple-200 dark:border-purple-800">
                                 Mkt: {formatCurrency(curPrice, currencySymbol)}
                               </span>
                             )}
                             {fees > 0 && (
-                              <span className="px-1.5 py-0.2 bg-neutral-100 text-neutral-600 rounded">
+                              <span className="px-1.5 py-0.2 bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 rounded">
                                 Fees: {formatCurrency(fees, currencySymbol)}
                               </span>
                             )}
@@ -1137,15 +1137,15 @@ export const AssetsPage: React.FC<AssetsPageProps> = ({
                               <span
                                 className={`px-1.5 py-0.2 rounded font-bold ${
                                   isPositive
-                                    ? 'bg-emerald-100 text-emerald-800'
-                                    : 'bg-red-100 text-red-800'
+                                    ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300'
+                                    : 'bg-red-100 dark:bg-red-950 text-red-800 dark:text-red-300'
                                 }`}
                               >
                                 P/L: {isPositive ? '+' : ''}{formatCurrency(gainLoss, currencySymbol)} ({isPositive ? '+' : ''}{gainLossPct.toFixed(1)}%)
                               </span>
                             )}
                             {(asset.totalDividendsCollected || 0) > 0 && (
-                              <span className="px-1.5 py-0.2 bg-amber-50 text-amber-800 rounded border border-amber-200">
+                              <span className="px-1.5 py-0.2 bg-amber-50 dark:bg-amber-950 text-amber-800 dark:text-amber-300 rounded border border-amber-200 dark:border-amber-800">
                                 Div: {formatCurrency(asset.totalDividendsCollected || 0, currencySymbol)}
                               </span>
                             )}
@@ -1153,7 +1153,7 @@ export const AssetsPage: React.FC<AssetsPageProps> = ({
                         )}
 
                         {asset.notes && (
-                          <div className="text-[11px] text-neutral-500 italic truncate max-w-xs mt-0.5">
+                          <div className="text-[11px] text-neutral-500 dark:text-neutral-400 italic truncate max-w-xs mt-0.5">
                             {asset.notes}
                           </div>
                         )}
@@ -1161,21 +1161,21 @@ export const AssetsPage: React.FC<AssetsPageProps> = ({
                       <td className="py-2.5 px-3">
                         <div className="flex items-center gap-1.5">
                           {getCategoryIcon(asset.category)}
-                          <span className="text-neutral-700 font-medium">{asset.category}</span>
+                          <span className="text-neutral-700 dark:text-neutral-300 font-medium">{asset.category}</span>
                         </div>
                       </td>
-                      <td className="py-2.5 px-3 text-neutral-600 font-mono">
+                      <td className="py-2.5 px-3 text-neutral-600 dark:text-neutral-400 font-mono">
                         {asset.date || '2024-01-01'}
                       </td>
-                      <td className="py-2.5 px-3 text-neutral-600 font-mono">
+                      <td className="py-2.5 px-3 text-neutral-600 dark:text-neutral-400 font-mono">
                         {asset.broker || asset.institution || '-'}
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono text-neutral-700">
-                        <span className="px-1.5 py-0.5 rounded bg-neutral-200 text-neutral-800 text-[10px] font-bold">
+                      <td className="py-2.5 px-3 text-right font-mono text-neutral-700 dark:text-neutral-300">
+                        <span className="px-1.5 py-0.5 rounded bg-neutral-200 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 text-[10px] font-bold">
                           {txCount} txs
                         </span>
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono font-bold text-neutral-900 text-sm">
+                      <td className="py-2.5 px-3 text-right font-mono font-bold text-neutral-900 dark:text-white text-sm">
                         {formatCurrency(computedVal, currencySymbol)}
                       </td>
                       <td
@@ -1187,7 +1187,7 @@ export const AssetsPage: React.FC<AssetsPageProps> = ({
                             <button
                               type="button"
                               onClick={() => openAdjustModal(asset)}
-                              className="p-1 text-emerald-600 hover:bg-emerald-100 rounded transition"
+                              className="p-1 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-950 rounded transition"
                               title="Adjust Cash Balance"
                             >
                               <Scale className="w-3.5 h-3.5" />
@@ -1195,21 +1195,21 @@ export const AssetsPage: React.FC<AssetsPageProps> = ({
                           )}
                           <button
                             onClick={() => setSelectedAssetForHistory(asset)}
-                            className="p-1 text-blue-600 hover:bg-blue-100 rounded transition"
+                            className="p-1 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-950 rounded transition"
                             title="View transaction history"
                           >
                             <History className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => openEditAssetModal(asset)}
-                            className="p-1 text-neutral-500 hover:text-blue-600 hover:bg-neutral-100 rounded transition"
+                            className="p-1 text-neutral-500 dark:text-neutral-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded transition"
                             title="Edit asset details"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => setAssetToDelete(asset)}
-                            className="p-1 text-neutral-500 hover:text-red-600 hover:bg-neutral-100 rounded transition"
+                            className="p-1 text-neutral-500 dark:text-neutral-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded transition"
                             title="Delete asset"
                           >
                             <Trash2 className="w-3.5 h-3.5" />

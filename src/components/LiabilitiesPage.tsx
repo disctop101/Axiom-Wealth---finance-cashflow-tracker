@@ -393,69 +393,69 @@ export const LiabilitiesPage: React.FC<LiabilitiesPageProps> = ({
 
       {/* Summary KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-        <div className="bg-white p-3 border border-neutral-300 shadow-xs">
-          <div className="text-neutral-500 font-medium">Total Outstanding Debt</div>
-          <div className="text-base sm:text-lg font-bold font-mono text-red-700 mt-1">
+        <div className="bg-white dark:bg-[#1a1f20] p-3 border border-neutral-300 dark:border-neutral-700 shadow-xs">
+          <div className="text-neutral-500 dark:text-neutral-400 font-medium">Total Outstanding Debt</div>
+          <div className="text-base sm:text-lg font-bold font-mono text-red-700 dark:text-red-400 mt-1">
             {formatCurrency(totalOutstanding, currencySymbol)}
           </div>
-          <div className="text-[10px] text-neutral-500 mt-0.5">
+          <div className="text-[10px] text-neutral-500 dark:text-neutral-400 mt-0.5">
             Deducts logged payments automatically
           </div>
         </div>
 
-        <div className="bg-white p-3 border border-neutral-300 shadow-xs">
-          <div className="text-neutral-500 font-medium">Total Paid-To-Date</div>
-          <div className="text-base sm:text-lg font-bold font-mono text-emerald-700 mt-1">
+        <div className="bg-white dark:bg-[#1a1f20] p-3 border border-neutral-300 dark:border-neutral-700 shadow-xs">
+          <div className="text-neutral-500 dark:text-neutral-400 font-medium">Total Paid-To-Date</div>
+          <div className="text-base sm:text-lg font-bold font-mono text-emerald-700 dark:text-emerald-400 mt-1">
             {formatCurrency(totalPaymentsMade, currencySymbol)}
           </div>
-          <div className="text-[10px] text-neutral-400 mt-0.5">
+          <div className="text-[10px] text-neutral-400 dark:text-neutral-500 mt-0.5">
             {liabilityPayments.length} payments recorded
           </div>
         </div>
 
-        <div className="bg-white p-3 border border-neutral-300 shadow-xs">
-          <div className="text-neutral-500 font-medium">Debt-to-Asset Ratio</div>
-          <div className="text-base sm:text-lg font-bold font-mono text-neutral-800 mt-1">
+        <div className="bg-white dark:bg-[#1a1f20] p-3 border border-neutral-300 dark:border-neutral-700 shadow-xs">
+          <div className="text-neutral-500 dark:text-neutral-400 font-medium">Debt-to-Asset Ratio</div>
+          <div className="text-base sm:text-lg font-bold font-mono text-neutral-800 dark:text-neutral-100 mt-1">
             {debtToAssetRatio.toFixed(1)}%
           </div>
-          <div className="text-[10px] text-neutral-500 mt-0.5">
+          <div className="text-[10px] text-neutral-500 dark:text-neutral-400 mt-0.5">
             {debtToAssetRatio > 80 ? (
-              <span className="text-red-600 font-semibold">High Leverage</span>
+              <span className="text-red-600 dark:text-red-400 font-semibold">High Leverage</span>
             ) : (
-              <span className="text-emerald-600 font-semibold">Healthy Range</span>
+              <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Healthy Range</span>
             )}
           </div>
         </div>
 
-        <div className="bg-white p-3 border border-neutral-300 shadow-xs">
-          <div className="text-neutral-500 font-medium">Monthly Amortization</div>
-          <div className="text-base sm:text-lg font-bold font-mono text-neutral-900 mt-1">
+        <div className="bg-white dark:bg-[#1a1f20] p-3 border border-neutral-300 dark:border-neutral-700 shadow-xs">
+          <div className="text-neutral-500 dark:text-neutral-400 font-medium">Monthly Amortization</div>
+          <div className="text-base sm:text-lg font-bold font-mono text-neutral-900 dark:text-white mt-1">
             {formatCurrency(totalMonthlyAmortization, currencySymbol)}
           </div>
-          <div className="text-[10px] text-neutral-400 mt-0.5">Recurring obligation</div>
+          <div className="text-[10px] text-neutral-400 dark:text-neutral-500 mt-0.5">Recurring obligation</div>
         </div>
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2.5 bg-white p-3 border border-neutral-300 w-full shadow-2xs">
+      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2.5 bg-white dark:bg-[#1a1f20] p-3 border border-neutral-300 dark:border-neutral-700 w-full shadow-2xs">
         <div className="relative flex-1 w-full">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500" />
           <input
             type="text"
             placeholder="Search by loan title, lender, or notes..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 text-xs bg-neutral-50 border border-neutral-300 rounded focus:bg-white focus:outline-hidden"
+            className="w-full pl-9 pr-3 py-2 text-xs bg-neutral-50 dark:bg-neutral-800/80 text-neutral-900 dark:text-neutral-100 border border-neutral-300 dark:border-neutral-700 rounded focus:bg-white dark:focus:bg-neutral-800 focus:outline-hidden"
           />
         </div>
 
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto">
           <div className="flex items-center gap-2 flex-1 sm:flex-initial">
-            <Filter className="w-4 h-4 text-neutral-500 shrink-0" />
+            <Filter className="w-4 h-4 text-neutral-500 dark:text-neutral-400 shrink-0" />
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="text-xs bg-neutral-50 border border-neutral-300 py-2 px-3 rounded focus:outline-hidden cursor-pointer w-full sm:w-auto"
+              className="text-xs bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 border border-neutral-300 dark:border-neutral-700 py-2 px-3 rounded focus:outline-hidden cursor-pointer w-full sm:w-auto"
             >
               <option value="all">All Debt Categories</option>
               {CATEGORIES.map((c) => (
@@ -471,16 +471,16 @@ export const LiabilitiesPage: React.FC<LiabilitiesPageProps> = ({
             onClick={() => setShowSettled(!showSettled)}
             className={`inline-flex items-center justify-center gap-2 px-3 py-2 text-xs font-semibold rounded border transition cursor-pointer shrink-0 ${
               showSettled
-                ? 'bg-emerald-50 text-emerald-800 border-emerald-400'
-                : 'bg-neutral-100 text-neutral-700 border-neutral-300 hover:bg-neutral-200'
+                ? 'bg-emerald-50 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border-emerald-400 dark:border-emerald-700'
+                : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border-neutral-300 dark:border-neutral-700 hover:bg-neutral-200 dark:hover:bg-neutral-700'
             }`}
             title="Toggle visibility of fully settled / paid-off liabilities"
           >
-            <CheckCircle2 className={`w-4 h-4 ${showSettled ? 'text-emerald-600' : 'text-neutral-400'}`} />
+            <CheckCircle2 className={`w-4 h-4 ${showSettled ? 'text-emerald-600 dark:text-emerald-400' : 'text-neutral-400'}`} />
             <span>Show Settled Liabilities</span>
             <span
               className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold font-mono ${
-                showSettled ? 'bg-emerald-200 text-emerald-900' : 'bg-neutral-200 text-neutral-700'
+                showSettled ? 'bg-emerald-200 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-200' : 'bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300'
               }`}
             >
               {settledCount}
@@ -490,7 +490,7 @@ export const LiabilitiesPage: React.FC<LiabilitiesPageProps> = ({
       </div>
 
       {/* Liabilities Table with Contrasting Grey Rows */}
-      <div className="border border-neutral-300 bg-white shadow-xs overflow-x-auto w-full">
+      <div className="border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-[#1a1f20] shadow-xs overflow-x-auto w-full">
         <table className="w-full text-left text-xs border-collapse min-w-[700px]">
           <thead>
             <tr className="bg-[#2d3134] text-white uppercase text-[11px] font-bold select-none whitespace-nowrap">
@@ -588,10 +588,10 @@ export const LiabilitiesPage: React.FC<LiabilitiesPageProps> = ({
               <th className="py-2.5 px-3 text-center">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-neutral-200">
+          <tbody className="divide-y divide-neutral-200 dark:divide-neutral-700">
             {filteredLiabilities.length === 0 ? (
               <tr>
-                <td colSpan={8} className="py-8 text-center text-neutral-500 italic">
+                <td colSpan={8} className="py-8 text-center text-neutral-500 dark:text-neutral-400 italic">
                   No debt obligations recorded. Click "Add New Debt / Loan" to create one.
                 </td>
               </tr>
@@ -603,28 +603,28 @@ export const LiabilitiesPage: React.FC<LiabilitiesPageProps> = ({
                 return (
                   <tr
                     key={item.id}
-                    className={`transition hover:bg-red-50 cursor-pointer ${
-                      idx % 2 === 0 ? 'bg-white' : 'bg-[#f8f9fa]'
+                    className={`transition hover:bg-red-50 dark:hover:bg-red-950/30 cursor-pointer ${
+                      idx % 2 === 0 ? 'bg-white dark:bg-[#1a1f20]' : 'bg-[#f8f9fa] dark:bg-[#15191b]'
                     }`}
                     onClick={() => setSelectedLiabilityForHistory(item)}
                     title="Click to view payment history or log a payment"
                   >
                     <td className="py-2.5 px-3">
-                      <div className="font-semibold text-neutral-900 flex items-center gap-1.5">
+                      <div className="font-semibold text-neutral-900 dark:text-white flex items-center gap-1.5">
                         <span>{item.name}</span>
                         {item.purpose === 'cash_loan' ? (
-                          <span className="text-[10px] font-mono px-1.5 py-0.2 bg-emerald-100 text-emerald-800 rounded font-bold">
+                          <span className="text-[10px] font-mono px-1.5 py-0.2 bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 rounded font-bold border border-emerald-300 dark:border-emerald-700">
                             Cash Loan
                           </span>
                         ) : (
-                          <span className="text-[10px] font-mono px-1.5 py-0.2 bg-neutral-200 text-neutral-800 rounded font-bold">
+                          <span className="text-[10px] font-mono px-1.5 py-0.2 bg-neutral-200 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 rounded font-bold border border-neutral-300 dark:border-neutral-700">
                             Financed
                           </span>
                         )}
-                        <History className="w-3.5 h-3.5 text-red-600 shrink-0" />
+                        <History className="w-3.5 h-3.5 text-red-600 dark:text-red-400 shrink-0" />
                       </div>
                       {item.notes && (
-                        <div className="text-[11px] text-neutral-500 italic truncate max-w-xs">
+                        <div className="text-[11px] text-neutral-500 dark:text-neutral-400 italic truncate max-w-xs">
                           {item.notes}
                         </div>
                       )}
@@ -632,44 +632,44 @@ export const LiabilitiesPage: React.FC<LiabilitiesPageProps> = ({
                     <td className="py-2.5 px-3">
                       <div className="flex items-center gap-1.5">
                         {getCategoryIcon(item.category)}
-                        <span className="text-neutral-700 font-medium">{item.category}</span>
+                        <span className="text-neutral-700 dark:text-neutral-300 font-medium">{item.category}</span>
                       </div>
                     </td>
-                    <td className="py-2.5 px-3 text-neutral-600 font-mono">
+                    <td className="py-2.5 px-3 text-neutral-600 dark:text-neutral-400 font-mono">
                       {item.date || '2024-01-01'}
                     </td>
-                    <td className="py-2.5 px-3 text-neutral-600 font-mono">
+                    <td className="py-2.5 px-3 text-neutral-600 dark:text-neutral-400 font-mono">
                       {item.lender || '-'}
                     </td>
-                    <td className="py-2.5 px-3 text-right font-mono text-neutral-700">
-                      <span className="px-1.5 py-0.5 rounded bg-neutral-200 text-neutral-800 text-[10px] font-bold">
+                    <td className="py-2.5 px-3 text-right font-mono text-neutral-700 dark:text-neutral-300">
+                      <span className="px-1.5 py-0.5 rounded bg-neutral-200 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 text-[10px] font-bold">
                         {paymentsCount} payments
                       </span>
                     </td>
-                    <td className="py-2.5 px-3 text-right font-mono text-neutral-700">
+                    <td className="py-2.5 px-3 text-right font-mono text-neutral-700 dark:text-neutral-300">
                       {item.monthlyPayment ? (
                         <div>
-                          <div className="font-semibold text-neutral-800">
+                          <div className="font-semibold text-neutral-800 dark:text-neutral-200">
                             {formatCurrency(item.monthlyPayment, currencySymbol)}
-                            <span className="text-[10px] text-neutral-500 font-sans font-normal ml-0.5">/mo</span>
+                            <span className="text-[10px] text-neutral-500 dark:text-neutral-400 font-sans font-normal ml-0.5">/mo</span>
                           </div>
                           {item.nextDueDate && (
-                            <div className="text-[10px] text-red-600 font-sans font-medium flex items-center justify-end gap-1 mt-0.5">
+                            <div className="text-[10px] text-red-600 dark:text-red-400 font-sans font-medium flex items-center justify-end gap-1 mt-0.5">
                               <Clock className="w-2.5 h-2.5 text-red-500" />
                               <span>Due: {item.nextDueDate}</span>
                             </div>
                           )}
                         </div>
                       ) : item.nextDueDate ? (
-                        <div className="text-[10px] text-red-600 font-sans font-medium flex items-center justify-end gap-1">
+                        <div className="text-[10px] text-red-600 dark:text-red-400 font-sans font-medium flex items-center justify-end gap-1">
                           <Clock className="w-2.5 h-2.5 text-red-500" />
                           <span>Due: {item.nextDueDate}</span>
                         </div>
                       ) : (
-                        <span className="text-neutral-400">-</span>
+                        <span className="text-neutral-400 dark:text-neutral-500">-</span>
                       )}
                     </td>
-                    <td className="py-2.5 px-3 text-right font-mono font-bold text-red-700 text-sm">
+                    <td className="py-2.5 px-3 text-right font-mono font-bold text-red-700 dark:text-red-400 text-sm">
                       {formatCurrency(currentBalance, currencySymbol)}
                     </td>
                     <td
@@ -679,21 +679,21 @@ export const LiabilitiesPage: React.FC<LiabilitiesPageProps> = ({
                       <div className="flex items-center justify-center gap-1">
                         <button
                           onClick={() => setSelectedLiabilityForHistory(item)}
-                          className="p-1 text-red-600 hover:bg-red-100 rounded transition"
+                          className="p-1 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-950 rounded transition"
                           title="View payment history"
                         >
                           <History className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => openEditModal(item)}
-                          className="p-1 text-neutral-500 hover:text-blue-600 hover:bg-neutral-100 rounded transition"
+                          className="p-1 text-neutral-500 dark:text-neutral-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded transition"
                           title="Edit liability"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => setLiabilityToDelete(item)}
-                          className="p-1 text-neutral-500 hover:text-red-600 hover:bg-neutral-100 rounded transition"
+                          className="p-1 text-neutral-500 dark:text-neutral-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded transition"
                           title="Delete liability"
                         >
                           <Trash2 className="w-3.5 h-3.5" />

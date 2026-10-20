@@ -261,7 +261,7 @@ export function saveLocalTransactions(transactions: TransactionItem[]) {
  */
 export function runOneTimeTestDataPurge(): boolean {
   try {
-    const PURGE_FLAG_KEY = 'axiom_test_data_purged_v2';
+    const PURGE_FLAG_KEY = 'axiom_test_data_purged_v3';
     if (localStorage.getItem(PURGE_FLAG_KEY) === 'true') {
       return false;
     }
@@ -283,7 +283,9 @@ export function runOneTimeTestDataPurge(): boolean {
         t.id?.startsWith('tx-') ||
         t.id?.startsWith('t-') ||
         t.name?.includes('Executive Salary') ||
-        t.name?.includes('Quarterly Salary & Consulting Payout')
+        t.name?.includes('Quarterly Salary & Consulting Payout') ||
+        t.name?.includes('Hybrid') ||
+        t.name?.includes('Shell V-Power')
     );
 
     const hasMockAsset = assets.some(
@@ -292,7 +294,10 @@ export function runOneTimeTestDataPurge(): boolean {
         a.id?.startsWith('ast-') ||
         a.name?.includes('BPI / GCash') ||
         a.name?.includes('High-Yield Checking') ||
-        a.name?.includes('COL Financial Trading Account')
+        a.name?.includes('COL Financial Trading Account') ||
+        a.name?.includes('Hybrid Executive SUV') ||
+        a.name?.includes('Toyota') ||
+        a.institution?.includes('Toyota')
     );
 
     const hasMockLiab = liab.some(
@@ -300,7 +305,8 @@ export function runOneTimeTestDataPurge(): boolean {
         l.id?.startsWith('mock-liab-') ||
         l.id?.startsWith('liab-') ||
         l.name?.includes('Home Mortgage') ||
-        l.name?.includes('Promissory Note')
+        l.name?.includes('Promissory Note') ||
+        l.name?.includes('Auto Hybrid Financing Loan')
     );
 
     const hasMockRec = rec.some(
