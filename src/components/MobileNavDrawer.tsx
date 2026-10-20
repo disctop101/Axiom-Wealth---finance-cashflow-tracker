@@ -39,6 +39,8 @@ interface MobileNavDrawerProps {
   onOpenAuthModal?: () => void;
   onSignOut?: () => void;
   onOpenHelp?: () => void;
+  hasApexAccess?: boolean;
+  onOpenGrowthCheckpoint?: () => void;
 }
 
 export const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({
@@ -52,6 +54,8 @@ export const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({
   onOpenAuthModal,
   onSignOut,
   onOpenHelp,
+  hasApexAccess = true,
+  onOpenGrowthCheckpoint,
 }) => {
   const { tooltipsEnabled, toggleTooltips } = useTooltips();
   const { isDark, toggleTheme } = useTheme();
@@ -70,6 +74,16 @@ export const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({
   if (!isOpen) return null;
 
   const handleSelect = (tab: AppNavTab) => {
+    const isApexTool = tab === 'analytics' || tab === 'purchase-checker' || tab === 'stock-dividend-calculator';
+    if (isApexTool && !hasApexAccess) {
+      onClose();
+      if (onOpenGrowthCheckpoint) {
+        onOpenGrowthCheckpoint();
+      } else {
+        setActiveTab(tab);
+      }
+      return;
+    }
     setActiveTab(tab);
     onClose();
   };
@@ -122,6 +136,29 @@ export const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({
             <X className="w-5 h-5 text-neutral-400 hover:text-white" />
           </button>
         </div>
+
+        {/* Growth Checkpoint Promotion if Essential */}
+        {!hasApexAccess && onOpenGrowthCheckpoint && (
+          <button
+            type="button"
+            onClick={() => {
+              onClose();
+              onOpenGrowthCheckpoint();
+            }}
+            className="w-full p-3 rounded-xl bg-gradient-to-r from-emerald-950/70 via-neutral-900 to-emerald-950/70 border border-emerald-500/50 flex items-center justify-between gap-2 transition cursor-pointer hover:border-emerald-400"
+          >
+            <div className="flex items-center gap-2.5">
+              <Sparkles className="w-4 h-4 text-emerald-400 animate-pulse shrink-0" />
+              <div className="text-left">
+                <div className="text-xs font-bold text-white">Upgrade to Axiom Wealth Apex</div>
+                <div className="text-[10px] text-emerald-300">Unlock cloud sync &amp; advanced analytics</div>
+              </div>
+            </div>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500 text-neutral-950 shrink-0">
+              GROWTH
+            </span>
+          </button>
+        )}
 
         {/* Primary Application Pages Section */}
         <div className="space-y-1.5">
@@ -236,7 +273,14 @@ export const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({
                     <TrendingUp className="w-4 h-4" />
                   </div>
                   <div className="text-left">
-                    <div className="text-xs font-bold text-white">Analytics</div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-bold text-white">Analytics</span>
+                      {!hasApexAccess && (
+                        <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-bold">
+                          APEX
+                        </span>
+                      )}
+                    </div>
                     <div className="text-[10px] text-neutral-400">Stock-market style glowing trend line graph</div>
                   </div>
                 </div>
@@ -258,7 +302,14 @@ export const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({
                     <Shield className="w-4 h-4" />
                   </div>
                   <div className="text-left">
-                    <div className="text-xs font-bold text-white">Purchase Checker</div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-bold text-white">Purchase Checker</span>
+                      {!hasApexAccess && (
+                        <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-purple-500/20 text-purple-300 border border-purple-500/40 font-bold">
+                          APEX
+                        </span>
+                      )}
+                    </div>
                     <div className="text-[10px] text-neutral-400">10x Rule Affordability &amp; Impulse Evaluator</div>
                   </div>
                 </div>
@@ -280,7 +331,14 @@ export const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({
                     <Calculator className="w-4 h-4" />
                   </div>
                   <div className="text-left">
-                    <div className="text-xs font-bold text-white">Stock &amp; Dividend Simulator</div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-bold text-white">Stock &amp; Dividend Simulator</span>
+                      {!hasApexAccess && (
+                        <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold">
+                          APEX
+                        </span>
+                      )}
+                    </div>
                     <div className="text-[10px] text-neutral-400">DRIP Compounding &amp; Yield Projections</div>
                   </div>
                 </div>

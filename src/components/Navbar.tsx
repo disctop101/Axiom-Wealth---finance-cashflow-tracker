@@ -24,6 +24,7 @@ import {
   Shield,
   PlusCircle,
   Download,
+  Sparkles,
 } from 'lucide-react';
 import {
   CurrencyConfig,
@@ -77,6 +78,8 @@ interface NavbarProps {
   ) => Promise<void> | void;
   onQuickLog?: () => void;
   onOpenHelp?: () => void;
+  hasApexAccess?: boolean;
+  onOpenGrowthCheckpoint?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -96,6 +99,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   onPayRecurringExpense,
   onQuickLog,
   onOpenHelp,
+  hasApexAccess = true,
+  onOpenGrowthCheckpoint,
 }) => {
   // Dropdown states for Desktop & Header
   const [isToolsOpen, setIsToolsOpen] = useState(false);
@@ -131,6 +136,19 @@ export const Navbar: React.FC<NavbarProps> = ({
   }, []);
 
   const handleSelectTab = (tab: AppNavTab) => {
+    const isApexTool = tab === 'analytics' || tab === 'purchase-checker' || tab === 'stock-dividend-calculator';
+    if (isApexTool && !hasApexAccess) {
+      setIsToolsOpen(false);
+      setIsBellOpen(false);
+      setIsProfileOpen(false);
+      if (setIsMobileMenuOpen) setIsMobileMenuOpen(false);
+      if (onOpenGrowthCheckpoint) {
+        onOpenGrowthCheckpoint();
+      } else {
+        setActiveTab(tab);
+      }
+      return;
+    }
     setActiveTab(tab);
     setIsToolsOpen(false);
     setIsBellOpen(false);
@@ -376,8 +394,15 @@ export const Navbar: React.FC<NavbarProps> = ({
                         }`}
                       >
                         <TrendingUp className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
-                        <div>
-                          <div className="text-xs font-semibold text-neutral-100">Analytics</div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-semibold text-neutral-100">Analytics</span>
+                            {!hasApexAccess && (
+                              <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">
+                                APEX
+                              </span>
+                            )}
+                          </div>
                           <div className="text-[10px] text-neutral-400 leading-tight">
                             Stock-Market Style Trends &amp; Telemetry
                           </div>
@@ -393,8 +418,15 @@ export const Navbar: React.FC<NavbarProps> = ({
                         }`}
                       >
                         <Shield className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
-                        <div>
-                          <div className="text-xs font-semibold text-neutral-100">Purchase Checker</div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-semibold text-neutral-100">Purchase Checker</span>
+                            {!hasApexAccess && (
+                              <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30 font-bold">
+                                APEX
+                              </span>
+                            )}
+                          </div>
                           <div className="text-[10px] text-neutral-400 leading-tight">
                             10x Rule Affordability &amp; Impulse Evaluator
                           </div>
@@ -410,8 +442,15 @@ export const Navbar: React.FC<NavbarProps> = ({
                         }`}
                       >
                         <Calculator className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                        <div>
-                          <div className="text-xs font-semibold text-neutral-100">Stock &amp; Dividend Calculator</div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-semibold text-neutral-100">Stock &amp; Dividend Calculator</span>
+                            {!hasApexAccess && (
+                              <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">
+                                APEX
+                              </span>
+                            )}
+                          </div>
                           <div className="text-[10px] text-neutral-400 leading-tight">
                             DRIP Compounding &amp; Yield Projections
                           </div>
@@ -672,13 +711,41 @@ export const Navbar: React.FC<NavbarProps> = ({
                       <div className="text-[11px] text-neutral-400 truncate">
                         {user?.email || 'Local Offline Mode'}
                       </div>
-                      <div className="mt-1.5 inline-block px-1.5 py-0.5 rounded text-[9px] font-semibold bg-emerald-950/80 border border-emerald-700/80 text-emerald-300">
-                        {user ? 'Cloud Synchronized' : 'Local Storage Mode'}
+                      <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
+                        <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider border ${
+                          hasApexAccess
+                            ? 'bg-emerald-950/80 border-emerald-600 text-emerald-300'
+                            : 'bg-neutral-800 border-neutral-700 text-neutral-300'
+                        }`}>
+                          {hasApexAccess ? 'Apex Tier' : 'Essential Tier'}
+                        </span>
+                        <span className="text-[10px] text-neutral-400">
+                          {hasApexAccess ? '• Cloud Synced' : '• Local Storage Only'}
+                        </span>
                       </div>
                     </div>
 
                     {/* Navigation Items in User Profile Dropdown */}
                     <div className="py-1">
+                      {/* Growth Checkpoint / Upgrade to Apex shortcut if Essential */}
+                      {!hasApexAccess && onOpenGrowthCheckpoint && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsProfileOpen(false);
+                            onOpenGrowthCheckpoint();
+                          }}
+                          className="w-full flex items-center justify-between px-3.5 py-2 text-left bg-gradient-to-r from-emerald-950/60 to-neutral-900 hover:from-emerald-900/60 hover:to-neutral-850 text-emerald-300 transition cursor-pointer border-b border-neutral-800"
+                        >
+                          <div className="flex items-center gap-2">
+                            <Sparkles className="w-4 h-4 text-emerald-400 animate-pulse" />
+                            <span className="font-bold">Upgrade to Apex</span>
+                          </div>
+                          <span className="text-[10px] font-mono font-bold bg-emerald-500/20 px-1.5 py-0.5 rounded border border-emerald-500/30">
+                            GROWTH
+                          </span>
+                        </button>
+                      )}
                       {/* Notifications Link */}
                       <button
                         type="button"

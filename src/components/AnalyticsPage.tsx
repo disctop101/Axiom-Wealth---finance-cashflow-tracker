@@ -30,6 +30,7 @@ import {
   LineChart,
   HelpCircle,
   BookOpen,
+  Receipt,
 } from 'lucide-react';
 import { Tooltip } from './Tooltip';
 
@@ -54,6 +55,7 @@ interface AggregatedPoint {
   expenses: number;
   net: number;
   txCount: number;
+  transactions?: TransactionItem[];
 }
 
 /**
@@ -213,6 +215,7 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({
             expenses: t.type === 'expense' ? t.amount : 0,
             net: runningNet,
             txCount: 1,
+            transactions: [t],
           };
         });
       }
@@ -229,6 +232,7 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({
           expenses: 0,
           net: 0,
           txCount: 0,
+          transactions: [],
         },
         {
           key: 'end',
@@ -238,6 +242,7 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({
           expenses,
           net: income - expenses,
           txCount: dayTxs.length,
+          transactions: dayTxs,
         },
       ];
     } else if (timeRange === 'weekly') {
@@ -272,6 +277,7 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({
           expenses,
           net: income - expenses,
           txCount: dayTxs.length,
+          transactions: dayTxs,
         });
 
         curr.setDate(curr.getDate() + 1);
@@ -319,6 +325,7 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({
             expenses,
             net: income - expenses,
             txCount: wTxs.length,
+            transactions: wTxs,
           });
         });
 
@@ -327,7 +334,7 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({
         // Multi-month range: group by calendar week
         const weekMap: Record<
           string,
-          { label: string; dateSort: string; income: number; expenses: number; txCount: number }
+          { label: string; dateSort: string; income: number; expenses: number; txCount: number; transactions: TransactionItem[] }
         > = {};
 
         filteredTransactions.forEach((t) => {
@@ -344,11 +351,13 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({
               income: 0,
               expenses: 0,
               txCount: 0,
+              transactions: [],
             };
           }
           if (t.type === 'income') weekMap[key].income += t.amount;
           else weekMap[key].expenses += t.amount;
           weekMap[key].txCount += 1;
+          weekMap[key].transactions.push(t);
         });
 
         return Object.entries(weekMap)
@@ -360,6 +369,7 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({
             expenses: data.expenses,
             net: data.income - data.expenses,
             txCount: data.txCount,
+            transactions: data.transactions,
           }))
           .sort((a, b) => a.dateSort.localeCompare(b.dateSort));
       }
@@ -388,6 +398,7 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({
             expenses,
             net: income - expenses,
             txCount: mTxs.length,
+            transactions: mTxs,
           });
         }
         return points;
@@ -395,7 +406,7 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({
         // Multi-year: group by Year-Month
         const monthMap: Record<
           string,
-          { label: string; dateSort: string; income: number; expenses: number; txCount: number }
+          { label: string; dateSort: string; income: number; expenses: number; txCount: number; transactions: TransactionItem[] }
         > = {};
 
         filteredTransactions.forEach((t) => {
@@ -412,11 +423,13 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({
               income: 0,
               expenses: 0,
               txCount: 0,
+              transactions: [],
             };
           }
           if (t.type === 'income') monthMap[key].income += t.amount;
           else monthMap[key].expenses += t.amount;
           monthMap[key].txCount += 1;
+          monthMap[key].transactions.push(t);
         });
 
         return Object.entries(monthMap)
@@ -428,6 +441,7 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({
             expenses: data.expenses,
             net: data.income - data.expenses,
             txCount: data.txCount,
+            transactions: data.transactions,
           }))
           .sort((a, b) => a.dateSort.localeCompare(b.dateSort));
       }
@@ -651,6 +665,15 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({
     const netCashflow = totalInflow - totalOutflow;
     const avgSpend = totalOutflow / slice.length;
 
+    // Collect and deduplicate transactions across all brushed intervals
+    const txMap = new Map<string, TransactionItem>();
+    slice.forEach((p) => {
+      (p.transactions || []).forEach((t) => {
+        txMap.set(t.id, t);
+      });
+    });
+    const transactions = Array.from(txMap.values()).sort((a, b) => b.date.localeCompare(a.date));
+
     return {
       slice,
       startLabel: slice[0].label,
@@ -660,6 +683,7 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({
       totalOutflow,
       netCashflow,
       avgSpend,
+      transactions,
     };
   }, [selectedBrushRange, points]);
 
@@ -1755,6 +1779,131 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({
           </div>
         )}
       </div>
+
+      {/* ================= BOX-SELECTION TRANSACTION DRILLDOWN DATA TABLE ================= */}
+      {brushedCalculation && (
+        <div className="bg-neutral-900/95 border border-sky-500/40 rounded-xl p-4 sm:p-5 shadow-2xl space-y-4 animate-in fade-in slide-in-from-top-3 duration-200">
+          {/* Header & Controls */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-neutral-800">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-lg bg-sky-500/20 text-sky-400 border border-sky-500/30 shadow-inner">
+                <Receipt className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="font-bold text-sm sm:text-base text-white tracking-tight">
+                    Underlying Transactions Drilldown
+                  </h3>
+                  <span className="px-2.5 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-400/30 text-xs font-mono font-bold">
+                    {brushedCalculation.transactions.length} {brushedCalculation.transactions.length === 1 ? 'transaction' : 'transactions'}
+                  </span>
+                  <span className="px-2.5 py-0.5 rounded-full bg-neutral-800 text-neutral-300 border border-neutral-700 text-xs font-mono">
+                    {brushedCalculation.startLabel} &rarr; {brushedCalculation.endLabel}
+                  </span>
+                </div>
+                <p className="text-xs text-neutral-400 mt-0.5">
+                  Filtered automatically by your interactive chart box-selection brush
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 self-start md:self-auto">
+              <button
+                type="button"
+                onClick={() => setSelectedBrushRange(null)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 hover:text-white rounded-lg text-xs font-semibold border border-neutral-700 transition cursor-pointer shadow-sm"
+              >
+                <X className="w-3.5 h-3.5" />
+                <span>Clear Selection</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Table Container */}
+          {brushedCalculation.transactions.length === 0 ? (
+            <div className="text-center py-10 px-4 rounded-lg bg-neutral-950/60 border border-neutral-800">
+              <Receipt className="w-8 h-8 text-neutral-600 mx-auto mb-2" />
+              <p className="text-sm font-medium text-neutral-300">No Transactions in Selected Window</p>
+              <p className="text-xs text-neutral-500 font-mono mt-1">
+                Zero inflow or outflow events were recorded between {brushedCalculation.startLabel} and {brushedCalculation.endLabel}.
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-hidden rounded-lg border border-neutral-800 bg-neutral-950/80">
+              <div className="max-h-96 overflow-y-auto">
+                <table className="w-full text-left text-xs text-neutral-200">
+                  <thead className="bg-neutral-900/90 sticky top-0 z-10 text-[11px] uppercase tracking-wider font-semibold text-neutral-400 border-b border-neutral-800 backdrop-blur-sm">
+                    <tr>
+                      <th className="px-4 py-3">Date</th>
+                      <th className="px-4 py-3">Description</th>
+                      <th className="px-4 py-3">Category</th>
+                      <th className="px-4 py-3">Payment Method</th>
+                      <th className="px-4 py-3">Flow Type</th>
+                      <th className="px-4 py-3 text-right">Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-800/80 font-mono">
+                    {brushedCalculation.transactions.map((tx) => (
+                      <tr key={tx.id} className="hover:bg-neutral-800/60 transition-colors">
+                        <td className="px-4 py-3 text-neutral-400 whitespace-nowrap">{tx.date}</td>
+                        <td className="px-4 py-3 font-sans font-medium text-white max-w-[220px] truncate" title={tx.name}>
+                          {tx.name}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <span className="px-2 py-0.5 rounded bg-neutral-800/90 text-neutral-300 text-[11px] font-sans border border-neutral-700">
+                            {tx.category}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-neutral-400 font-sans whitespace-nowrap">
+                          {tx.paymentMethod || '—'}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <span
+                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-[11px] font-sans font-semibold border ${
+                              tx.type === 'income'
+                                ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                                : 'bg-red-500/15 text-red-400 border-red-500/30'
+                            }`}
+                          >
+                            {tx.type === 'income' ? '+' : '-'} {tx.type === 'income' ? 'Income' : 'Expense'}
+                          </span>
+                        </td>
+                        <td
+                          className={`px-4 py-3 text-right font-bold whitespace-nowrap ${
+                            tx.type === 'income' ? 'text-emerald-400' : 'text-red-400'
+                          }`}
+                        >
+                          {tx.type === 'income' ? '+' : '-'}
+                          {formatCurrency(tx.amount, currencySymbol)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot className="bg-neutral-900/95 sticky bottom-0 z-10 border-t border-neutral-800 font-mono text-xs">
+                    <tr>
+                      <td colSpan={4} className="px-4 py-2.5 font-sans font-semibold text-neutral-400">
+                        Net Brushed Total ({brushedCalculation.transactions.length} records)
+                      </td>
+                      <td className="px-4 py-2.5 font-sans font-semibold text-neutral-400">
+                        <span className="text-emerald-400 mr-2">In: +{formatCurrency(brushedCalculation.totalInflow, currencySymbol)}</span>
+                        <span className="text-red-400">Out: -{formatCurrency(brushedCalculation.totalOutflow, currencySymbol)}</span>
+                      </td>
+                      <td
+                        className={`px-4 py-2.5 text-right font-bold ${
+                          brushedCalculation.netCashflow >= 0 ? 'text-emerald-400' : 'text-red-400'
+                        }`}
+                      >
+                        {brushedCalculation.netCashflow >= 0 ? '+' : ''}
+                        {formatCurrency(brushedCalculation.netCashflow, currencySymbol)}
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
         </div>
       )}
     </div>

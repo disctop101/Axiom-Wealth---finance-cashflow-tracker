@@ -41,16 +41,12 @@ const STORAGE_KEYS = {
   RECURRING: 'finance_tracker_recurring_v2',
 };
 
-export const DEFAULT_USER_NAME = 'Emmanuel Fajutagana';
+export const DEFAULT_USER_NAME = '';
 
 export function loadLocalUserName(): string {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.USER_NAME);
     if (raw && raw.trim()) {
-      if (raw.trim() === 'Emmanuel') {
-        saveLocalUserName(DEFAULT_USER_NAME);
-        return DEFAULT_USER_NAME;
-      }
       return raw.trim();
     }
     return DEFAULT_USER_NAME;
@@ -251,18 +247,114 @@ export function saveLocalTransactions(transactions: TransactionItem[]) {
   }
 }
 
+/**
+ * One-time local storage cleanup script:
+ * Actively detects and purges previously injected '90-Day Comprehensive Test Data'
+ * or hardcoded mock fixtures on load to force returning testers into a clean, zero-balance state.
+ */
+export function runOneTimeTestDataPurge(): boolean {
+  try {
+    const PURGE_FLAG_KEY = 'axiom_test_data_purged_v2';
+    if (localStorage.getItem(PURGE_FLAG_KEY) === 'true') {
+      return false;
+    }
+
+    const rawTx = localStorage.getItem(STORAGE_KEYS.TRANSACTIONS);
+    const rawAssets = localStorage.getItem(STORAGE_KEYS.ASSETS);
+    const rawLiab = localStorage.getItem(STORAGE_KEYS.LIABILITIES);
+    const rawRec = localStorage.getItem(STORAGE_KEYS.RECURRING);
+    const rawName = localStorage.getItem(STORAGE_KEYS.USER_NAME);
+
+    const txs: TransactionItem[] = rawTx ? JSON.parse(rawTx) : [];
+    const assets: AssetItem[] = rawAssets ? JSON.parse(rawAssets) : [];
+    const liab: LiabilityItem[] = rawLiab ? JSON.parse(rawLiab) : [];
+    const rec: RecurringExpenseItem[] = rawRec ? JSON.parse(rawRec) : [];
+
+    const hasMockTx = txs.some(
+      (t) =>
+        t.id?.startsWith('mock-tx-') ||
+        t.id?.startsWith('tx-') ||
+        t.id?.startsWith('t-') ||
+        t.name?.includes('Executive Salary') ||
+        t.name?.includes('Quarterly Salary & Consulting Payout')
+    );
+
+    const hasMockAsset = assets.some(
+      (a) =>
+        a.id?.startsWith('mock-asset-') ||
+        a.id?.startsWith('ast-') ||
+        a.name?.includes('BPI / GCash') ||
+        a.name?.includes('High-Yield Checking') ||
+        a.name?.includes('COL Financial Trading Account')
+    );
+
+    const hasMockLiab = liab.some(
+      (l) =>
+        l.id?.startsWith('mock-liab-') ||
+        l.id?.startsWith('liab-') ||
+        l.name?.includes('Home Mortgage') ||
+        l.name?.includes('Promissory Note')
+    );
+
+    const hasMockRec = rec.some(
+      (r) =>
+        r.id?.startsWith('mock-rec-') ||
+        r.id?.startsWith('rec-') ||
+        r.name?.includes('Residential Apartment Rent') ||
+        r.name?.includes('Fiber Broadband')
+    );
+
+    const isDefaultName = rawName === 'Emmanuel Fajutagana' || rawName === 'Emmanuel';
+
+    if (hasMockTx || hasMockAsset || hasMockLiab || hasMockRec || isDefaultName) {
+      console.log('[Axiom Cleanup] Purging previously injected 90-day test data and mock fixtures to force clean zero state...');
+      localStorage.setItem(STORAGE_KEYS.TRANSACTIONS, JSON.stringify([]));
+      localStorage.setItem(STORAGE_KEYS.ASSET_TXS, JSON.stringify([]));
+      localStorage.setItem(STORAGE_KEYS.LIABILITY_PAYMENTS, JSON.stringify([]));
+      localStorage.setItem(STORAGE_KEYS.ASSETS, JSON.stringify([]));
+      localStorage.setItem(STORAGE_KEYS.LIABILITIES, JSON.stringify([]));
+      localStorage.setItem(STORAGE_KEYS.RECURRING, JSON.stringify([]));
+
+      if (isDefaultName) {
+        localStorage.removeItem(STORAGE_KEYS.USER_NAME);
+      }
+
+      // Reset beginning balance in period
+      const rawPeriod = localStorage.getItem(STORAGE_KEYS.PERIOD);
+      if (rawPeriod) {
+        try {
+          const p = JSON.parse(rawPeriod);
+          p.beginningBalance = 0;
+          localStorage.setItem(STORAGE_KEYS.PERIOD, JSON.stringify(p));
+        } catch {}
+      }
+    }
+
+    localStorage.setItem(PURGE_FLAG_KEY, 'true');
+    return true;
+  } catch (err) {
+    console.warn('[Axiom Cleanup] Error during state purge:', err);
+    return false;
+  }
+}
+
 export async function wipeAllDataToPureZero(
   userId?: string | null,
   currentPeriod?: PeriodSettings,
   currentAssets?: AssetItem[]
 ): Promise<{ newPeriod: PeriodSettings; newAssets: AssetItem[] }> {
   try {
-    // 1. Wipe all transactions and ledger movement keys from local storage
+    // 1. Wipe all transactions, asset txs, and liability payments from local storage
     localStorage.setItem(STORAGE_KEYS.TRANSACTIONS, JSON.stringify([]));
     localStorage.setItem(STORAGE_KEYS.ASSET_TXS, JSON.stringify([]));
     localStorage.setItem(STORAGE_KEYS.LIABILITY_PAYMENTS, JSON.stringify([]));
 
-    // 2. Completely zero out the beginning balance
+    // 2. Explicitly wipe all logged assets and liabilities from local storage
+    localStorage.setItem(STORAGE_KEYS.ASSETS, JSON.stringify([]));
+    localStorage.setItem(STORAGE_KEYS.LIABILITIES, JSON.stringify([]));
+    localStorage.setItem(STORAGE_KEYS.RECURRING, JSON.stringify([]));
+
+    // 3. Completely zero out the beginning balance
     const basePeriod = currentPeriod || loadLocalPeriod();
     const zeroedPeriod: PeriodSettings = {
       ...basePeriod,
@@ -270,14 +362,7 @@ export async function wipeAllDataToPureZero(
     };
     localStorage.setItem(STORAGE_KEYS.PERIOD, JSON.stringify(zeroedPeriod));
 
-    // 3. Completely zero out 'Cash and cash equivalents'
-    const baseAssets = currentAssets || loadLocalAssets();
-    const zeroedAssets: AssetItem[] = baseAssets.map((a) =>
-      a.category === 'Cash and cash equivalents'
-        ? { ...a, initialValue: 0 }
-        : a
-    );
-    localStorage.setItem(STORAGE_KEYS.ASSETS, JSON.stringify(zeroedAssets));
+    const zeroedAssets: AssetItem[] = [];
 
     // 4. Wipe from connected Firebase Firestore database
     if (userId) {
@@ -288,15 +373,30 @@ export async function wipeAllDataToPureZero(
         await Promise.all(txSnap.docs.map((docSnap) => deleteDoc(docSnap.ref)));
       }
 
+      // Delete all asset documents
+      const assetsCol = collection(db, 'users', userId, 'assets');
+      const assetSnap = await getDocs(assetsCol);
+      if (!assetSnap.empty) {
+        await Promise.all(assetSnap.docs.map((docSnap) => deleteDoc(docSnap.ref)));
+      }
+
+      // Delete all liability documents
+      const liabCol = collection(db, 'users', userId, 'liabilities');
+      const liabSnap = await getDocs(liabCol);
+      if (!liabSnap.empty) {
+        await Promise.all(liabSnap.docs.map((docSnap) => deleteDoc(docSnap.ref)));
+      }
+
+      // Delete all recurring expenses
+      const recCol = collection(db, 'users', userId, 'recurring_expenses');
+      const recSnap = await getDocs(recCol);
+      if (!recSnap.empty) {
+        await Promise.all(recSnap.docs.map((docSnap) => deleteDoc(docSnap.ref)));
+      }
+
       // Update period settings in Firestore with beginningBalance: 0
       const periodDoc = doc(db, 'users', userId, 'settings', 'period');
       await setDoc(periodDoc, { ...zeroedPeriod, userId, updatedAt: new Date().toISOString() }, { merge: true });
-
-      // Update Cash assets in Firestore with initialValue: 0
-      const cashAssets = zeroedAssets.filter((a) => a.category === 'Cash and cash equivalents');
-      for (const cashAsset of cashAssets) {
-        await saveAssetItemToCloud(userId, cashAsset);
-      }
     }
 
     return { newPeriod: zeroedPeriod, newAssets: zeroedAssets };

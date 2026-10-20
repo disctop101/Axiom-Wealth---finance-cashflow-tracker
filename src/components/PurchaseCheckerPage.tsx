@@ -48,8 +48,8 @@ export const PurchaseCheckerPage: React.FC<PurchaseCheckerPageProps> = ({
   onLogTransactionAndAsset,
   onNavigateToTab,
 }) => {
-  const [itemName, setItemName] = useState<string>('Apple MacBook Pro M3');
-  const [itemPrice, setItemPrice] = useState<number>(85000);
+  const [itemName, setItemName] = useState<string>('');
+  const [itemPrice, setItemPrice] = useState<number | ''>('');
   const [category, setCategory] = useState<string>('Electronics / Tech');
   const [multiplier, setMultiplier] = useState<number>(10); // Defaults to 10x rule
   const [comparisonBasis, setComparisonBasis] = useState<'cash' | 'income' | 'both'>('cash');
@@ -64,23 +64,27 @@ export const PurchaseCheckerPage: React.FC<PurchaseCheckerPageProps> = ({
     { label: '20x (Ultra Fortress)', value: 20 },
   ];
 
-  // Calculations
-  const requiredAmount = itemPrice * multiplier;
+  // Calculations & Input Validation
+  const numericPrice = typeof itemPrice === 'number' && !isNaN(itemPrice) ? itemPrice : 0;
+  const hasValidInput = itemName.trim().length > 0 && numericPrice > 0;
+  const requiredAmount = numericPrice * multiplier;
 
   // Evaluation against Cash Equivalents
-  const cashPassed = cashEquivalents >= requiredAmount;
+  const cashPassed = numericPrice > 0 && cashEquivalents >= requiredAmount;
   const cashSurplus = cashEquivalents - requiredAmount;
   const cashDeficit = requiredAmount - cashEquivalents;
-  const cashImpactPercent = cashEquivalents > 0 ? (itemPrice / cashEquivalents) * 100 : 100;
-  const remainingCashAfterPurchase = cashEquivalents - itemPrice;
+  const cashImpactPercent = cashEquivalents > 0 && numericPrice > 0 ? (numericPrice / cashEquivalents) * 100 : 0;
+  const remainingCashAfterPurchase = numericPrice > 0 ? cashEquivalents - numericPrice : cashEquivalents;
 
   // Evaluation against Monthly Net Income
-  const incomeRequired = itemPrice * Math.max(1, multiplier / 2);
-  const incomePassed = monthlyNetIncome > 0 && monthlyNetIncome >= incomeRequired;
+  const incomeRequired = numericPrice * Math.max(1, multiplier / 2);
+  const incomePassed = numericPrice > 0 && monthlyNetIncome > 0 && monthlyNetIncome >= incomeRequired;
 
   // Combined Decision
   const isApproved =
-    comparisonBasis === 'cash'
+    !hasValidInput
+      ? false
+      : comparisonBasis === 'cash'
       ? cashPassed
       : comparisonBasis === 'income'
       ? incomePassed
@@ -88,14 +92,14 @@ export const PurchaseCheckerPage: React.FC<PurchaseCheckerPageProps> = ({
 
   // Months to save deficit if denied
   const monthsToAfford = useMemo(() => {
-    if (isApproved || monthlyNetIncome <= 0 || cashDeficit <= 0) return null;
+    if (!hasValidInput || isApproved || monthlyNetIncome <= 0 || cashDeficit <= 0) return null;
     const months = Math.ceil(cashDeficit / monthlyNetIncome);
     return Math.max(1, months);
-  }, [isApproved, monthlyNetIncome, cashDeficit]);
+  }, [hasValidInput, isApproved, monthlyNetIncome, cashDeficit]);
 
   // Push directly into Logged Transactions and Asset Inventory
   const handleLogAction = async () => {
-    if (isLogging || !onLogTransactionAndAsset || itemPrice <= 0) return;
+    if (isLogging || !onLogTransactionAndAsset || !hasValidInput || numericPrice <= 0) return;
     setIsLogging(true);
     try {
       const today = new Date().toISOString().split('T')[0];
@@ -112,7 +116,7 @@ export const PurchaseCheckerPage: React.FC<PurchaseCheckerPageProps> = ({
       await onLogTransactionAndAsset({
         transaction: {
           name: `Purchase: ${itemName.trim() || 'Evaluated Item'}`,
-          amount: itemPrice,
+          amount: numericPrice,
           date: today,
           type: 'expense',
           category: category.trim() || 'Miscellaneous',
@@ -121,7 +125,7 @@ export const PurchaseCheckerPage: React.FC<PurchaseCheckerPageProps> = ({
         asset: {
           name: itemName.trim() || 'New Asset Item',
           category: assetCat,
-          initialValue: itemPrice,
+          initialValue: numericPrice,
           date: today,
           institution: 'Personal Possession',
           notes: `Created from Buyer Checker verification. Multiplier target: ${multiplier}x, Outcome: ${isApproved ? 'Approved' : 'Self-Financed'}.`,
@@ -188,7 +192,7 @@ export const PurchaseCheckerPage: React.FC<PurchaseCheckerPageProps> = ({
       {/* Main Grid: Inputs on Left, Real-Time Decision on Right */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         {/* ================= LEFT COLUMN: INPUTS & SETTINGS ================= */}
-        <div className="lg:col-span-6 bg-white border border-neutral-300 rounded-lg shadow-xs overflow-hidden text-xs">
+        <div className="lg:col-span-6 bg-white dark:bg-[#1a1f20] border border-neutral-300 dark:border-neutral-800 rounded-lg shadow-xs overflow-hidden text-xs">
           <div className="bg-[#2d3134] text-white p-3 flex items-center justify-between border-b border-neutral-700">
             <div className="flex items-center gap-2">
               <ShoppingBag className="w-4 h-4 text-emerald-400" />
@@ -202,7 +206,7 @@ export const PurchaseCheckerPage: React.FC<PurchaseCheckerPageProps> = ({
           <div className="p-4 space-y-4">
             {/* Item Name */}
             <div>
-              <label className="block font-semibold text-neutral-700 mb-1">
+              <label className="block font-semibold text-neutral-700 dark:text-neutral-300 mb-1">
                 Item / Purchase Description *
               </label>
               <input
@@ -211,13 +215,13 @@ export const PurchaseCheckerPage: React.FC<PurchaseCheckerPageProps> = ({
                 value={itemName}
                 onChange={(e) => setItemName(e.target.value)}
                 placeholder="e.g. Designer Watch, Weekend Getaway, New Laptop"
-                className="w-full px-3 py-2 border border-neutral-300 rounded focus:outline-hidden focus:border-emerald-600 font-medium text-neutral-900 text-xs"
+                className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 rounded focus:outline-hidden focus:border-emerald-600 font-medium text-neutral-900 dark:text-neutral-100 text-xs"
               />
             </div>
 
             {/* Price */}
             <div>
-              <label className="block font-semibold text-neutral-700 mb-1">
+              <label className="block font-semibold text-neutral-700 dark:text-neutral-300 mb-1">
                 Purchase Price ({currencySymbol}) *
               </label>
               <input
@@ -225,22 +229,30 @@ export const PurchaseCheckerPage: React.FC<PurchaseCheckerPageProps> = ({
                 step="any"
                 min="1"
                 required
-                value={itemPrice || ''}
-                onChange={(e) => setItemPrice(parseFloat(e.target.value) || 0)}
+                value={itemPrice}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === '') {
+                    setItemPrice('');
+                  } else {
+                    const parsed = parseFloat(val);
+                    setItemPrice(isNaN(parsed) ? '' : parsed);
+                  }
+                }}
                 placeholder="0.00"
-                className="w-full px-3 py-2 border border-neutral-300 rounded focus:outline-hidden focus:border-emerald-600 font-mono text-sm font-bold text-neutral-900"
+                className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 rounded focus:outline-hidden focus:border-emerald-600 font-mono text-sm font-bold text-neutral-900 dark:text-neutral-100"
               />
             </div>
 
             {/* Category */}
             <div>
-              <label className="block font-semibold text-neutral-700 mb-1">
+              <label className="block font-semibold text-neutral-700 dark:text-neutral-300 mb-1">
                 Category
               </label>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="w-full px-3 py-2 border border-neutral-300 rounded focus:outline-hidden focus:border-emerald-600 bg-white cursor-pointer text-xs"
+                className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 rounded focus:outline-hidden focus:border-emerald-600 cursor-pointer text-xs"
               >
                 <option value="Electronics / Tech">Electronics / Tech</option>
                 <option value="Luxury / Fashion">Luxury / Fashion</option>
@@ -347,142 +359,209 @@ export const PurchaseCheckerPage: React.FC<PurchaseCheckerPageProps> = ({
         {/* ================= RIGHT COLUMN: REAL-TIME DECISION & METRICS ================= */}
         <div className="lg:col-span-6 space-y-4">
           {/* Decision Status Card */}
-          <div
-            className={`p-5 rounded-lg border-2 shadow-md text-white transition-all duration-200 ${
-              isApproved
-                ? 'bg-gradient-to-br from-emerald-950 via-neutral-900 to-emerald-950 border-emerald-500/80'
-                : 'bg-gradient-to-br from-red-950 via-neutral-900 to-red-950 border-red-500/80'
-            }`}
-          >
-            {/* Status Header Badge */}
-            <div className="flex items-center justify-between pb-3 border-b border-neutral-700/60">
-              <div className="flex items-center gap-2">
-                {isApproved ? (
-                  <ShieldCheck className="w-6 h-6 text-emerald-400" />
-                ) : (
-                  <ShieldAlert className="w-6 h-6 text-red-400" />
+          {!hasValidInput ? (
+            <div className="p-5 rounded-lg border-2 shadow-md text-white bg-gradient-to-br from-neutral-900 via-neutral-950 to-neutral-900 border-neutral-700/80 transition-all duration-200">
+              <div className="flex items-center justify-between pb-3 border-b border-neutral-700/60">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-6 h-6 text-emerald-400" />
+                  <div>
+                    <span className="text-[10px] text-neutral-400 font-mono uppercase tracking-wider block">
+                      Verification Outcome
+                    </span>
+                    <span className="font-black text-lg tracking-wide text-neutral-200">
+                      AWAITING PURCHASE DETAILS
+                    </span>
+                  </div>
+                </div>
+                <span className="text-xs px-2.5 py-1 rounded font-bold border font-mono bg-neutral-800 text-neutral-300 border-neutral-700">
+                  {multiplier}x Rule Ready
+                </span>
+              </div>
+
+              <div className="py-3 text-xs text-neutral-400 space-y-2">
+                <p>
+                  Enter an item description and purchase price on the left to evaluate affordability against your liquid cash reserves and the <b className="text-white">{multiplier}x wealth rule</b>.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 pt-3 border-t border-neutral-700/60 text-xs font-mono">
+                <div className="bg-neutral-900/60 p-2.5 rounded border border-neutral-800">
+                  <span className="text-[10px] text-neutral-400 block uppercase">
+                    Required {multiplier}x Buffer
+                  </span>
+                  <span className="text-sm font-bold text-neutral-500">
+                    --
+                  </span>
+                </div>
+
+                <div className="bg-neutral-900/60 p-2.5 rounded border border-neutral-800">
+                  <span className="text-[10px] text-neutral-400 block uppercase">
+                    Available Liquid Cash
+                  </span>
+                  <span className="text-sm font-bold text-emerald-400">
+                    {formatCurrency(cashEquivalents, currencySymbol)}
+                  </span>
+                </div>
+
+                <div className="bg-neutral-900/60 p-2.5 rounded border border-neutral-800">
+                  <span className="text-[10px] text-neutral-400 block uppercase">
+                    Cash Left After Buy
+                  </span>
+                  <span className="text-sm font-bold text-neutral-500">
+                    --
+                  </span>
+                </div>
+
+                <div className="bg-neutral-900/60 p-2.5 rounded border border-neutral-800">
+                  <span className="text-[10px] text-neutral-400 block uppercase">
+                    Reserves Consumed
+                  </span>
+                  <span className="text-sm font-bold text-neutral-500">
+                    --
+                  </span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div
+              className={`p-5 rounded-lg border-2 shadow-md text-white transition-all duration-200 ${
+                isApproved
+                  ? 'bg-gradient-to-br from-emerald-950 via-neutral-900 to-emerald-950 border-emerald-500/80'
+                  : 'bg-gradient-to-br from-red-950 via-neutral-900 to-red-950 border-red-500/80'
+              }`}
+            >
+              {/* Status Header Badge */}
+              <div className="flex items-center justify-between pb-3 border-b border-neutral-700/60">
+                <div className="flex items-center gap-2">
+                  {isApproved ? (
+                    <ShieldCheck className="w-6 h-6 text-emerald-400" />
+                  ) : (
+                    <ShieldAlert className="w-6 h-6 text-red-400" />
+                  )}
+                  <div>
+                    <span className="text-[10px] text-neutral-400 font-mono uppercase tracking-wider block">
+                      Verification Outcome
+                    </span>
+                    <span
+                      className={`font-black text-lg tracking-wide ${
+                        isApproved ? 'text-emerald-400' : 'text-red-400'
+                      }`}
+                    >
+                      {isApproved ? 'APPROVED TO BUY' : 'PURCHASE DENIED'}
+                    </span>
+                  </div>
+                </div>
+                <span
+                  className={`text-xs px-2.5 py-1 rounded font-bold border font-mono ${
+                    isApproved
+                      ? 'bg-emerald-900/80 text-emerald-200 border-emerald-500'
+                      : 'bg-red-900/80 text-red-200 border-red-500'
+                  }`}
+                >
+                  {multiplier}x Rule {isApproved ? 'Satisfied' : 'Failed'}
+                </span>
+              </div>
+
+              {/* Explanation / Rationale */}
+              <div className="py-3 text-xs text-neutral-300 space-y-2">
+                <p>
+                  {isApproved ? (
+                    <span>
+                      Great news! Buying <b className="text-white">"{itemName}"</b> for{' '}
+                      <b className="text-emerald-400 font-mono">{formatCurrency(numericPrice, currencySymbol)}</b> passes your{' '}
+                      <b className="text-white">{multiplier}x affordability rule</b>. You have ample liquid reserves to absorb this expenditure without compromising your long-term wealth stability.
+                    </span>
+                  ) : (
+                    <span>
+                      Hold on! Buying <b className="text-white">"{itemName}"</b> for{' '}
+                      <b className="text-red-400 font-mono">{formatCurrency(numericPrice, currencySymbol)}</b> violates your{' '}
+                      <b className="text-white">{multiplier}x buffer target</b>. It would overextend your liquid reserves by{' '}
+                      <b className="text-red-300 font-mono">{formatCurrency(cashDeficit, currencySymbol)}</b>.
+                    </span>
+                  )}
+                </p>
+
+                {!isApproved && monthsToAfford !== null && (
+                  <div className="p-2.5 bg-neutral-900/80 border border-neutral-700 rounded text-amber-300 text-[11px] flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+                    <span>
+                      At your current monthly savings run-rate, you can safely afford this purchase in approximately{' '}
+                      <b>{monthsToAfford} month{monthsToAfford === 1 ? '' : 's'}</b>.
+                    </span>
+                  </div>
                 )}
-                <div>
-                  <span className="text-[10px] text-neutral-400 font-mono uppercase tracking-wider block">
-                    Verification Outcome
+              </div>
+
+              {/* Key Comparison Grid */}
+              <div className="grid grid-cols-2 gap-2 pt-3 border-t border-neutral-700/60 text-xs font-mono">
+                <div className="bg-neutral-900/60 p-2.5 rounded border border-neutral-800">
+                  <span className="text-[10px] text-neutral-400 block uppercase">
+                    Required {multiplier}x Buffer
+                  </span>
+                  <span className="text-sm font-bold text-white">
+                    {formatCurrency(requiredAmount, currencySymbol)}
+                  </span>
+                </div>
+
+                <div className="bg-neutral-900/60 p-2.5 rounded border border-neutral-800">
+                  <span className="text-[10px] text-neutral-400 block uppercase">
+                    Available Liquid Cash
+                  </span>
+                  <span className="text-sm font-bold text-emerald-400">
+                    {formatCurrency(cashEquivalents, currencySymbol)}
+                  </span>
+                </div>
+
+                <div className="bg-neutral-900/60 p-2.5 rounded border border-neutral-800">
+                  <span className="text-[10px] text-neutral-400 block uppercase">
+                    Cash Left After Buy
                   </span>
                   <span
-                    className={`font-black text-lg tracking-wide ${
-                      isApproved ? 'text-emerald-400' : 'text-red-400'
+                    className={`text-sm font-bold ${
+                      remainingCashAfterPurchase >= 0 ? 'text-neutral-200' : 'text-red-400'
                     }`}
                   >
-                    {isApproved ? 'APPROVED TO BUY' : 'PURCHASE DENIED'}
+                    {formatCurrency(remainingCashAfterPurchase, currencySymbol)}
+                  </span>
+                </div>
+
+                <div className="bg-neutral-900/60 p-2.5 rounded border border-neutral-800">
+                  <span className="text-[10px] text-neutral-400 block uppercase">
+                    Reserves Consumed
+                  </span>
+                  <span
+                    className={`text-sm font-bold ${
+                      cashImpactPercent <= 10 ? 'text-emerald-400' : 'text-amber-400'
+                    }`}
+                  >
+                    {cashImpactPercent.toFixed(1)}%
                   </span>
                 </div>
               </div>
-              <span
-                className={`text-xs px-2.5 py-1 rounded font-bold border font-mono ${
-                  isApproved
-                    ? 'bg-emerald-900/80 text-emerald-200 border-emerald-500'
-                    : 'bg-red-900/80 text-red-200 border-red-500'
-                }`}
-              >
-                {multiplier}x Rule {isApproved ? 'Satisfied' : 'Failed'}
-              </span>
             </div>
-
-            {/* Explanation / Rationale */}
-            <div className="py-3 text-xs text-neutral-300 space-y-2">
-              <p>
-                {isApproved ? (
-                  <span>
-                    Great news! Buying <b className="text-white">"{itemName}"</b> for{' '}
-                    <b className="text-emerald-400 font-mono">{formatCurrency(itemPrice, currencySymbol)}</b> passes your{' '}
-                    <b className="text-white">{multiplier}x affordability rule</b>. You have ample liquid reserves to absorb this expenditure without compromising your long-term wealth stability.
-                  </span>
-                ) : (
-                  <span>
-                    Hold on! Buying <b className="text-white">"{itemName}"</b> for{' '}
-                    <b className="text-red-400 font-mono">{formatCurrency(itemPrice, currencySymbol)}</b> violates your{' '}
-                    <b className="text-white">{multiplier}x buffer target</b>. It would overextend your liquid reserves by{' '}
-                    <b className="text-red-300 font-mono">{formatCurrency(cashDeficit, currencySymbol)}</b>.
-                  </span>
-                )}
-              </p>
-
-              {!isApproved && monthsToAfford !== null && (
-                <div className="p-2.5 bg-neutral-900/80 border border-neutral-700 rounded text-amber-300 text-[11px] flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
-                  <span>
-                    At your current monthly savings run-rate, you can safely afford this purchase in approximately{' '}
-                    <b>{monthsToAfford} month{monthsToAfford === 1 ? '' : 's'}</b>.
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {/* Key Comparison Grid */}
-            <div className="grid grid-cols-2 gap-2 pt-3 border-t border-neutral-700/60 text-xs font-mono">
-              <div className="bg-neutral-900/60 p-2.5 rounded border border-neutral-800">
-                <span className="text-[10px] text-neutral-400 block uppercase">
-                  Required {multiplier}x Buffer
-                </span>
-                <span className="text-sm font-bold text-white">
-                  {formatCurrency(requiredAmount, currencySymbol)}
-                </span>
-              </div>
-
-              <div className="bg-neutral-900/60 p-2.5 rounded border border-neutral-800">
-                <span className="text-[10px] text-neutral-400 block uppercase">
-                  Available Liquid Cash
-                </span>
-                <span className="text-sm font-bold text-emerald-400">
-                  {formatCurrency(cashEquivalents, currencySymbol)}
-                </span>
-              </div>
-
-              <div className="bg-neutral-900/60 p-2.5 rounded border border-neutral-800">
-                <span className="text-[10px] text-neutral-400 block uppercase">
-                  Cash Left After Buy
-                </span>
-                <span
-                  className={`text-sm font-bold ${
-                    remainingCashAfterPurchase >= 0 ? 'text-neutral-200' : 'text-red-400'
-                  }`}
-                >
-                  {formatCurrency(remainingCashAfterPurchase, currencySymbol)}
-                </span>
-              </div>
-
-              <div className="bg-neutral-900/60 p-2.5 rounded border border-neutral-800">
-                <span className="text-[10px] text-neutral-400 block uppercase">
-                  Reserves Consumed
-                </span>
-                <span
-                  className={`text-sm font-bold ${
-                    cashImpactPercent <= 10 ? 'text-emerald-400' : 'text-amber-400'
-                  }`}
-                >
-                  {cashImpactPercent.toFixed(1)}%
-                </span>
-              </div>
-            </div>
-          </div>
+          )}
 
           {/* Action Pipeline: Log as Active Transaction & Asset */}
-          <div className="bg-white border border-neutral-300 rounded-lg p-4 shadow-xs space-y-3">
+          <div className="bg-white dark:bg-[#1a1f20] border border-neutral-300 dark:border-neutral-800 rounded-lg p-4 shadow-xs space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <div className="font-bold text-neutral-900 text-xs flex items-center gap-1.5">
+                <div className="font-bold text-neutral-900 dark:text-neutral-100 text-xs flex items-center gap-1.5">
                   <Layers className="w-4 h-4 text-emerald-600" />
                   <span>Ledger &amp; Balance Sheet Pipeline</span>
                 </div>
-                <p className="text-[11px] text-neutral-500 mt-0.5">
+                <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">
                   Instantly push this evaluated trade/purchase into your Logged Transactions and create a holding entry in Asset Inventory.
                 </p>
               </div>
 
               <button
                 type="button"
-                disabled={isLogging || itemPrice <= 0}
+                disabled={isLogging || !hasValidInput || numericPrice <= 0}
                 onClick={handleLogAction}
                 className={`px-4 py-2.5 rounded-lg text-xs font-bold transition shadow-xs cursor-pointer flex items-center justify-center gap-2 shrink-0 ${
-                  logSuccess
+                  !hasValidInput || numericPrice <= 0
+                    ? 'bg-neutral-200 dark:bg-neutral-800 text-neutral-400 dark:text-neutral-500 cursor-not-allowed border border-neutral-300 dark:border-neutral-700'
+                    : logSuccess
                     ? 'bg-emerald-600 text-white cursor-default'
                     : 'bg-neutral-900 hover:bg-neutral-800 text-white active:bg-black'
                 }`}
@@ -507,11 +586,11 @@ export const PurchaseCheckerPage: React.FC<PurchaseCheckerPageProps> = ({
             </div>
 
             {logSuccess && (
-              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-800 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2 animate-in fade-in duration-150">
+              <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-lg text-emerald-800 dark:text-emerald-200 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2 animate-in fade-in duration-150">
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                   <span>
-                    Successfully recorded in <b>Logged Transactions</b> (Expense) and <b>Asset Inventory</b> ({formatCurrency(itemPrice, currencySymbol)}).
+                    Successfully recorded in <b>Logged Transactions</b> (Expense) and <b>Asset Inventory</b> ({formatCurrency(numericPrice, currencySymbol)}).
                   </span>
                 </div>
                 {onNavigateToTab && (
@@ -537,16 +616,16 @@ export const PurchaseCheckerPage: React.FC<PurchaseCheckerPageProps> = ({
           </div>
 
           {/* Educational Insight Card: The 10x Wealth Rule */}
-          <div className="bg-white border border-neutral-300 rounded-lg p-4 shadow-xs text-xs space-y-2.5">
-            <div className="flex items-center gap-2 text-neutral-900 font-bold">
-              <Info className="w-4 h-4 text-blue-600" />
+          <div className="bg-white dark:bg-[#1a1f20] border border-neutral-300 dark:border-neutral-800 rounded-lg p-4 shadow-xs text-xs space-y-2.5">
+            <div className="flex items-center gap-2 text-neutral-900 dark:text-neutral-100 font-bold">
+              <Info className="w-4 h-4 text-blue-500" />
               <span>Why Use the 10x Wealth Rule?</span>
             </div>
-            <p className="text-neutral-600 leading-relaxed">
+            <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
               Standard consumer budgeting often only checks if you have enough money in your bank account to cover the sticker price right now.
               The <b>10x Rule</b> ensures you never suffer from lifestyle inflation or cashflow shocks:
             </p>
-            <ul className="list-disc pl-5 space-y-1 text-neutral-600">
+            <ul className="list-disc pl-5 space-y-1 text-neutral-600 dark:text-neutral-400">
               <li>
                 <b>Zero Regret:</b> Even after purchasing, 90% of your initial capital buffer remains intact and productive.
               </li>

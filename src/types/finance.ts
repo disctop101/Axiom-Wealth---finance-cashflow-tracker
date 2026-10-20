@@ -259,191 +259,31 @@ const pKey2 = `${_y2}-${String(_m2).padStart(2, '0')}`;
 const pKey3 = `${_currentYear}-${String(_m3).padStart(2, '0')}`;
 
 export const DEFAULT_BUDGETS: CategoryBudget[] = [
-  {
-    category: 'Utilities',
-    monthlyBudget: 30000,
-    periodBudgets: { [pKey1]: 30000, [pKey2]: 30000, [pKey3]: 30000 },
-  },
-  {
-    category: 'Food',
-    monthlyBudget: 50000,
-    periodBudgets: { [pKey1]: 48000, [pKey2]: 50000, [pKey3]: 50000 },
-  },
-  {
-    category: 'Health Care',
-    monthlyBudget: 35000,
-    periodBudgets: { [pKey1]: 35000, [pKey2]: 35000, [pKey3]: 35000 },
-  },
-  {
-    category: 'Personal Care',
-    monthlyBudget: 5000,
-    periodBudgets: { [pKey1]: 5000, [pKey2]: 5000, [pKey3]: 5000 },
-  },
-  {
-    category: 'Entertainment',
-    monthlyBudget: 5000,
-    periodBudgets: { [pKey1]: 5000, [pKey2]: 5000, [pKey3]: 5000 },
-  },
-  {
-    category: 'Transportation',
-    monthlyBudget: 10000,
-    periodBudgets: { [pKey1]: 10000, [pKey2]: 10000, [pKey3]: 10000 },
-  },
-  {
-    category: 'Account Payables',
-    monthlyBudget: 50000,
-    periodBudgets: { [pKey1]: 50000, [pKey2]: 50000, [pKey3]: 50000 },
-  },
-  {
-    category: 'Miscellaneous',
-    monthlyBudget: 30000,
-    periodBudgets: { [pKey1]: 30000, [pKey2]: 30000, [pKey3]: 30000 },
-  },
-  {
-    category: 'Housing',
-    monthlyBudget: 25000,
-    periodBudgets: { [pKey1]: 25000, [pKey2]: 25000, [pKey3]: 25000 },
-  },
-  {
-    category: 'Investments',
-    monthlyBudget: 20000,
-    periodBudgets: { [pKey1]: 20000, [pKey2]: 20000, [pKey3]: 20000 },
-  },
-  {
-    category: 'Savings',
-    monthlyBudget: 15000,
-    periodBudgets: { [pKey1]: 15000, [pKey2]: 15000, [pKey3]: 15000 },
-  },
+  { category: 'Utilities', monthlyBudget: 0, periodBudgets: {} },
+  { category: 'Food', monthlyBudget: 0, periodBudgets: {} },
+  { category: 'Health Care', monthlyBudget: 0, periodBudgets: {} },
+  { category: 'Personal Care', monthlyBudget: 0, periodBudgets: {} },
+  { category: 'Entertainment', monthlyBudget: 0, periodBudgets: {} },
+  { category: 'Transportation', monthlyBudget: 0, periodBudgets: {} },
+  { category: 'Account Payables', monthlyBudget: 0, periodBudgets: {} },
+  { category: 'Miscellaneous', monthlyBudget: 0, periodBudgets: {} },
+  { category: 'Housing', monthlyBudget: 0, periodBudgets: {} },
+  { category: 'Investments', monthlyBudget: 0, periodBudgets: {} },
+  { category: 'Savings', monthlyBudget: 0, periodBudgets: {} },
 ];
 
-export const DEFAULT_ASSETS: AssetItem[] = [
-  {
-    id: 'ast-1',
-    name: 'Cash in Bank (BPI / GCash)',
-    category: 'Cash and cash equivalents',
-    initialValue: 3238,
-    institution: 'BPI & Maya',
-    notes: 'Operating liquidity matching ending balance',
-    date: '2024-01-01',
-    createdAt: '2024-01-01',
-    updatedAt: '2024-03-31',
-  },
-  {
-    id: 'ast-2',
-    name: 'COL Financial Trading Account',
-    category: 'Investment accounts',
-    initialValue: 482,
-    institution: 'COL Financial / PSE',
-    stockCode: 'AREIT',
-    stockName: 'AREIT Inc.',
-    broker: 'COL Financial',
-    notes: 'Equities portfolio',
-    date: '2024-01-01',
-    createdAt: '2024-01-01',
-    updatedAt: '2024-03-31',
-  },
-  {
-    id: 'ast-3',
-    name: 'Business Inventory & Equipment',
-    category: 'Other assets',
-    initialValue: 192000,
-    institution: 'Private Holdings',
-    notes: 'Capital equipment and inventory valuation',
-    date: '2024-01-01',
-    createdAt: '2024-01-01',
-    updatedAt: '2024-03-31',
-  },
-];
+export const DEFAULT_ASSETS: AssetItem[] = [];
 
-export const DEFAULT_ASSET_TRANSACTIONS: AssetTransaction[] = [
-  {
-    id: 'atx-1',
-    assetId: 'ast-2',
-    name: 'Buy 500 shares AREIT',
-    type: 'buy',
-    amount: 182,
-    date: '2024-02-15',
-    stockCode: 'AREIT',
-    broker: 'COL Financial',
-    notes: 'Dividend REIT accumulation',
-    createdAt: '2024-02-15',
-  },
-  {
-    id: 'atx-2',
-    assetId: 'ast-2',
-    name: 'Cash Dividend payout',
-    type: 'deposit',
-    amount: 300,
-    date: '2024-03-01',
-    stockCode: 'AREIT',
-    broker: 'COL Financial',
-    notes: 'Quarterly dividend received',
-    createdAt: '2024-03-01',
-  },
-];
+export const DEFAULT_ASSET_TRANSACTIONS: AssetTransaction[] = [];
 
-export const DEFAULT_LIABILITIES: LiabilityItem[] = [
-  {
-    id: 'liab-1',
-    name: 'Home Mortgage (Pag-IBIG)',
-    category: 'Mortgage balance',
-    initialAmount: 117000,
-    interestRate: 6.25,
-    monthlyPayment: 8500,
-    lender: 'Pag-IBIG Fund',
-    purpose: 'financed_purchase',
-    date: '2024-01-01',
-    notes: 'Residential real estate housing amortized balance',
-    createdAt: '2024-01-01',
-    updatedAt: '2024-03-31',
-  },
-  {
-    id: 'liab-2',
-    name: 'Promissory Note & Equipment Loan',
-    category: 'Other debts',
-    initialAmount: 94200,
-    interestRate: 5.5,
-    monthlyPayment: 4200,
-    lender: 'BDO Unibank',
-    purpose: 'cash_loan',
-    date: '2024-01-01',
-    notes: 'Equipment financing payable',
-    createdAt: '2024-01-01',
-    updatedAt: '2024-03-31',
-  },
-];
+export const DEFAULT_LIABILITIES: LiabilityItem[] = [];
 
-export const DEFAULT_LIABILITY_PAYMENTS: LiabilityPayment[] = [
-  {
-    id: 'pay-1',
-    liabilityId: 'liab-1',
-    amount: 8500,
-    date: '2024-01-20',
-    notes: 'January amortization installment',
-    createdAt: '2024-01-20',
-  },
-  {
-    id: 'pay-2',
-    liabilityId: 'liab-1',
-    amount: 8500,
-    date: '2024-02-20',
-    notes: 'February amortization installment',
-    createdAt: '2024-02-20',
-  },
-  {
-    id: 'pay-3',
-    liabilityId: 'liab-2',
-    amount: 4200,
-    date: '2024-02-10',
-    notes: 'Equipment loan monthly amortization',
-    createdAt: '2024-02-10',
-  },
-];
-
-const _fmtDate = (y: number, m: number, d: number) =>
-  `${y}-${String(m).padStart(2, '0')}-${String(Math.min(28, d)).padStart(2, '0')}`;
+export const DEFAULT_LIABILITY_PAYMENTS: LiabilityPayment[] = [];
 
 export function generateDefaultTransactions(): TransactionItem[] {
+  return [];
+}
+/*
   const items: TransactionItem[] = [
     // Period Income
     {
@@ -619,59 +459,8 @@ export function generateDefaultTransactions(): TransactionItem[] {
       updatedAt: _fmtDate(_currentYear, _m3, 24),
     },
   ];
+*/
 
-  // Assign sequential entry numbers in chronological order
-  items.sort((a, b) => a.date.localeCompare(b.date));
-  items.forEach((item, idx) => {
-    item.entryNo = `TXN-${String(idx + 1).padStart(4, '0')}`;
-  });
+export const DEFAULT_TRANSACTIONS: TransactionItem[] = [];
 
-  return items;
-}
-
-export const DEFAULT_TRANSACTIONS: TransactionItem[] = generateDefaultTransactions();
-
-export const DEFAULT_RECURRING_EXPENSES: RecurringExpenseItem[] = [
-  {
-    id: 'rec-1',
-    name: 'Residential Apartment Rent',
-    category: 'Housing',
-    subCategory: 'fixed',
-    amount: 15000,
-    frequency: 'monthly',
-    startDate: '2026-01-01',
-    nextDueDate: new Date().toISOString().split('T')[0], // due today for demonstration
-    paymentMethod: 'Bank Transfer',
-    notes: 'Monthly condominium rent',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'rec-2',
-    name: 'Fiber Broadband Internet',
-    category: 'Utilities',
-    subCategory: 'fixed',
-    amount: 1899,
-    frequency: 'monthly',
-    startDate: '2026-01-10',
-    nextDueDate: new Date(Date.now() + 2 * 86400000).toISOString().split('T')[0], // due in 2 days
-    paymentMethod: 'Card',
-    notes: 'PLDT Home Fiber bill',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'rec-3',
-    name: 'Meralco Electric Power',
-    category: 'Utilities',
-    subCategory: 'fixed',
-    amount: 3850,
-    frequency: 'monthly',
-    startDate: '2026-01-15',
-    nextDueDate: new Date(Date.now() + 5 * 86400000).toISOString().split('T')[0], // due in 5 days
-    paymentMethod: 'Bank Transfer',
-    notes: 'Variable electric utility bill',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-];
+export const DEFAULT_RECURRING_EXPENSES: RecurringExpenseItem[] = [];

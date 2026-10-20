@@ -29,6 +29,7 @@ import {
   BookOpen,
   Smartphone,
   Download,
+  Clock,
 } from 'lucide-react';
 import { useTooltips } from '../context/TooltipContext';
 import { usePwa } from '../context/PwaContext';
@@ -48,6 +49,13 @@ import {
   getOwnerEmail,
   setOwnerEmail,
   SubscriptionPlanType,
+  getTrialStatus,
+  setSimulateTrialExpired,
+  resetTrialStartTime,
+  simulateTrialDaysRemaining,
+  activateFreeTrial,
+  resetTrialToUnactivated,
+  TrialStatus,
 } from '../services/subscription';
 import {
   changeUserPassword,
@@ -133,13 +141,50 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
 
-  // Wipe All Data State & Master Password Protection
+  // Wipe All Data State & Text Verification
   const [isWipeModalOpen, setIsWipeModalOpen] = useState(false);
   const [isWiping, setIsWiping] = useState(false);
-  const [wipePassword, setWipePassword] = useState('');
+  const [wipeConfirmationText, setWipeConfirmationText] = useState('');
   const [wipePasswordError, setWipePasswordError] = useState<string | null>(null);
-  const [showWipePassword, setShowWipePassword] = useState(false);
   const [wipeSuccessMsg, setWipeSuccessMsg] = useState<string | null>(null);
+
+  const isWipeConfirmed = wipeConfirmationText.trim().toLowerCase() === 'wipe all data';
+
+  // 15-Day Free Trial Simulation Controls State
+  const [trialInfo, setTrialInfo] = useState<TrialStatus>(getTrialStatus);
+
+  useEffect(() => {
+    const handleSyncTrial = () => {
+      setTrialInfo(getTrialStatus());
+    };
+    window.addEventListener('axiom_trial_change', handleSyncTrial);
+    return () => window.removeEventListener('axiom_trial_change', handleSyncTrial);
+  }, []);
+
+  const handleActivateTrial = () => {
+    const next = activateFreeTrial();
+    setTrialInfo(next);
+  };
+
+  const handleResetToUnactivated = () => {
+    const next = resetTrialToUnactivated();
+    setTrialInfo(next);
+  };
+
+  const handleSimulateTrialExpired = () => {
+    setSimulateTrialExpired(true);
+    setTrialInfo(getTrialStatus());
+  };
+
+  const handleResetTrial = () => {
+    const next = resetTrialStartTime();
+    setTrialInfo(next);
+  };
+
+  const handleSimulateTrial3Days = () => {
+    const next = simulateTrialDaysRemaining(3);
+    setTrialInfo(next);
+  };
 
   // Global Category Color Management State
   const [categoryColors, setCategoryColors] = useState<Record<string, string>>(() => loadCategoryColors());
@@ -178,49 +223,19 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 
   const handleConfirmWipe = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!wipePassword.trim()) {
-      setWipePasswordError('Master password is required to authorize data wipe.');
+    if (!isWipeConfirmed) {
+      setWipePasswordError('Please type "wipe all data" exactly to authorize.');
       return;
     }
 
     try {
       setIsWiping(true);
       setWipePasswordError(null);
-
-      let isVerified = false;
-      if (user && isPasswordUser && user.email) {
-        try {
-          const { EmailAuthProvider, reauthenticateWithCredential } = await import('firebase/auth');
-          const credential = EmailAuthProvider.credential(user.email, wipePassword.trim());
-          await reauthenticateWithCredential(user, credential);
-          isVerified = true;
-        } catch (authErr: any) {
-          setWipePasswordError('Incorrect account password. Verification failed.');
-          setIsWiping(false);
-          return;
-        }
-      } else {
-        const configuredMaster = localStorage.getItem('axiom_master_password') || 'admin';
-        if (
-          wipePassword.trim() === configuredMaster ||
-          wipePassword.trim() === 'admin' ||
-          wipePassword.trim() === 'DELETE'
-        ) {
-          isVerified = true;
-        } else {
-          setWipePasswordError('Incorrect master authorization password. (Default master pass: admin)');
-          setIsWiping(false);
-          return;
-        }
-      }
-
-      if (isVerified) {
-        await onWipeAllData();
-        setIsWipeModalOpen(false);
-        setWipePassword('');
-        setWipeSuccessMsg('All transaction data, cash balances and ledger records were completely zeroed out.');
-        setTimeout(() => setWipeSuccessMsg(null), 4000);
-      }
+      await onWipeAllData();
+      setIsWipeModalOpen(false);
+      setWipeConfirmationText('');
+      setWipeSuccessMsg('All logged assets, liabilities, transactions, and cash balances were completely purged to a zero-balance state.');
+      setTimeout(() => setWipeSuccessMsg(null), 4000);
     } catch (err: any) {
       console.error('Wipe data failed:', err);
       setWipePasswordError(err?.message || 'Data wipe failed.');
@@ -892,15 +907,15 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 p-3.5 bg-neutral-50 rounded-lg border border-neutral-200">
                 <div>
                   <div className="font-bold text-neutral-900 flex items-center gap-1.5">
-                    <Sparkles className="w-4 h-4 text-amber-500" />
-                    <span>Axiom Wealth Pro Status</span>
+                    <Sparkles className="w-4 h-4 text-emerald-600" />
+                    <span>Axiom Wealth Tier Status</span>
                   </div>
                   <div className="text-neutral-500 text-[11px] mt-0.5">
                     {isAdmin && !previewAsCustomer
-                      ? 'Owner Admin Account: Full unrestricted access granted via permanent owner bypass.'
+                      ? 'Owner Admin Account: Full unrestricted access granted via permanent owner bypass (Apex Tier).'
                       : isSubscribed
-                      ? `Active Subscriber (${subscriptionPlan || 'Pro'} membership active).`
-                      : 'Free Tier / Preview Mode: Paywall required for premium ledger functions.'}
+                      ? `Apex Tier Active (${subscriptionPlan || 'Active'} membership) · Cloud sync & full automations enabled.`
+                      : 'Essential Tier (Free): Local device storage only. Upgrade to Apex for cloud sync, advanced analytics, and PDF exports.'}
                   </div>
                 </div>
 
@@ -911,28 +926,8 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                     className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-emerald-700 hover:bg-emerald-600 text-white rounded font-bold text-xs shadow-xs transition cursor-pointer"
                   >
                     <Sparkles className="w-3.5 h-3.5" />
-                    <span>View Paywall</span>
+                    <span>Growth Checkpoint &bull; Apex Plans</span>
                   </button>
-
-                  <a
-                    href="https://play.google.com/store/account/subscriptions"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-1.5 px-3 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 hover:text-white rounded font-bold text-xs shadow-xs transition cursor-pointer border border-neutral-600"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>Manage Subscription</span>
-                  </a>
-
-                  <a
-                    href="https://play.google.com/store/account/subscriptions"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-1.5 px-3 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 hover:text-white rounded font-bold text-xs shadow-xs transition cursor-pointer border border-neutral-600"
-                  >
-                    <CreditCard className="w-3.5 h-3.5 text-sky-400" />
-                    <span>Update Payment Method</span>
-                  </a>
                 </div>
               </div>
             </div>
@@ -1057,6 +1052,103 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                 </div>
               )}
 
+              {/* 15-Day Free Trial Simulation & Testing Panel */}
+              <div className="p-4 bg-neutral-850 rounded-lg border border-neutral-700/80 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <div className="font-bold text-white flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-emerald-400" />
+                      <span>Apex 15-Day Free Trial Controls</span>
+                      <span
+                        className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                          !trialInfo.isActivated
+                            ? 'bg-neutral-800 text-neutral-300 border border-neutral-700'
+                            : trialInfo.isActive
+                            ? 'bg-emerald-950 text-emerald-300 border border-emerald-700'
+                            : 'bg-red-950 text-red-300 border border-red-700'
+                        }`}
+                      >
+                        {!trialInfo.isActivated
+                          ? 'UNACTIVATED (Essential Tier)'
+                          : trialInfo.isActive
+                          ? `ACTIVE (${trialInfo.daysRemaining}d remaining)`
+                          : 'EXPIRED (Downgraded to Essential)'}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-neutral-400 mt-0.5">
+                      Test Essential vs. Apex gating. Trials do not start automatically; users must activate them. Use buttons below to simulate states.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2 shrink-0">
+                    {!trialInfo.isActivated && (
+                      <button
+                        type="button"
+                        onClick={handleActivateTrial}
+                        className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white rounded text-xs font-bold border border-emerald-500 transition cursor-pointer"
+                      >
+                        Activate 15-Day Trial
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={handleSimulateTrialExpired}
+                      className="px-3 py-1.5 bg-red-900/80 hover:bg-red-800 text-red-100 rounded text-xs font-bold border border-red-700 transition cursor-pointer"
+                    >
+                      Simulate Trial Expired
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSimulateTrial3Days}
+                      className="px-2.5 py-1.5 bg-amber-900/70 hover:bg-amber-800 text-amber-200 rounded text-xs font-bold border border-amber-700 transition cursor-pointer"
+                    >
+                      Simulate 3 Days Left
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleResetTrial}
+                      className="px-2.5 py-1.5 bg-neutral-700 hover:bg-neutral-600 text-white rounded text-xs font-bold border border-neutral-600 transition cursor-pointer"
+                    >
+                      Reset (Day 1)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleResetToUnactivated}
+                      className="px-2.5 py-1.5 bg-neutral-800 hover:bg-neutral-750 text-neutral-300 rounded text-xs font-bold border border-neutral-650 transition cursor-pointer"
+                    >
+                      Reset Unactivated
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-neutral-800 text-[11px] font-mono">
+                  <div>
+                    <span className="text-neutral-500 block text-[10px]">TRIAL STARTED</span>
+                    <span className="text-neutral-200">
+                      {trialInfo.startTime ? new Date(trialInfo.startTime).toLocaleDateString() : 'Not activated'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-neutral-500 block text-[10px]">TRIAL EXPIRES</span>
+                    <span className="text-neutral-200">
+                      {trialInfo.endTime ? new Date(trialInfo.endTime).toLocaleDateString() : '—'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-neutral-500 block text-[10px]">DAYS REMAINING</span>
+                    <span className={trialInfo.isActive ? 'text-emerald-400 font-bold' : trialInfo.isExpired ? 'text-red-400 font-bold' : 'text-neutral-400'}>
+                      {trialInfo.isActivated ? `${trialInfo.daysRemaining} days` : '15 days (unclaimed)'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-neutral-500 block text-[10px]">SIMULATION STATUS</span>
+                    <span className={trialInfo.simExpired ? 'text-red-400 font-bold' : 'text-neutral-400'}>
+                      {trialInfo.simExpired ? 'Forced Expired' : 'Normal Clock'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
               {/* Developer Test Utilities */}
               <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-neutral-800">
                 <span className="text-[11px] text-neutral-400 font-medium">Quick Test Actions:</span>
@@ -1102,7 +1194,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
         </section>
       )}
 
-      {/* High-Security Master Password Protected Modal for Wipe All Data */}
+      {/* Text Verification Modal for Wipe All Data */}
       {isWipeModalOpen && (
         <div
           role="dialog"
@@ -1121,7 +1213,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                     Authorize Data Wipe
                   </h3>
                   <p className="text-[11px] text-neutral-400 font-mono">
-                    Master Password Verification Required
+                    Text Verification Required
                   </p>
                 </div>
               </div>
@@ -1130,7 +1222,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                 onClick={() => {
                   if (!isWiping) {
                     setIsWipeModalOpen(false);
-                    setWipePassword('');
+                    setWipeConfirmationText('');
                     setWipePasswordError(null);
                   }
                 }}
@@ -1143,7 +1235,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             {/* Body Form */}
             <form onSubmit={handleConfirmWipe} className="p-5 space-y-4 text-xs">
               <div className="p-3 bg-red-950/60 border border-red-800/80 rounded-lg text-red-200 leading-relaxed text-[11px]">
-                <b>Warning: Irreversible Action</b>. This operation will purge all logged transactions, zero out beginning balances and rolling cash equivalents across your local browser storage and Cloud Firestore.
+                <b>Warning: Irreversible Action</b>. This operation will purge all logged transactions, assets, liabilities, and recurring expenses, zeroing out beginning balances and cash equivalents across your local browser storage and Cloud Firestore.
               </div>
 
               {wipePasswordError && (
@@ -1154,38 +1246,23 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
               )}
 
               <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-neutral-300 flex items-center justify-between">
-                  <span className="flex items-center gap-1.5">
-                    <Lock className="w-3.5 h-3.5 text-red-400" />
-                    <span>Enter Master Password</span>
-                  </span>
-                  <span className="text-[10px] text-neutral-400 font-normal">
-                    {user && isPasswordUser ? 'Account Password' : 'Admin Passphrase'}
-                  </span>
+                <label className="text-[11px] font-bold text-neutral-300 block">
+                  To confirm permanent deletion, please type <span className="text-red-400 font-mono font-bold bg-neutral-900 px-1.5 py-0.5 rounded border border-neutral-700">wipe all data</span> below:
                 </label>
 
                 <div className="relative">
                   <input
-                    type={showWipePassword ? 'text' : 'password'}
+                    type="text"
                     required
                     autoFocus
-                    value={wipePassword}
-                    onChange={(e) => setWipePassword(e.target.value)}
-                    placeholder="Enter password to authorize wipe..."
-                    className="w-full bg-neutral-900 border border-neutral-700 rounded-lg pl-3 pr-9 py-2 text-xs text-white placeholder-neutral-500 focus:outline-hidden focus:border-red-500 font-mono"
+                    value={wipeConfirmationText}
+                    onChange={(e) => setWipeConfirmationText(e.target.value)}
+                    placeholder='Type "wipe all data"'
+                    className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-hidden focus:border-red-500 font-mono"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowWipePassword(!showWipePassword)}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-200 cursor-pointer"
-                  >
-                    {showWipePassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                  </button>
                 </div>
-                <p className="text-[10px] text-neutral-400 font-mono">
-                  {user && isPasswordUser
-                    ? 'Enter your Firebase account password to authenticate.'
-                    : 'Enter master authorization passphrase (Default: "admin" or "DELETE").'}
+                <p className="text-[10px] text-neutral-400">
+                  Type the exact phrase <code className="text-red-300">wipe all data</code> to activate the deletion button.
                 </p>
               </div>
 
@@ -1195,7 +1272,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                   disabled={isWiping}
                   onClick={() => {
                     setIsWipeModalOpen(false);
-                    setWipePassword('');
+                    setWipeConfirmationText('');
                     setWipePasswordError(null);
                   }}
                   className="px-3.5 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded font-bold text-xs transition cursor-pointer"
@@ -1204,11 +1281,11 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                 </button>
                 <button
                   type="submit"
-                  disabled={isWiping || !wipePassword.trim()}
-                  className="px-4 py-2 bg-red-700 hover:bg-red-600 disabled:opacity-50 text-white rounded font-bold text-xs shadow-md transition cursor-pointer flex items-center gap-1.5"
+                  disabled={isWiping || !isWipeConfirmed}
+                  className="px-4 py-2 bg-red-700 hover:bg-red-600 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded font-bold text-xs shadow-md transition cursor-pointer flex items-center gap-1.5"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
-                  <span>{isWiping ? 'Verifying & Wiping...' : 'Authorize & Wipe All Data'}</span>
+                  <span>{isWiping ? 'Wiping All Data...' : 'Authorize & Wipe All Data'}</span>
                 </button>
               </div>
             </form>

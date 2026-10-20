@@ -13,6 +13,8 @@ import {
   ArrowRight,
   AlertCircle,
   CheckCircle2,
+  Copy,
+  Check,
 } from 'lucide-react';
 import {
   googleSignIn,
@@ -32,6 +34,7 @@ interface AuthModalProps {
   onClose: () => void;
   initialMode?: AuthMode;
   onSuccess?: (user: User) => void;
+  isMandatory?: boolean;
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({
@@ -39,8 +42,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onClose,
   initialMode = 'signin',
   onSuccess,
+  isMandatory = false,
 }) => {
-  const [mode, setMode] = useState<AuthMode>(initialMode);
+  const [mode, setMode] = useState<AuthMode>(isMandatory ? 'signup' : initialMode);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -52,12 +56,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [unauthorizedDomain, setUnauthorizedDomain] = useState<string | null>(null);
+  const [domainCopied, setDomainCopied] = useState(false);
 
   if (!isOpen) return null;
 
   const resetFormState = () => {
     setErrorMsg(null);
     setSuccessMsg(null);
+    setUnauthorizedDomain(null);
     setPassword('');
     setConfirmPassword('');
     setTotpCode('');
@@ -74,13 +81,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     try {
       setIsLoading(true);
       setErrorMsg(null);
+      setUnauthorizedDomain(null);
       const res = await googleSignIn();
       if (res?.user) {
         if (onSuccess) onSuccess(res.user);
         onClose();
       }
     } catch (err: any) {
-      setErrorMsg(getFriendlyAuthError(err));
+      if (err?.code === 'auth/unauthorized-domain') {
+        const host = typeof window !== 'undefined' && window.location.hostname ? window.location.hostname : 'this domain';
+        setUnauthorizedDomain(host);
+      } else {
+        setErrorMsg(getFriendlyAuthError(err));
+      }
     } finally {
       setIsLoading(false);
     }
@@ -223,34 +236,91 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </div>
             <div>
               <h2 className="text-sm font-extrabold uppercase tracking-wider text-neutral-100">
-                {mode === 'signin' && 'Sign In to Axiom'}
-                {mode === 'signup' && 'Create Your Account'}
-                {mode === 'forgot' && 'Reset Password'}
-                {mode === 'mfa' && 'Two-Factor Authentication'}
-                {mode === 'magic' && 'Passwordless Magic Link'}
+                {isMandatory && mode === 'signup'
+                  ? 'Welcome to Axiom Wealth'
+                  : isMandatory && mode === 'signin'
+                  ? 'Sign In to Your Account'
+                  : mode === 'signin'
+                  ? 'Sign In to Axiom'
+                  : mode === 'signup'
+                  ? 'Create Your Account'
+                  : mode === 'forgot'
+                  ? 'Reset Password'
+                  : mode === 'mfa'
+                  ? 'Two-Factor Authentication'
+                  : 'Passwordless Magic Link'}
               </h2>
               <p className="text-[11px] text-neutral-400 font-mono">
-                {mode === 'signin' && 'Access cloud sync & professional ledger'}
-                {mode === 'signup' && 'Start tracking your net worth today'}
-                {mode === 'forgot' && 'We will email you a secure recovery link'}
-                {mode === 'mfa' && 'Enter 6-digit TOTP code to verify'}
-                {mode === 'magic' && 'Sign in instantly via secure email link'}
+                {isMandatory && (mode === 'signup' || mode === 'signin')
+                  ? 'Sign up or sign in to access your personal dashboard & ledger'
+                  : mode === 'signin'
+                  ? 'Access cloud sync & professional ledger'
+                  : mode === 'signup'
+                  ? 'Start tracking your net worth today'
+                  : mode === 'forgot'
+                  ? 'We will email you a secure recovery link'
+                  : mode === 'mfa'
+                  ? 'Enter 6-digit TOTP code to verify'
+                  : 'Sign in instantly via secure email link'}
               </p>
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800 transition cursor-pointer"
-            aria-label="Close modal"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          {!isMandatory && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800 transition cursor-pointer"
+              aria-label="Close modal"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
 
         {/* Modal Body */}
         <div className="p-5 overflow-y-auto space-y-4">
+          {/* Domain Authorization Assistance Card */}
+          {unauthorizedDomain && (
+            <div className="p-3.5 bg-amber-950/70 border border-amber-600/80 rounded-lg text-xs space-y-2.5 shadow-md animate-in fade-in duration-100">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-center gap-1.5 text-amber-300 font-bold">
+                  <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span>Google Sign-In Domain Verification</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setUnauthorizedDomain(null)}
+                  className="text-amber-400 hover:text-white text-[11px] font-semibold cursor-pointer"
+                >
+                  Dismiss
+                </button>
+              </div>
+              <p className="text-neutral-300 text-[11px] leading-relaxed">
+                Google OAuth is restricted because this Vercel deployment domain has not yet been registered in Firebase Authorized Domains.
+              </p>
+              <div className="flex items-center justify-between gap-2 p-2 bg-neutral-900/90 rounded border border-neutral-700 font-mono text-[11px] text-amber-200">
+                <span className="truncate">{unauthorizedDomain}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(unauthorizedDomain);
+                    setDomainCopied(true);
+                    setTimeout(() => setDomainCopied(false), 2000);
+                  }}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded bg-amber-900/60 hover:bg-amber-800 text-amber-200 text-[10px] font-sans font-bold cursor-pointer shrink-0 transition"
+                  title="Copy domain to paste into Firebase Console"
+                >
+                  {domainCopied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                  <span>{domainCopied ? 'Copied!' : 'Copy Domain'}</span>
+                </button>
+              </div>
+              <p className="text-[11px] text-emerald-400 font-medium pt-1.5 border-t border-amber-800/40">
+                👉 You can sign in or register immediately using Email &amp; Password or Magic Link below.
+              </p>
+            </div>
+          )}
+
           {/* Error Message Alert */}
           {errorMsg && (
             <div className="p-3 bg-red-950/80 border border-red-800 text-red-200 rounded-lg text-xs flex items-start justify-between gap-2 shadow-sm animate-in fade-in duration-100">

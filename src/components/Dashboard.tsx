@@ -63,6 +63,8 @@ interface DashboardProps {
     paidDate?: string
   ) => Promise<void> | void;
   onOpenHelp?: () => void;
+  hasApexAccess?: boolean;
+  onOpenGrowthCheckpoint?: (trigger?: 'export') => void;
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({
@@ -85,6 +87,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onDeleteRecurringExpense,
   onPayRecurringExpense,
   onOpenHelp,
+  hasApexAccess = true,
+  onOpenGrowthCheckpoint,
 }) => {
   const [internalSubTab, setInternalSubTab] = React.useState<'dashboard' | 'income' | 'cashflow' | 'balancesheet'>('dashboard');
   const currentSubTab = activeSubTab || internalSubTab;
@@ -111,6 +115,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
   // PDF Export State & Handler
   const [isExportingPdf, setIsExportingPdf] = React.useState(false);
   const handleExportPdf = async () => {
+    if (!hasApexAccess) {
+      if (onOpenGrowthCheckpoint) onOpenGrowthCheckpoint('export');
+      return;
+    }
     try {
       setIsExportingPdf(true);
       const safeOwner = (userName && userName.trim()) || 'Personal';

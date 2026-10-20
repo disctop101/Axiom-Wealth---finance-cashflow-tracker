@@ -66,6 +66,7 @@ import {
   deleteTransactionItemFromCloud,
   wipeAllTransactionsFromStorageAndCloud,
   wipeAllDataToPureZero,
+  runOneTimeTestDataPurge,
 } from './services/storage';
 import { generate90DayMockData } from './services/mockData';
 import { Navbar, AppNavTab } from './components/Navbar';
@@ -79,7 +80,7 @@ import { AnalyticsPage } from './components/AnalyticsPage';
 import { PurchaseCheckerPage } from './components/PurchaseCheckerPage';
 import { StockDividendCalculatorPage } from './components/StockDividendCalculatorPage';
 import { NotificationsPage } from './components/NotificationsPage';
-import { PaywallModal } from './components/PaywallModal';
+import { GrowthCheckpointModal, GrowthCheckpointTrigger } from './components/GrowthCheckpointModal';
 import { ExportSheetsModal } from './components/ExportSheetsModal';
 import { CategoryDetailModal } from './components/CategoryDetailModal';
 import { HelpModal } from './components/HelpModal';
@@ -94,6 +95,7 @@ import {
   setPreviewAsCustomer,
   getLocalSubscriptionStatus,
   setLocalSubscriptionStatus,
+  activateFreeTrial,
   SubscriptionPlanType,
 } from './services/subscription';
 import {
@@ -115,16 +117,71 @@ import {
   Sliders,
   Sparkles,
   Repeat,
+  Shield,
+  Calculator,
 } from 'lucide-react';
+
+// Purge any previously injected 90-day test data or mock fixtures on app load
+runOneTimeTestDataPurge();
 
 export default function App() {
   // Navigation tab
   const [activeTab, setActiveTab] = useState<AppNavTab>('dashboard');
 
-  // Subscription, Admin Bypass & Paywall State
+  // Subscription, Admin Bypass & Growth Checkpoint State
   const [previewAsCustomer, setPreviewAsCustomerState] = useState<boolean>(getPreviewAsCustomer);
   const [subscriptionState, setSubscriptionState] = useState(getLocalSubscriptionStatus);
-  const [isPaywallOpen, setIsPaywallOpen] = useState(false);
+  const [isGrowthCheckpointOpen, setIsGrowthCheckpointOpen] = useState(false);
+  const [growthCheckpointTrigger, setGrowthCheckpointTrigger] = useState<GrowthCheckpointTrigger>('general');
+
+  const handleOpenGrowthCheckpoint = (
+    trigger: GrowthCheckpointTrigger = 'general'
+  ) => {
+    setGrowthCheckpointTrigger(trigger);
+    setIsGrowthCheckpointOpen(true);
+  };
+
+  // 15-Day Trial Live Refresh Listener
+  const [trialRevision, setTrialRevision] = useState(0);
+
+  useEffect(() => {
+    const handleTrialChange = () => {
+      setTrialRevision((r) => r + 1);
+      setSubscriptionState(getLocalSubscriptionStatus());
+    };
+    window.addEventListener('axiom_trial_change', handleTrialChange);
+    return () => window.removeEventListener('axiom_trial_change', handleTrialChange);
+  }, []);
+
+  // Auth & Token State
+  const [user, setUser] = useState<User | null>(null);
+  const [authInitialized, setAuthInitialized] = useState(false);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  // User Access & Subscription Status computation
+  const userAccess = useMemo(
+    () => computeUserAccess(user, previewAsCustomer),
+    [user, previewAsCustomer, subscriptionState, trialRevision]
+  );
+
+  // Auto-trigger Growth Checkpoint modal if an Essential tier user attempts to open an Apex-locked tool
+  useEffect(() => {
+    if (
+      !userAccess.hasApexAccess &&
+      (activeTab === 'purchase-checker' ||
+        activeTab === 'stock-dividend-calculator' ||
+        activeTab === 'analytics')
+    ) {
+      handleOpenGrowthCheckpoint(
+        activeTab === 'purchase-checker'
+          ? 'purchase_checker'
+          : activeTab === 'stock-dividend-calculator'
+          ? 'stock_calculator'
+          : 'analytics'
+      );
+    }
+  }, [activeTab, userAccess.hasApexAccess]);
 
   // Context-aware mobile sub-tabs per main page
   const [dashboardSubTab, setDashboardSubTab] = useState<'dashboard' | 'income' | 'cashflow' | 'balancesheet'>('dashboard');
@@ -162,11 +219,6 @@ export default function App() {
       return next;
     });
   };
-
-  // Auth & Token State
-  const [user, setUser] = useState<User | null>(null);
-  const [accessToken, setAccessToken] = useState<string | null>(null);
-  const [isSyncing, setIsSyncing] = useState(false);
 
   // App Data State
   const [period, setPeriod] = useState<PeriodSettings>(loadLocalPeriod);
@@ -233,6 +285,7 @@ export default function App() {
     const unsubscribe = initAuth(
       async (authUser, token) => {
         setUser(authUser);
+        setAuthInitialized(true);
         if (token) {
           setAccessToken(token);
         } else {
@@ -240,7 +293,8 @@ export default function App() {
           setAccessToken(cached);
         }
 
-        if (authUser) {
+        const access = computeUserAccess(authUser, previewAsCustomer);
+        if (authUser && access.hasApexAccess) {
           setIsSyncing(true);
           try {
             await syncUserDataToFirestore(
@@ -262,15 +316,16 @@ export default function App() {
       () => {
         setUser(null);
         setAccessToken(null);
+        setAuthInitialized(true);
       }
     );
 
     return () => unsubscribe();
-  }, [assets, liabilities, transactions, period]);
+  }, [assets, liabilities, transactions, period, previewAsCustomer]);
 
-  // Subscribe to real-time Firestore updates if user is authenticated
+  // Subscribe to real-time Firestore updates if user is authenticated AND on Apex tier
   useEffect(() => {
-    if (!user) return;
+    if (!user || !userAccess.hasApexAccess) return;
 
     const unsubAssets = subscribeToUserAssets(
       user.uid,
@@ -288,7 +343,7 @@ export default function App() {
       unsubAssets();
       unsubLiabilities();
     };
-  }, [user]);
+  }, [user, userAccess.hasApexAccess]);
 
   // Save to Local Storage on updates
   useEffect(() => {
@@ -504,12 +559,12 @@ export default function App() {
       };
 
       setTransactions((prev) => [crossTx, ...prev]);
-      if (user) {
+      if (user && userAccess.hasApexAccess) {
         await saveTransactionItemToCloud(user.uid, crossTx);
       }
     }
 
-    if (user) {
+    if (user && userAccess.hasApexAccess) {
       await saveAssetItemToCloud(user.uid, item);
     }
   };
@@ -517,7 +572,7 @@ export default function App() {
   const handleUpdateAsset = async (updated: AssetItem) => {
     setAssets((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
 
-    if (user) {
+    if (user && userAccess.hasApexAccess) {
       await saveAssetItemToCloud(user.uid, updated);
     }
   };
@@ -527,7 +582,7 @@ export default function App() {
     setAssetTransactions((prev) => prev.filter((t) => t.assetId !== assetId));
     setTransactions((prev) => prev.filter((t) => t.linkedAssetId !== assetId));
 
-    if (user) {
+    if (user && userAccess.hasApexAccess) {
       await deleteAssetItemFromCloud(user.uid, assetId);
     }
   };
@@ -576,7 +631,7 @@ export default function App() {
     };
     setTransactions((prev) => [newTx, ...prev]);
 
-    if (user) {
+    if (user && userAccess.hasApexAccess) {
       await saveAssetItemToCloud(user.uid, newAsset);
       await saveTransactionItemToCloud(user.uid, newTx);
     }
@@ -632,7 +687,7 @@ export default function App() {
       };
 
       setTransactions((prev) => [crossTx, ...prev]);
-      if (user) {
+      if (user && userAccess.hasApexAccess) {
         await saveTransactionItemToCloud(user.uid, crossTx);
       }
     }
@@ -690,12 +745,12 @@ export default function App() {
       };
 
       setTransactions((prev) => [crossTx, ...prev]);
-      if (user) {
+      if (user && userAccess.hasApexAccess) {
         await saveTransactionItemToCloud(user.uid, crossTx);
       }
     }
 
-    if (user) {
+    if (user && userAccess.hasApexAccess) {
       await saveLiabilityItemToCloud(user.uid, item);
     }
   };
@@ -703,7 +758,7 @@ export default function App() {
   const handleUpdateLiability = async (updated: LiabilityItem) => {
     setLiabilities((prev) => prev.map((l) => (l.id === updated.id ? updated : l)));
 
-    if (user) {
+    if (user && userAccess.hasApexAccess) {
       await saveLiabilityItemToCloud(user.uid, updated);
     }
   };
@@ -713,7 +768,7 @@ export default function App() {
     setLiabilityPayments((prev) => prev.filter((p) => p.liabilityId !== liabilityId));
     setTransactions((prev) => prev.filter((t) => t.linkedLiabilityId !== liabilityId));
 
-    if (user) {
+    if (user && userAccess.hasApexAccess) {
       await deleteLiabilityItemFromCloud(user.uid, liabilityId);
     }
   };
@@ -761,7 +816,7 @@ export default function App() {
       };
 
       setTransactions((prev) => [crossTx, ...prev]);
-      if (user) {
+      if (user && userAccess.hasApexAccess) {
         await saveTransactionItemToCloud(user.uid, crossTx);
       }
     }
@@ -805,7 +860,7 @@ export default function App() {
 
     setTransactions((prev) => [newTx, ...prev]);
 
-    if (user) {
+    if (user && userAccess.hasApexAccess) {
       await saveTransactionItemToCloud(user.uid, newTx);
     }
   };
@@ -813,7 +868,7 @@ export default function App() {
   const handleUpdateTransaction = async (updated: TransactionItem) => {
     setTransactions((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
 
-    if (user) {
+    if (user && userAccess.hasApexAccess) {
       await saveTransactionItemToCloud(user.uid, updated);
     }
   };
@@ -821,7 +876,7 @@ export default function App() {
   const handleDeleteTransaction = async (txId: string) => {
     setTransactions((prev) => prev.filter((t) => t.id !== txId));
 
-    if (user) {
+    if (user && userAccess.hasApexAccess) {
       await deleteTransactionItemFromCloud(user.uid, txId);
     }
   };
@@ -851,6 +906,10 @@ export default function App() {
     paymentMethod: PaymentMethodType = 'Cash',
     paidDate?: string
   ) => {
+    if (!userAccess.hasApexAccess) {
+      handleOpenGrowthCheckpoint('recurring_automation');
+      return;
+    }
     const rec = recurringExpenses.find((r) => r.id === recurringId);
     if (!rec) return;
 
@@ -1049,15 +1108,17 @@ export default function App() {
     return baseBeginning + netTransactions;
   }, [period.beginningBalance, transactions]);
 
-  // Wipe All Data handler: completely clears all logged transaction entries from local storage and Firebase,
-  // zeroes out beginning balance and 'Cash and cash equivalents' so the app resets to a pure zero state.
+  // Wipe All Data handler: completely clears all logged assets, liabilities, transactions,
+  // and recurring expenses from local storage and Firebase, zeroing out beginning balance so the app resets to a pure zero state.
   const handleWipeAllTransactions = async () => {
-    const { newPeriod, newAssets } = await wipeAllDataToPureZero(user ? user.uid : null, period, assets);
+    const { newPeriod } = await wipeAllDataToPureZero(user ? user.uid : null, period, assets);
     setTransactions([]);
+    setAssets([]);
     setAssetTransactions([]);
+    setLiabilities([]);
     setLiabilityPayments([]);
+    setRecurringExpenses([]);
     setPeriod(newPeriod);
-    setAssets(newAssets);
   };
 
   // 90-Day Comprehensive Mock Data Injection Handler
@@ -1080,12 +1141,6 @@ export default function App() {
 
     alert('Successfully injected 90-day comprehensive test data! All charts, time window filters, and performance modules are now fully populated.');
   };
-
-  // User Access & Subscription Status computation
-  const userAccess = useMemo(
-    () => computeUserAccess(user, previewAsCustomer),
-    [user, previewAsCustomer]
-  );
 
   const handleTogglePreviewAsCustomer = (val: boolean) => {
     setPreviewAsCustomer(val);
@@ -1111,6 +1166,36 @@ export default function App() {
   const handleQuickLog = () => {
     setIsQuickLogModalOpen(true);
   };
+
+  // Mandatory Onboarding & Authentication Guard
+  if (!authInitialized) {
+    return (
+      <div className="min-h-screen bg-[#121416] flex flex-col items-center justify-center p-4 text-white">
+        <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 mb-4 animate-pulse">
+          <Sparkles className="w-6 h-6" />
+        </div>
+        <h1 className="text-xl font-black uppercase tracking-wider text-white">Axiom Wealth</h1>
+        <p className="text-xs text-neutral-400 font-mono mt-1">Initializing secure session...</p>
+      </div>
+    );
+  }
+
+  // Require all users to sign up / create an account before accessing the dashboard
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-[#121416] flex flex-col items-center justify-center p-3 sm:p-4 text-white">
+        <AuthModal
+          isOpen={true}
+          isMandatory={true}
+          initialMode="signup"
+          onClose={() => {}}
+          onSuccess={(authUser) => {
+            setUser(authUser);
+          }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#f4f6f8] dark:bg-[#121416] text-neutral-900 dark:text-neutral-100 font-sans antialiased flex flex-col transition-colors duration-150">
@@ -1148,13 +1233,15 @@ export default function App() {
           onPayRecurringExpense={handlePayRecurringExpense}
           onQuickLog={handleQuickLog}
           onOpenHelp={handleOpenMasterHelp}
+          hasApexAccess={userAccess.hasApexAccess}
+          onOpenGrowthCheckpoint={() => handleOpenGrowthCheckpoint('general')}
         />
       )}
 
       {/* Main Page Content */}
       <main className={`flex-1 p-3 sm:p-5 pb-24 md:pb-6 max-w-7xl w-full mx-auto ${!isNavHidden ? 'pt-16 sm:pt-18 md:pt-20' : ''}`}>
-        {/* Customer Preview & Paywall Alert Banner */}
-        {!userAccess.hasFullAccess && (
+        {/* Customer Preview / 15-Day Trial / Tier Status Header Alert Banner */}
+        {userAccess.isAdmin && previewAsCustomer ? (
           <div className="mb-4 p-3 bg-gradient-to-r from-amber-950/90 via-neutral-900 to-amber-950/90 border border-amber-500/70 text-amber-200 rounded-lg shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
             <div className="flex items-center gap-2.5">
               <span className="flex h-2 w-2 relative">
@@ -1162,38 +1249,113 @@ export default function App() {
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
               </span>
               <div>
-                <span className="font-bold text-white">
-                  {userAccess.isAdmin && previewAsCustomer
-                    ? 'Customer Preview Active'
-                    : 'Axiom Wealth Free Tier'}
-                </span>
+                <span className="font-bold text-white">Customer Preview Active</span>
                 <span className="text-neutral-300 ml-1.5">
-                  {userAccess.isAdmin && previewAsCustomer
-                    ? 'Admin bypass is suspended so you can test paywalls and standard customer checkout.'
-                    : 'Upgrade to Axiom Wealth Pro for unlimited cloud sync, real-time ledger automations and advanced reports.'}
+                  Admin bypass is suspended so you can test Essential vs. Apex tiers, 15-day trial activation, and the Growth Checkpoint.
                 </span>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => setIsPaywallOpen(true)}
-                className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-neutral-950 font-bold rounded shadow-xs transition cursor-pointer"
+                onClick={() => handleOpenGrowthCheckpoint('general')}
+                className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-neutral-950 font-bold rounded shadow-xs transition cursor-pointer shrink-0"
               >
-                View Paywall
+                Growth Checkpoint
               </button>
-              {userAccess.isAdmin && previewAsCustomer && (
-                <button
-                  type="button"
-                  onClick={() => handleTogglePreviewAsCustomer(false)}
-                  className="px-2.5 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 rounded text-[11px] font-semibold border border-neutral-600 transition cursor-pointer"
-                >
-                  Exit Preview
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => handleTogglePreviewAsCustomer(false)}
+                className="px-2.5 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 rounded text-[11px] font-semibold border border-neutral-600 transition cursor-pointer shrink-0"
+              >
+                Exit Preview
+              </button>
             </div>
           </div>
-        )}
+        ) : userAccess.isTrialActive ? (
+          <div className="mb-4 p-3 bg-gradient-to-r from-emerald-950/90 via-neutral-900 to-emerald-950/90 border border-emerald-500/70 text-emerald-200 rounded-lg shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-2 w-2 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <div>
+                <span className="font-bold text-white">
+                  Axiom Wealth Apex &bull; 15-Day Free Trial Active ({userAccess.trialDaysRemaining} {userAccess.trialDaysRemaining === 1 ? 'day' : 'days'} remaining)
+                </span>
+                <span className="text-neutral-300 ml-1.5">
+                  Full Apex access enabled: encrypted cloud sync, real-time ledger automations, advanced analytics, and PDF/sheets export.
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => handleOpenGrowthCheckpoint('general')}
+                className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-neutral-950 font-bold rounded shadow-xs transition cursor-pointer shrink-0"
+              >
+                Upgrade to Apex
+              </button>
+            </div>
+          </div>
+        ) : userAccess.isTrialExpired ? (
+          <div className="mb-4 p-3 bg-gradient-to-r from-red-950/90 via-neutral-900 to-amber-950/90 border border-red-500/70 text-amber-200 rounded-lg shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-2 w-2 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+              </span>
+              <div>
+                <span className="font-bold text-white">15-Day Apex Trial Expired</span>
+                <span className="text-neutral-300 ml-1.5">
+                  Downgraded to Essential Tier (Local Storage Only). Core ledger and balance sheet remain active.
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => handleOpenGrowthCheckpoint('general')}
+                className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-neutral-950 font-bold rounded shadow-xs transition cursor-pointer shrink-0"
+              >
+                Upgrade to Apex
+              </button>
+            </div>
+          </div>
+        ) : !userAccess.hasApexAccess ? (
+          <div className="mb-4 p-3 bg-gradient-to-r from-neutral-900 via-neutral-950 to-neutral-900 border border-neutral-700/80 text-neutral-200 rounded-lg shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-2 w-2 relative">
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-neutral-400"></span>
+              </span>
+              <div>
+                <span className="font-bold text-white">Essential Tier (Free &bull; Local Storage Only)</span>
+                <span className="text-neutral-400 ml-1.5">
+                  Basic ledger and balance sheets enabled. Activate your optional 15-day free trial or upgrade to Apex for cloud sync &amp; analytics.
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  activateFreeTrial();
+                  setTrialRevision((r) => r + 1);
+                }}
+                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded shadow-xs transition cursor-pointer shrink-0 text-xs"
+              >
+                Activate 15-Day Free Trial
+              </button>
+              <button
+                type="button"
+                onClick={() => handleOpenGrowthCheckpoint('general')}
+                className="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 font-semibold rounded text-xs border border-neutral-600 transition cursor-pointer shrink-0"
+              >
+                Growth Checkpoint
+              </button>
+            </div>
+          </div>
+        ) : null}
 
         {/* Page 1: Main Dashboard (Read-Only Visualization with Click Drill-down) */}
         {activeTab === 'dashboard' && (
@@ -1220,6 +1382,8 @@ export default function App() {
             onDeleteRecurringExpense={handleDeleteRecurringExpense}
             onPayRecurringExpense={handlePayRecurringExpense}
             onOpenHelp={() => handleOpenContextualGuide('dashboard')}
+            hasApexAccess={userAccess.hasApexAccess}
+            onOpenGrowthCheckpoint={handleOpenGrowthCheckpoint}
           />
         )}
 
@@ -1287,9 +1451,15 @@ export default function App() {
             }}
             currency={currency}
             onChangeCurrency={setCurrency}
-            onOpenExportSheets={() => setIsExportModalOpen(true)}
+            onOpenExportSheets={() => {
+              if (!userAccess.hasApexAccess) {
+                handleOpenGrowthCheckpoint('export');
+              } else {
+                setIsExportModalOpen(true);
+              }
+            }}
             onWipeAllData={handleWipeAllTransactions}
-            onOpenPaywall={() => setIsPaywallOpen(true)}
+            onOpenPaywall={() => handleOpenGrowthCheckpoint('general')}
             previewAsCustomer={previewAsCustomer}
             onTogglePreviewAsCustomer={handleTogglePreviewAsCustomer}
             isSubscribed={subscriptionState.isSubscribed}
@@ -1302,36 +1472,156 @@ export default function App() {
 
         {/* Page 5: Dedicated Stock-Market Style Analytics */}
         {activeTab === 'analytics' && (
-          <AnalyticsPage
-            transactions={transactions}
-            assets={assets}
-            assetTransactions={assetTransactions}
-            liabilities={liabilities}
-            currencySymbol={currency.symbol}
-            onOpenHelp={() => handleOpenContextualGuide('analytics')}
-          />
+          userAccess.hasApexAccess ? (
+            <AnalyticsPage
+              transactions={transactions}
+              assets={assets}
+              assetTransactions={assetTransactions}
+              liabilities={liabilities}
+              currencySymbol={currency.symbol}
+              onOpenHelp={() => handleOpenContextualGuide('analytics')}
+            />
+          ) : (
+            <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 sm:p-10 shadow-2xl text-center max-w-2xl mx-auto space-y-6 my-8 animate-in fade-in duration-200">
+              <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-inner">
+                <Sparkles className="w-7 h-7" />
+              </div>
+              <div className="space-y-2">
+                <span className="text-[11px] font-mono font-bold uppercase tracking-widest text-emerald-400">
+                  Growth Checkpoint &bull; Axiom Wealth Apex
+                </span>
+                <h2 className="text-xl sm:text-2xl font-black text-white leading-tight">
+                  Are you ready to master your cashflow? Choose your path to financial literacy.
+                </h2>
+                <p className="text-xs sm:text-sm text-neutral-400 max-w-lg mx-auto leading-relaxed">
+                  Advanced Financial Analytics provides interactive multi-cycle stock-market trend graphs, zero-baseline projections, and box-selection transaction drilldowns.
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                {!userAccess.isTrialActivated && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      activateFreeTrial();
+                      setTrialRevision((r) => r + 1);
+                    }}
+                    className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-neutral-950 font-bold text-xs rounded-xl shadow-md transition cursor-pointer"
+                  >
+                    Activate 15-Day Free Trial
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => handleOpenGrowthCheckpoint('analytics')}
+                  className="px-5 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-white font-bold text-xs rounded-xl border border-neutral-700 shadow-sm transition cursor-pointer"
+                >
+                  Upgrade to Apex
+                </button>
+              </div>
+            </div>
+          )
         )}
 
         {/* Page 6: Purchase Checker (Affordability Calculator) */}
         {activeTab === 'purchase-checker' && (
-          <PurchaseCheckerPage
-            currencySymbol={currency.symbol}
-            cashEquivalents={allTimeCashBalance}
-            monthlyNetIncome={computedTotals.netIncome}
-            onLogTransactionAndAsset={handleLogActiveTransactionAndAsset}
-            onNavigateToTab={(tab) => setActiveTab(tab as AppNavTab)}
-            onOpenHelp={() => handleOpenContextualGuide('purchase-checker')}
-          />
+          userAccess.hasApexAccess ? (
+            <PurchaseCheckerPage
+              currencySymbol={currency.symbol}
+              cashEquivalents={allTimeCashBalance}
+              monthlyNetIncome={computedTotals.netIncome}
+              onLogTransactionAndAsset={handleLogActiveTransactionAndAsset}
+              onNavigateToTab={(tab) => setActiveTab(tab as AppNavTab)}
+              onOpenHelp={() => handleOpenContextualGuide('purchase-checker')}
+            />
+          ) : (
+            <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 sm:p-10 shadow-2xl text-center max-w-2xl mx-auto space-y-6 my-8 animate-in fade-in duration-200">
+              <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-purple-500/20 text-purple-400 border border-purple-500/40 shadow-inner">
+                <Shield className="w-7 h-7" />
+              </div>
+              <div className="space-y-2">
+                <span className="text-[11px] font-mono font-bold uppercase tracking-widest text-purple-400">
+                  Growth Checkpoint &bull; Axiom Wealth Apex
+                </span>
+                <h2 className="text-xl sm:text-2xl font-black text-white leading-tight">
+                  Are you ready to master your cashflow? Choose your path to financial literacy.
+                </h2>
+                <p className="text-xs sm:text-sm text-neutral-400 max-w-lg mx-auto leading-relaxed">
+                  The Purchase Affordability Checker stress-tests prospective lifestyle and luxury purchases against the 10x Wealth Rule and your real-time liquid cash buffer before you buy.
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                {!userAccess.isTrialActivated && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      activateFreeTrial();
+                      setTrialRevision((r) => r + 1);
+                    }}
+                    className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-neutral-950 font-bold text-xs rounded-xl shadow-md transition cursor-pointer"
+                  >
+                    Activate 15-Day Free Trial
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => handleOpenGrowthCheckpoint('purchase_checker')}
+                  className="px-5 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-white font-bold text-xs rounded-xl border border-neutral-700 shadow-sm transition cursor-pointer"
+                >
+                  Upgrade to Apex
+                </button>
+              </div>
+            </div>
+          )
         )}
 
         {/* Page 7: Stock & Dividend Calculator */}
         {activeTab === 'stock-dividend-calculator' && (
-          <StockDividendCalculatorPage
-            currencySymbol={currency?.symbol || '$'}
-            onLogTransactionAndAsset={handleLogActiveTransactionAndAsset}
-            onNavigateToTab={(tab) => setActiveTab(tab as AppNavTab)}
-            onOpenHelp={() => handleOpenContextualGuide('stock-dividend-calculator')}
-          />
+          userAccess.hasApexAccess ? (
+            <StockDividendCalculatorPage
+              currencySymbol={currency?.symbol || '$'}
+              onLogTransactionAndAsset={handleLogActiveTransactionAndAsset}
+              onNavigateToTab={(tab) => setActiveTab(tab as AppNavTab)}
+              onOpenHelp={() => handleOpenContextualGuide('stock-dividend-calculator')}
+            />
+          ) : (
+            <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 sm:p-10 shadow-2xl text-center max-w-2xl mx-auto space-y-6 my-8 animate-in fade-in duration-200">
+              <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-inner">
+                <Calculator className="w-7 h-7" />
+              </div>
+              <div className="space-y-2">
+                <span className="text-[11px] font-mono font-bold uppercase tracking-widest text-emerald-400">
+                  Growth Checkpoint &bull; Axiom Wealth Apex
+                </span>
+                <h2 className="text-xl sm:text-2xl font-black text-white leading-tight">
+                  Are you ready to master your cashflow? Choose your path to financial literacy.
+                </h2>
+                <p className="text-xs sm:text-sm text-neutral-400 max-w-lg mx-auto leading-relaxed">
+                  The Stock &amp; Dividend Yield Simulator projects multi-year dividend reinvestment (DRIP), yield on cost, and compounding exponential growth curves with inflation-adjusted targets.
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                {!userAccess.isTrialActivated && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      activateFreeTrial();
+                      setTrialRevision((r) => r + 1);
+                    }}
+                    className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-neutral-950 font-bold text-xs rounded-xl shadow-md transition cursor-pointer"
+                  >
+                    Activate 15-Day Free Trial
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => handleOpenGrowthCheckpoint('stock_calculator')}
+                  className="px-5 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-white font-bold text-xs rounded-xl border border-neutral-700 shadow-sm transition cursor-pointer"
+                >
+                  Upgrade to Apex
+                </button>
+              </div>
+            </div>
+          )
         )}
 
         {/* Page 8: Dedicated Notifications & Scheduled Alerts */}
@@ -1402,13 +1692,13 @@ export default function App() {
         }}
       />
 
-      {/* Pro Subscription & RevenueCat Paywall Modal */}
-      <PaywallModal
-        isOpen={isPaywallOpen}
-        onClose={() => setIsPaywallOpen(false)}
+      {/* Axiom Wealth Apex Growth Checkpoint Modal */}
+      <GrowthCheckpointModal
+        isOpen={isGrowthCheckpointOpen}
+        onClose={() => setIsGrowthCheckpointOpen(false)}
         onSubscribe={handleSubscribe}
-        onRestore={handleRestoreSubscription}
         isAdminPreview={userAccess.isAdmin && previewAsCustomer}
+        triggerFeature={growthCheckpointTrigger}
       />
 
       {/* Authentication & MFA Security Modal */}
@@ -1443,6 +1733,8 @@ export default function App() {
         onOpenAuthModal={() => setIsAuthModalOpen(true)}
         onSignOut={handleSignOut}
         onOpenHelp={() => handleOpenContextualGuide(activeTab)}
+        hasApexAccess={userAccess.hasApexAccess}
+        onOpenGrowthCheckpoint={() => handleOpenGrowthCheckpoint('general')}
       />
 
       {/* Mobile Fixed Bottom Navigation Bar (md:hidden) */}
