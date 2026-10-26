@@ -302,77 +302,171 @@ export default function App() {
     }
   }, []);
 
-  // Listen to Auth state changes
+  // Listen to Auth state changes (One-time subscription on mount)
   useEffect(() => {
+    let isMounted = true;
     const unsubscribe = initAuth(
       async (authUser, token) => {
+        if (!isMounted) return;
         setUser(authUser);
         setAuthInitialized(true);
         if (token) {
           setAccessToken(token);
         } else {
-          const cached = await getAccessToken();
-          setAccessToken(cached);
-        }
-
-        const access = computeUserAccess(authUser, previewAsCustomer);
-        if (authUser && access.hasApexAccess) {
-          setIsSyncing(true);
           try {
-            await syncUserDataToFirestore(
-              authUser.uid,
-              authUser.email || '',
-              authUser.displayName || '',
-              assets,
-              liabilities,
-              transactions,
-              period
-            );
+            const cached = await getAccessToken();
+            if (isMounted) setAccessToken(cached);
           } catch (e) {
-            console.error('Initial sync error:', e);
-          } finally {
-            setIsSyncing(false);
+            console.warn('Failed to retrieve cached access token:', e);
           }
         }
       },
       () => {
-        setUser(null);
+        if (!isMounted) return;
+        setUser((prevUser) => {
+          if (prevUser !== null) {
+            // Only reset state if transitioning from an authenticated session to signed out
+            setAssets([]);
+            setAssetTransactions([]);
+            setLiabilities([]);
+            setLiabilityPayments([]);
+            setTransactions([]);
+            setBudgets([]);
+            setRecurringExpenses([]);
+          }
+          return null;
+        });
         setAccessToken(null);
         setAuthInitialized(true);
-        setAssets([]);
-        setAssetTransactions([]);
-        setLiabilities([]);
-        setLiabilityPayments([]);
-        setTransactions([]);
-        setBudgets([]);
-        setRecurringExpenses([]);
       }
     );
 
-    return () => unsubscribe();
-  }, [assets, liabilities, transactions, period, previewAsCustomer]);
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
+  }, []);
 
-  // Subscribe to real-time Firestore updates if user is authenticated AND on Apex tier
+  // Subscribe to real-time Cloud Firestore updates for ALL authenticated accounts (Single Source of Truth)
   useEffect(() => {
-    if (!user || !userAccess.hasApexAccess) return;
+    if (!user) return;
+
+    setIsSyncing(true);
+    let loadedCount = 0;
+    const markLoaded = () => {
+      loadedCount++;
+      if (loadedCount >= 8) {
+        setIsSyncing(false);
+      }
+    };
 
     const unsubAssets = subscribeToUserAssets(
       user.uid,
-      (updatedAssets) => setAssets(updatedAssets),
-      (err) => console.error('Assets sync error:', err)
+      (updatedAssets) => {
+        setAssets(updatedAssets);
+        markLoaded();
+      },
+      (err) => {
+        console.error('Assets sync error:', err);
+        markLoaded();
+      }
     );
 
     const unsubLiabilities = subscribeToUserLiabilities(
       user.uid,
-      (updatedLiabs) => setLiabilities(updatedLiabs),
-      (err) => console.error('Liabilities sync error:', err)
+      (updatedLiabs) => {
+        setLiabilities(updatedLiabs);
+        markLoaded();
+      },
+      (err) => {
+        console.error('Liabilities sync error:', err);
+        markLoaded();
+      }
+    );
+
+    const unsubTransactions = subscribeToUserTransactions(
+      user.uid,
+      (updatedTxs) => {
+        setTransactions(updatedTxs);
+        markLoaded();
+      },
+      (err) => {
+        console.error('Transactions sync error:', err);
+        markLoaded();
+      }
+    );
+
+    const unsubBudgets = subscribeToUserBudgets(
+      user.uid,
+      (updatedBudgets) => {
+        setBudgets(updatedBudgets);
+        markLoaded();
+      },
+      (err) => {
+        console.error('Budgets sync error:', err);
+        markLoaded();
+      }
+    );
+
+    const unsubSettings = subscribeToUserSettings(
+      user.uid,
+      (remotePeriod) => {
+        if (remotePeriod) setPeriod(remotePeriod);
+        markLoaded();
+      },
+      (err) => {
+        console.error('Settings sync error:', err);
+        markLoaded();
+      }
+    );
+
+    const unsubAssetTxs = subscribeToUserAssetTransactions(
+      user.uid,
+      (updatedAstTxs) => {
+        setAssetTransactions(updatedAstTxs);
+        markLoaded();
+      },
+      (err) => {
+        console.error('Asset transactions sync error:', err);
+        markLoaded();
+      }
+    );
+
+    const unsubLiabilityPayments = subscribeToUserLiabilityPayments(
+      user.uid,
+      (updatedPayments) => {
+        setLiabilityPayments(updatedPayments);
+        markLoaded();
+      },
+      (err) => {
+        console.error('Liability payments sync error:', err);
+        markLoaded();
+      }
+    );
+
+    const unsubRecurring = subscribeToUserRecurringExpenses(
+      user.uid,
+      (updatedRecurring) => {
+        setRecurringExpenses(updatedRecurring);
+        markLoaded();
+      },
+      (err) => {
+        console.error('Recurring expenses sync error:', err);
+        markLoaded();
+      }
     );
 
     return () => {
       unsubAssets();
       unsubLiabilities();
+      unsubTransactions();
+      unsubBudgets();
+      unsubSettings();
+      unsubAssetTxs();
+      unsubLiabilityPayments();
+      unsubRecurring();
     };
-  }, [user, userAccess.hasApexAccess]);
+  }, [user]);
 
   // Save to Local Storage and User Cache on updates
   useEffect(() => {
@@ -1274,20 +1368,32 @@ export default function App() {
     return (
       <>
         <LandingPage
-          onSignIn={() => setLandingAuthMode('signin')}
-          onSignUp={() => setLandingAuthMode('signup')}
-        />
-        <AuthModal
-          key={landingAuthMode ?? 'closed'}
-          isOpen={landingAuthMode !== null}
-          isMandatory={false}
-          initialMode={landingAuthMode === 'signin' ? 'signin' : 'signup'}
-          onClose={() => setLandingAuthMode(null)}
-          onSuccess={(authUser) => {
-            setUser(authUser);
-            setLandingAuthMode(null);
+          onSignIn={() => {
+            console.log('[App] User clicked Sign In on landing page');
+            setLandingAuthMode('signin');
+          }}
+          onSignUp={() => {
+            console.log('[App] User clicked Create Account on landing page');
+            setLandingAuthMode('signup');
           }}
         />
+        {landingAuthMode !== null && (
+          <AuthModal
+            key={landingAuthMode}
+            isOpen={true}
+            isMandatory={false}
+            initialMode={landingAuthMode}
+            onClose={() => {
+              console.log('[App] Closing AuthModal');
+              setLandingAuthMode(null);
+            }}
+            onSuccess={(authUser) => {
+              console.log('[App] AuthModal success, authenticated:', authUser.email);
+              setUser(authUser);
+              setLandingAuthMode(null);
+            }}
+          />
+        )}
       </>
     );
   }

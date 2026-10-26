@@ -40,7 +40,13 @@ const PublicFooter: React.FC = () => (
   </footer>
 );
 
-const PublicShell: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+interface PublicShellProps {
+  children: React.ReactNode;
+  onSignIn?: () => void;
+  onSignUp?: () => void;
+}
+
+const PublicShell: React.FC<PublicShellProps> = ({ children, onSignIn, onSignUp }) => (
   <div className="min-h-screen bg-[#121416] text-neutral-100 font-sans antialiased flex flex-col">
     <header className="border-b border-neutral-800 px-4 py-3">
       <div className="max-w-4xl mx-auto flex items-center justify-between">
@@ -52,9 +58,33 @@ const PublicShell: React.FC<{ children: React.ReactNode }> = ({ children }) => (
           />
           {APP_NAME}
         </a>
-        <nav className="flex items-center gap-4 text-xs text-neutral-400">
+        <nav className="flex items-center gap-3 text-xs text-neutral-400">
           <a href="/privacy" className="hover:text-emerald-400">Privacy</a>
           <a href="/terms" className="hover:text-emerald-400">Terms</a>
+          {onSignIn && (
+            <button
+              type="button"
+              onClick={() => {
+                console.log('[Navbar] Sign in clicked');
+                onSignIn();
+              }}
+              className="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-white font-semibold rounded-lg border border-neutral-700 transition cursor-pointer"
+            >
+              Sign In
+            </button>
+          )}
+          {onSignUp && (
+            <button
+              type="button"
+              onClick={() => {
+                console.log('[Navbar] Create Account clicked');
+                onSignUp();
+              }}
+              className="px-3.5 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-neutral-950 font-bold rounded-lg shadow-sm transition cursor-pointer"
+            >
+              Create Account
+            </button>
+          )}
         </nav>
       </div>
     </header>
@@ -105,7 +135,7 @@ export const LandingPage: React.FC<{ onSignIn: () => void; onSignUp: () => void 
   ];
 
   return (
-    <PublicShell>
+    <PublicShell onSignIn={onSignIn} onSignUp={onSignUp}>
       <section className="text-center py-8 sm:py-12 space-y-4">
         <span className="inline-block text-[11px] font-mono font-bold uppercase tracking-widest text-emerald-400">
           Personal Financial Ledger &amp; Cashflow Tracker
@@ -122,15 +152,21 @@ export const LandingPage: React.FC<{ onSignIn: () => void; onSignUp: () => void 
         <div className="flex flex-wrap justify-center gap-3 pt-2">
           <button
             type="button"
-            onClick={onSignUp}
-            className="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-neutral-950 font-bold text-sm rounded-xl shadow-md transition cursor-pointer"
+            onClick={() => {
+              console.log('[LandingPage] Create free account button clicked');
+              onSignUp();
+            }}
+            className="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-neutral-950 font-bold text-sm rounded-xl shadow-md transition cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
           >
             Create free account
           </button>
           <button
             type="button"
-            onClick={onSignIn}
-            className="px-6 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-white font-bold text-sm rounded-xl border border-neutral-700 transition cursor-pointer"
+            onClick={() => {
+              console.log('[LandingPage] Sign in button clicked');
+              onSignIn();
+            }}
+            className="px-6 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-white font-bold text-sm rounded-xl border border-neutral-700 transition cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
           >
             Sign in
           </button>
@@ -166,6 +202,36 @@ export const LandingPage: React.FC<{ onSignIn: () => void; onSignUp: () => void 
           <a href="/privacy" className="text-emerald-400 underline">Privacy Policy</a> and{' '}
           <a href="/terms" className="text-emerald-400 underline">Terms of Service</a> for full details.
         </p>
+      </section>
+
+      {/* Bottom Conversion CTA Card */}
+      <section className="mt-8 text-center py-8 bg-gradient-to-b from-neutral-900 to-[#121416] border border-neutral-800 rounded-2xl p-6 sm:p-8 space-y-4">
+        <h2 className="text-xl sm:text-2xl font-bold text-white">Ready to master your cashflow?</h2>
+        <p className="text-xs sm:text-sm text-neutral-400 max-w-md mx-auto leading-relaxed">
+          Start recording transactions, tracking assets and liabilities, and building real net worth today.
+        </p>
+        <div className="flex flex-wrap justify-center gap-3 pt-2">
+          <button
+            type="button"
+            onClick={() => {
+              console.log('[LandingPage Bottom] Create free account clicked');
+              onSignUp();
+            }}
+            className="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-neutral-950 font-bold text-sm rounded-xl shadow-md transition cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+          >
+            Create free account
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              console.log('[LandingPage Bottom] Sign in clicked');
+              onSignIn();
+            }}
+            className="px-6 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-white font-bold text-sm rounded-xl border border-neutral-700 transition cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+          >
+            Sign in
+          </button>
+        </div>
       </section>
     </PublicShell>
   );
