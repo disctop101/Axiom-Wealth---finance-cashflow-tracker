@@ -7,6 +7,7 @@ import {
   getDocs,
 } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase';
+import { BackupPayload } from './backupRestore';
 import {
   AssetItem,
   LiabilityItem,
@@ -42,6 +43,73 @@ const STORAGE_KEYS = {
 };
 
 export const DEFAULT_USER_NAME = '';
+
+/**
+ * User-scoped offline caching utilities.
+ * LocalStorage serves strictly as an offline cache keyed per authenticated user.
+ */
+export function getUserCacheKey(userId: string, key: string): string {
+  return `axiom_cache_${userId}_${key}`;
+}
+
+export function loadUserCache<T>(userId: string, key: string, fallback: T): T {
+  try {
+    const raw = localStorage.getItem(getUserCacheKey(userId, key));
+    if (raw) return JSON.parse(raw);
+    return fallback;
+  } catch (e) {
+    console.warn(`[Cache] Error reading ${key} for user ${userId}:`, e);
+    return fallback;
+  }
+}
+
+export function saveUserCache<T>(userId: string, key: string, data: T): void {
+  try {
+    localStorage.setItem(getUserCacheKey(userId, key), JSON.stringify(data));
+  } catch (e) {
+    console.warn(`[Cache] Error caching ${key} for user ${userId}:`, e);
+  }
+}
+
+export function clearUserCache(userId: string): void {
+  try {
+    const prefix = `axiom_cache_${userId}_`;
+    const toRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith(prefix)) {
+        toRemove.push(k);
+      }
+    }
+    toRemove.forEach((k) => localStorage.removeItem(k));
+  } catch (e) {
+    console.warn(`[Cache] Error clearing cache for user ${userId}:`, e);
+  }
+}
+
+/**
+ * Sanitizes object for Firestore by stripping undefined values.
+ */
+export function sanitizeForFirestore<T>(data: T): T {
+  if (data === null || data === undefined) {
+    return data;
+  }
+  if (Array.isArray(data)) {
+    return data
+      .filter((item) => item !== undefined)
+      .map((item) => sanitizeForFirestore(item)) as unknown as T;
+  }
+  if (typeof data === 'object' && !(data instanceof Date)) {
+    const cleaned: Record<string, any> = {};
+    for (const [key, val] of Object.entries(data as Record<string, any>)) {
+      if (val !== undefined) {
+        cleaned[key] = typeof val === 'object' && val !== null ? sanitizeForFirestore(val) : val;
+      }
+    }
+    return cleaned as T;
+  }
+  return data;
+}
 
 export function loadLocalUserName(): string {
   try {
@@ -645,13 +713,15 @@ export function subscribeToUserLiabilities(
 export async function saveAssetItemToCloud(userId: string, asset: AssetItem) {
   const path = `users/${userId}/assets/${asset.id}`;
   try {
-    await setDoc(doc(db, 'users', userId, 'assets', asset.id), {
+    const cleanData = sanitizeForFirestore({
       ...asset,
       userId,
       updatedAt: new Date().toISOString(),
     });
+    await setDoc(doc(db, 'users', userId, 'assets', asset.id), cleanData);
   } catch (err) {
     handleFirestoreError(err, OperationType.WRITE, path);
+    throw err;
   }
 }
 
@@ -661,19 +731,22 @@ export async function deleteAssetItemFromCloud(userId: string, assetId: string) 
     await deleteDoc(doc(db, 'users', userId, 'assets', assetId));
   } catch (err) {
     handleFirestoreError(err, OperationType.DELETE, path);
+    throw err;
   }
 }
 
 export async function saveLiabilityItemToCloud(userId: string, liability: LiabilityItem) {
   const path = `users/${userId}/liabilities/${liability.id}`;
   try {
-    await setDoc(doc(db, 'users', userId, 'liabilities', liability.id), {
+    const cleanData = sanitizeForFirestore({
       ...liability,
       userId,
       updatedAt: new Date().toISOString(),
     });
+    await setDoc(doc(db, 'users', userId, 'liabilities', liability.id), cleanData);
   } catch (err) {
     handleFirestoreError(err, OperationType.WRITE, path);
+    throw err;
   }
 }
 
@@ -683,19 +756,22 @@ export async function deleteLiabilityItemFromCloud(userId: string, liabilityId: 
     await deleteDoc(doc(db, 'users', userId, 'liabilities', liabilityId));
   } catch (err) {
     handleFirestoreError(err, OperationType.DELETE, path);
+    throw err;
   }
 }
 
 export async function saveTransactionItemToCloud(userId: string, tx: TransactionItem) {
   const path = `users/${userId}/transactions/${tx.id}`;
   try {
-    await setDoc(doc(db, 'users', userId, 'transactions', tx.id), {
+    const cleanData = sanitizeForFirestore({
       ...tx,
       userId,
       updatedAt: new Date().toISOString(),
     });
+    await setDoc(doc(db, 'users', userId, 'transactions', tx.id), cleanData);
   } catch (err) {
     handleFirestoreError(err, OperationType.WRITE, path);
+    throw err;
   }
 }
 
@@ -705,5 +781,403 @@ export async function deleteTransactionItemFromCloud(userId: string, txId: strin
     await deleteDoc(doc(db, 'users', userId, 'transactions', txId));
   } catch (err) {
     handleFirestoreError(err, OperationType.DELETE, path);
+    throw err;
+  }
+}
+
+export function subscribeToUserTransactions(
+  userId: string,
+  onUpdate: (txs: TransactionItem[]) => void,
+  onError?: (err: unknown) => void
+) {
+  const path = `users/${userId}/transactions`;
+  const txCol = collection(db, 'users', userId, 'transactions');
+  return onSnapshot(
+    txCol,
+    (snapshot) => {
+      const items: TransactionItem[] = [];
+      snapshot.forEach((d) => {
+        const item = d.data() as TransactionItem;
+        const isMock =
+          item.id?.startsWith('mock-tx-') ||
+          item.id?.startsWith('mock-') ||
+          item.name?.includes('Executive Salary') ||
+          item.name?.includes('Quarterly Salary & Consulting Payout') ||
+          item.name?.includes('Hybrid') ||
+          item.name?.includes('Shell V-Power') ||
+          item.amount === 725000 ||
+          item.amount === 435000 ||
+          item.amount === 99900;
+        if (!isMock) {
+          items.push(item);
+        }
+      });
+      items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      onUpdate(items);
+      saveUserCache(userId, 'transactions', items);
+    },
+    (err) => {
+      console.error('Transactions listener error:', err);
+      if (onError) onError(err);
+      handleFirestoreError(err, OperationType.GET, path);
+    }
+  );
+}
+
+export async function saveBudgetsToCloud(userId: string, budgets: CategoryBudget[]) {
+  const path = `users/${userId}/budgets/category_budgets`;
+  try {
+    const cleanData = sanitizeForFirestore({
+      items: budgets,
+      userId,
+      updatedAt: new Date().toISOString(),
+    });
+    await setDoc(doc(db, 'users', userId, 'budgets', 'category_budgets'), cleanData);
+    saveUserCache(userId, 'budgets', budgets);
+  } catch (err) {
+    handleFirestoreError(err, OperationType.WRITE, path);
+    throw err;
+  }
+}
+
+export function subscribeToUserBudgets(
+  userId: string,
+  onUpdate: (budgets: CategoryBudget[]) => void,
+  onError?: (err: unknown) => void
+) {
+  const path = `users/${userId}/budgets/category_budgets`;
+  const budgetDocRef = doc(db, 'users', userId, 'budgets', 'category_budgets');
+  return onSnapshot(
+    budgetDocRef,
+    (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        if (Array.isArray(data?.items)) {
+          onUpdate(data.items);
+          saveUserCache(userId, 'budgets', data.items);
+        }
+      }
+    },
+    (err) => {
+      console.error('Budgets listener error:', err);
+      if (onError) onError(err);
+      handleFirestoreError(err, OperationType.GET, path);
+    }
+  );
+}
+
+export async function savePeriodToCloud(userId: string, period: PeriodSettings) {
+  const path = `users/${userId}/settings/period`;
+  try {
+    const cleanData = sanitizeForFirestore({
+      ...period,
+      userId,
+      updatedAt: new Date().toISOString(),
+    });
+    await setDoc(doc(db, 'users', userId, 'settings', 'period'), cleanData);
+    saveUserCache(userId, 'period', period);
+  } catch (err) {
+    handleFirestoreError(err, OperationType.WRITE, path);
+    throw err;
+  }
+}
+
+export function subscribeToUserSettings(
+  userId: string,
+  onUpdate: (period: PeriodSettings) => void,
+  onError?: (err: unknown) => void
+) {
+  const path = `users/${userId}/settings/period`;
+  const periodDocRef = doc(db, 'users', userId, 'settings', 'period');
+  return onSnapshot(
+    periodDocRef,
+    (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        if (data?.startMonth && data?.endMonth) {
+          const loaded: PeriodSettings = {
+            startMonth: data.startMonth,
+            startYear: data.startYear,
+            endMonth: data.endMonth,
+            endYear: data.endYear,
+            beginningBalance: typeof data.beginningBalance === 'number' ? data.beginningBalance : 0,
+          };
+          onUpdate(loaded);
+          saveUserCache(userId, 'period', loaded);
+        }
+      }
+    },
+    (err) => {
+      console.error('Period settings listener error:', err);
+      if (onError) onError(err);
+      handleFirestoreError(err, OperationType.GET, path);
+    }
+  );
+}
+
+export async function saveAssetTransactionToCloud(userId: string, tx: AssetTransaction) {
+  const path = `users/${userId}/asset_transactions/${tx.id}`;
+  try {
+    const cleanData = sanitizeForFirestore({
+      ...tx,
+      userId,
+      updatedAt: new Date().toISOString(),
+    });
+    await setDoc(doc(db, 'users', userId, 'asset_transactions', tx.id), cleanData);
+  } catch (err) {
+    handleFirestoreError(err, OperationType.WRITE, path);
+    throw err;
+  }
+}
+
+export async function deleteAssetTransactionFromCloud(userId: string, txId: string) {
+  const path = `users/${userId}/asset_transactions/${txId}`;
+  try {
+    await deleteDoc(doc(db, 'users', userId, 'asset_transactions', txId));
+  } catch (err) {
+    handleFirestoreError(err, OperationType.DELETE, path);
+    throw err;
+  }
+}
+
+export function subscribeToUserAssetTransactions(
+  userId: string,
+  onUpdate: (txs: AssetTransaction[]) => void,
+  onError?: (err: unknown) => void
+) {
+  const path = `users/${userId}/asset_transactions`;
+  const txCol = collection(db, 'users', userId, 'asset_transactions');
+  return onSnapshot(
+    txCol,
+    (snapshot) => {
+      const items: AssetTransaction[] = [];
+      snapshot.forEach((d) => {
+        items.push(d.data() as AssetTransaction);
+      });
+      items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      onUpdate(items);
+      saveUserCache(userId, 'asset_txs', items);
+    },
+    (err) => {
+      console.error('Asset transactions listener error:', err);
+      if (onError) onError(err);
+      handleFirestoreError(err, OperationType.GET, path);
+    }
+  );
+}
+
+export async function saveLiabilityPaymentToCloud(userId: string, payment: LiabilityPayment) {
+  const path = `users/${userId}/liability_payments/${payment.id}`;
+  try {
+    const cleanData = sanitizeForFirestore({
+      ...payment,
+      userId,
+      updatedAt: new Date().toISOString(),
+    });
+    await setDoc(doc(db, 'users', userId, 'liability_payments', payment.id), cleanData);
+  } catch (err) {
+    handleFirestoreError(err, OperationType.WRITE, path);
+    throw err;
+  }
+}
+
+export async function deleteLiabilityPaymentFromCloud(userId: string, paymentId: string) {
+  const path = `users/${userId}/liability_payments/${paymentId}`;
+  try {
+    await deleteDoc(doc(db, 'users', userId, 'liability_payments', paymentId));
+  } catch (err) {
+    handleFirestoreError(err, OperationType.DELETE, path);
+    throw err;
+  }
+}
+
+export function subscribeToUserLiabilityPayments(
+  userId: string,
+  onUpdate: (payments: LiabilityPayment[]) => void,
+  onError?: (err: unknown) => void
+) {
+  const path = `users/${userId}/liability_payments`;
+  const paymentsCol = collection(db, 'users', userId, 'liability_payments');
+  return onSnapshot(
+    paymentsCol,
+    (snapshot) => {
+      const items: LiabilityPayment[] = [];
+      snapshot.forEach((d) => {
+        items.push(d.data() as LiabilityPayment);
+      });
+      items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      onUpdate(items);
+      saveUserCache(userId, 'liab_payments', items);
+    },
+    (err) => {
+      console.error('Liability payments listener error:', err);
+      if (onError) onError(err);
+      handleFirestoreError(err, OperationType.GET, path);
+    }
+  );
+}
+
+export async function saveRecurringExpenseToCloud(userId: string, item: RecurringExpenseItem) {
+  const path = `users/${userId}/recurring_expenses/${item.id}`;
+  try {
+    const cleanData = sanitizeForFirestore({
+      ...item,
+      userId,
+      updatedAt: new Date().toISOString(),
+    });
+    await setDoc(doc(db, 'users', userId, 'recurring_expenses', item.id), cleanData);
+  } catch (err) {
+    handleFirestoreError(err, OperationType.WRITE, path);
+    throw err;
+  }
+}
+
+export async function deleteRecurringExpenseFromCloud(userId: string, itemId: string) {
+  const path = `users/${userId}/recurring_expenses/${itemId}`;
+  try {
+    await deleteDoc(doc(db, 'users', userId, 'recurring_expenses', itemId));
+  } catch (err) {
+    handleFirestoreError(err, OperationType.DELETE, path);
+    throw err;
+  }
+}
+
+export function subscribeToUserRecurringExpenses(
+  userId: string,
+  onUpdate: (items: RecurringExpenseItem[]) => void,
+  onError?: (err: unknown) => void
+) {
+  const path = `users/${userId}/recurring_expenses`;
+  const recCol = collection(db, 'users', userId, 'recurring_expenses');
+  return onSnapshot(
+    recCol,
+    (snapshot) => {
+      const items: RecurringExpenseItem[] = [];
+      snapshot.forEach((d) => {
+        items.push(d.data() as RecurringExpenseItem);
+      });
+      items.sort((a, b) => (a.nextDueDate || '').localeCompare(b.nextDueDate || ''));
+      onUpdate(items);
+      saveUserCache(userId, 'recurring', items);
+    },
+    (err) => {
+      console.error('Recurring expenses listener error:', err);
+      if (onError) onError(err);
+      handleFirestoreError(err, OperationType.GET, path);
+    }
+  );
+}
+
+export async function savePortfolioDataToCloud(userId: string, data: any) {
+  const path = `users/${userId}/portfolioData/data`;
+  try {
+    const cleanData = sanitizeForFirestore({
+      ...data,
+      userId,
+      updatedAt: new Date().toISOString(),
+    });
+    await setDoc(doc(db, 'users', userId, 'portfolioData', 'data'), cleanData, { merge: true });
+  } catch (err) {
+    handleFirestoreError(err, OperationType.WRITE, path);
+    throw err;
+  }
+}
+
+/**
+ * Directly restores backup data straight to Cloud Firestore as the authoritative record.
+ */
+export async function restoreAccountDataToFirestore(
+  userId: string,
+  backup: BackupPayload,
+  mode: 'merge' | 'replace' = 'merge'
+): Promise<{
+  restoredTxs: number;
+  restoredAssets: number;
+  restoredLiabilities: number;
+  restoredBudgets: number;
+}> {
+  try {
+    // 1. If replace mode, clear existing remote collections
+    if (mode === 'replace') {
+      const txs = await getDocs(collection(db, 'users', userId, 'transactions'));
+      await Promise.all(txs.docs.map((d) => deleteDoc(d.ref)));
+
+      const assets = await getDocs(collection(db, 'users', userId, 'assets'));
+      await Promise.all(assets.docs.map((d) => deleteDoc(d.ref)));
+
+      const liabs = await getDocs(collection(db, 'users', userId, 'liabilities'));
+      await Promise.all(liabs.docs.map((d) => deleteDoc(d.ref)));
+
+      const atxs = await getDocs(collection(db, 'users', userId, 'asset_transactions'));
+      await Promise.all(atxs.docs.map((d) => deleteDoc(d.ref)));
+
+      const lpays = await getDocs(collection(db, 'users', userId, 'liability_payments'));
+      await Promise.all(lpays.docs.map((d) => deleteDoc(d.ref)));
+
+      const recs = await getDocs(collection(db, 'users', userId, 'recurring_expenses'));
+      await Promise.all(recs.docs.map((d) => deleteDoc(d.ref)));
+    }
+
+    // 2. Write all entities directly to Firestore
+    for (const t of backup.transactions) {
+      await saveTransactionItemToCloud(userId, t);
+    }
+    for (const a of backup.assets) {
+      await saveAssetItemToCloud(userId, a);
+    }
+    for (const l of backup.liabilities) {
+      await saveLiabilityItemToCloud(userId, l);
+    }
+    for (const atx of backup.assetTransactions) {
+      await saveAssetTransactionToCloud(userId, atx);
+    }
+    for (const lp of backup.liabilityPayments) {
+      await saveLiabilityPaymentToCloud(userId, lp);
+    }
+    for (const r of backup.recurringExpenses) {
+      await saveRecurringExpenseToCloud(userId, r);
+    }
+
+    if (backup.budgets && backup.budgets.length > 0) {
+      await saveBudgetsToCloud(userId, backup.budgets);
+    }
+
+    if (backup.period) {
+      await savePeriodToCloud(userId, backup.period);
+    }
+
+    // 3. Update aggregate backup
+    await savePortfolioDataToCloud(userId, {
+      transactions: backup.transactions,
+      assets: backup.assets,
+      liabilities: backup.liabilities,
+      budgets: backup.budgets,
+      period: backup.period,
+      assetTransactions: backup.assetTransactions,
+      liabilityPayments: backup.liabilityPayments,
+      recurringExpenses: backup.recurringExpenses,
+      restoredAt: new Date().toISOString(),
+    });
+
+    // 4. Update user cache
+    saveUserCache(userId, 'transactions', backup.transactions);
+    saveUserCache(userId, 'assets', backup.assets);
+    saveUserCache(userId, 'liabilities', backup.liabilities);
+    saveUserCache(userId, 'budgets', backup.budgets);
+    saveUserCache(userId, 'period', backup.period);
+    saveUserCache(userId, 'asset_txs', backup.assetTransactions);
+    saveUserCache(userId, 'liab_payments', backup.liabilityPayments);
+    saveUserCache(userId, 'recurring', backup.recurringExpenses);
+
+    return {
+      restoredTxs: backup.transactions.length,
+      restoredAssets: backup.assets.length,
+      restoredLiabilities: backup.liabilities.length,
+      restoredBudgets: backup.budgets.length,
+    };
+  } catch (err) {
+    console.error(`[Restore Failed] Error restoring backup for user ${userId}:`, err);
+    handleFirestoreError(err, OperationType.WRITE, `users/${userId}`);
+    throw err;
   }
 }

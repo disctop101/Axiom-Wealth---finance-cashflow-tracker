@@ -77,6 +77,7 @@ interface SettingsPageProps {
   currency: CurrencyConfig;
   onChangeCurrency: (curr: CurrencyConfig) => void;
   onOpenExportSheets: () => void;
+  onOpenBackupRestore?: (tab?: 'export' | 'restore') => void;
   onWipeAllData: () => Promise<void> | void;
   onOpenPaywall: () => void;
   previewAsCustomer: boolean;
@@ -99,6 +100,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
   currency,
   onChangeCurrency,
   onOpenExportSheets,
+  onOpenBackupRestore,
   onWipeAllData,
   onOpenPaywall,
   previewAsCustomer,
@@ -669,6 +671,40 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                   <HelpCircle className="w-3.5 h-3.5" />
                   <span>{tooltipsEnabled ? 'Disable All Tooltips' : 'Enable Tooltips'}</span>
                 </button>
+              </div>
+
+              {/* Account Backup & Restore (Google Sheets / CSV / JSON) */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-neutral-50 rounded-lg border border-neutral-200">
+                <div>
+                  <div className="font-bold text-neutral-900 flex items-center gap-1.5">
+                    <Cloud className="w-4 h-4 text-emerald-600" />
+                    <span>Account Backup &amp; Restore</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                      GOOGLE SHEETS / CSV / JSON
+                    </span>
+                  </div>
+                  <div className="text-neutral-500 text-[11px] mt-0.5">
+                    Export your full cloud account (transactions, assets, liabilities, and budgets) to a downloadable CSV for Google Sheets, or restore an existing backup directly into your cloud ledger.
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => onOpenBackupRestore?.('export')}
+                    className="flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-700 hover:bg-emerald-600 text-white rounded font-bold text-xs shadow-xs transition cursor-pointer"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Export Backup</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onOpenBackupRestore?.('restore')}
+                    className="flex items-center justify-center gap-1.5 px-3 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 rounded font-bold text-xs shadow-xs transition cursor-pointer"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>Restore Data</span>
+                  </button>
+                </div>
               </div>
 
               {/* Export to Google Sheets */}

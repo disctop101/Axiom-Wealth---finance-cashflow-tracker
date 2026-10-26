@@ -58,16 +58,34 @@ import {
   syncUserDataToFirestore,
   subscribeToUserAssets,
   subscribeToUserLiabilities,
+  subscribeToUserTransactions,
+  subscribeToUserBudgets,
+  subscribeToUserSettings,
+  subscribeToUserAssetTransactions,
+  subscribeToUserLiabilityPayments,
+  subscribeToUserRecurringExpenses,
   saveAssetItemToCloud,
   deleteAssetItemFromCloud,
   saveLiabilityItemToCloud,
   deleteLiabilityItemFromCloud,
   saveTransactionItemToCloud,
   deleteTransactionItemFromCloud,
+  saveBudgetsToCloud,
+  savePeriodToCloud,
+  saveAssetTransactionToCloud,
+  deleteAssetTransactionFromCloud,
+  saveLiabilityPaymentToCloud,
+  deleteLiabilityPaymentFromCloud,
+  saveRecurringExpenseToCloud,
+  deleteRecurringExpenseFromCloud,
+  restoreAccountDataToFirestore,
+  saveUserCache,
   wipeAllTransactionsFromStorageAndCloud,
   wipeAllDataToPureZero,
   runOneTimeTestDataPurge,
 } from './services/storage';
+import { BackupRestoreModal } from './components/BackupRestoreModal';
+import { BackupPayload } from './services/backupRestore';
 import { generate90DayMockData } from './services/mockData';
 import { Navbar, AppNavTab } from './components/Navbar';
 import { Dashboard } from './components/Dashboard';
@@ -237,6 +255,8 @@ export default function App() {
 
   // Modals state
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [isBackupRestoreModalOpen, setIsBackupRestoreModalOpen] = useState(false);
+  const [backupRestoreTab, setBackupRestoreTab] = useState<'export' | 'restore'>('export');
   const [isMasterHelpOpen, setIsMasterHelpOpen] = useState(false);
   const [contextualGuideTab, setContextualGuideTab] = useState<AppNavTab | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -319,6 +339,13 @@ export default function App() {
         setUser(null);
         setAccessToken(null);
         setAuthInitialized(true);
+        setAssets([]);
+        setAssetTransactions([]);
+        setLiabilities([]);
+        setLiabilityPayments([]);
+        setTransactions([]);
+        setBudgets([]);
+        setRecurringExpenses([]);
       }
     );
 
@@ -347,42 +374,51 @@ export default function App() {
     };
   }, [user, userAccess.hasApexAccess]);
 
-  // Save to Local Storage on updates
+  // Save to Local Storage and User Cache on updates
   useEffect(() => {
     saveLocalAssets(assets);
-  }, [assets]);
+    if (user) saveUserCache(user.uid, 'assets', assets);
+  }, [assets, user]);
 
   useEffect(() => {
     saveLocalAssetTransactions(assetTransactions);
-  }, [assetTransactions]);
+    if (user) saveUserCache(user.uid, 'assetTransactions', assetTransactions);
+  }, [assetTransactions, user]);
 
   useEffect(() => {
     saveLocalLiabilities(liabilities);
-  }, [liabilities]);
+    if (user) saveUserCache(user.uid, 'liabilities', liabilities);
+  }, [liabilities, user]);
 
   useEffect(() => {
     saveLocalLiabilityPayments(liabilityPayments);
-  }, [liabilityPayments]);
+    if (user) saveUserCache(user.uid, 'liabilityPayments', liabilityPayments);
+  }, [liabilityPayments, user]);
 
   useEffect(() => {
     saveLocalTransactions(transactions);
-  }, [transactions]);
+    if (user) saveUserCache(user.uid, 'transactions', transactions);
+  }, [transactions, user]);
 
   useEffect(() => {
     saveLocalBudgets(budgets);
-  }, [budgets]);
+    if (user) saveUserCache(user.uid, 'budgets', budgets);
+  }, [budgets, user]);
 
   useEffect(() => {
     saveLocalPeriod(period);
-  }, [period]);
+    if (user) saveUserCache(user.uid, 'period', period);
+  }, [period, user]);
 
   useEffect(() => {
     saveLocalCurrency(currency);
-  }, [currency]);
+    if (user) saveUserCache(user.uid, 'currency', currency);
+  }, [currency, user]);
 
   useEffect(() => {
     saveLocalRecurringExpenses(recurringExpenses);
-  }, [recurringExpenses]);
+    if (user) saveUserCache(user.uid, 'recurringExpenses', recurringExpenses);
+  }, [recurringExpenses, user]);
 
   // Handle Google Sign In
   const handleSignIn = async () => {
@@ -403,6 +439,13 @@ export default function App() {
       await logout();
       setUser(null);
       setAccessToken(null);
+      setAssets([]);
+      setAssetTransactions([]);
+      setLiabilities([]);
+      setLiabilityPayments([]);
+      setTransactions([]);
+      setBudgets([]);
+      setRecurringExpenses([]);
     } catch (e) {
       console.error('Logout error:', e);
     }
@@ -561,12 +604,12 @@ export default function App() {
       };
 
       setTransactions((prev) => [crossTx, ...prev]);
-      if (user && userAccess.hasApexAccess) {
+      if (user) {
         await saveTransactionItemToCloud(user.uid, crossTx);
       }
     }
 
-    if (user && userAccess.hasApexAccess) {
+    if (user) {
       await saveAssetItemToCloud(user.uid, item);
     }
   };
@@ -574,7 +617,7 @@ export default function App() {
   const handleUpdateAsset = async (updated: AssetItem) => {
     setAssets((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
 
-    if (user && userAccess.hasApexAccess) {
+    if (user) {
       await saveAssetItemToCloud(user.uid, updated);
     }
   };
@@ -584,7 +627,7 @@ export default function App() {
     setAssetTransactions((prev) => prev.filter((t) => t.assetId !== assetId));
     setTransactions((prev) => prev.filter((t) => t.linkedAssetId !== assetId));
 
-    if (user && userAccess.hasApexAccess) {
+    if (user) {
       await deleteAssetItemFromCloud(user.uid, assetId);
     }
   };
@@ -633,7 +676,7 @@ export default function App() {
     };
     setTransactions((prev) => [newTx, ...prev]);
 
-    if (user && userAccess.hasApexAccess) {
+    if (user) {
       await saveAssetItemToCloud(user.uid, newAsset);
       await saveTransactionItemToCloud(user.uid, newTx);
     }
@@ -655,6 +698,9 @@ export default function App() {
       createdAt: new Date().toISOString(),
     };
     setAssetTransactions((prev) => [newTx, ...prev]);
+    if (user) {
+      await saveAssetTransactionToCloud(user.uid, newTx);
+    }
 
     // Cross-linked ledger automation:
     // Earning from an asset, such as business revenue or stock dividends -> must log as Income
@@ -689,7 +735,7 @@ export default function App() {
       };
 
       setTransactions((prev) => [crossTx, ...prev]);
-      if (user && userAccess.hasApexAccess) {
+      if (user) {
         await saveTransactionItemToCloud(user.uid, crossTx);
       }
     }
@@ -697,6 +743,9 @@ export default function App() {
 
   const handleDeleteAssetTransaction = (txId: string) => {
     setAssetTransactions((prev) => prev.filter((t) => t.id !== txId));
+    if (user) {
+      deleteAssetTransactionFromCloud(user.uid, txId).catch(console.error);
+    }
   };
 
   // Liability Actions with Cross-Linked Ledger Automations
@@ -747,12 +796,12 @@ export default function App() {
       };
 
       setTransactions((prev) => [crossTx, ...prev]);
-      if (user && userAccess.hasApexAccess) {
+      if (user) {
         await saveTransactionItemToCloud(user.uid, crossTx);
       }
     }
 
-    if (user && userAccess.hasApexAccess) {
+    if (user) {
       await saveLiabilityItemToCloud(user.uid, item);
     }
   };
@@ -760,7 +809,7 @@ export default function App() {
   const handleUpdateLiability = async (updated: LiabilityItem) => {
     setLiabilities((prev) => prev.map((l) => (l.id === updated.id ? updated : l)));
 
-    if (user && userAccess.hasApexAccess) {
+    if (user) {
       await saveLiabilityItemToCloud(user.uid, updated);
     }
   };
@@ -770,7 +819,7 @@ export default function App() {
     setLiabilityPayments((prev) => prev.filter((p) => p.liabilityId !== liabilityId));
     setTransactions((prev) => prev.filter((t) => t.linkedLiabilityId !== liabilityId));
 
-    if (user && userAccess.hasApexAccess) {
+    if (user) {
       await deleteLiabilityItemFromCloud(user.uid, liabilityId);
     }
   };
@@ -787,6 +836,9 @@ export default function App() {
       createdAt: new Date().toISOString(),
     };
     setLiabilityPayments((prev) => [newPayment, ...prev]);
+    if (user) {
+      await saveLiabilityPaymentToCloud(user.uid, newPayment);
+    }
 
     // Cross-linked ledger: paying liability automatically logs as an Expense
     if (autoLedger?.enabled !== false && newPayment.amount > 0) {
@@ -826,6 +878,9 @@ export default function App() {
 
   const handleDeleteLiabilityPayment = (paymentId: string) => {
     setLiabilityPayments((prev) => prev.filter((p) => p.id !== paymentId));
+    if (user) {
+      deleteLiabilityPaymentFromCloud(user.uid, paymentId).catch(console.error);
+    }
   };
 
   // Transaction Actions (Logged via Income & Expenses page)
@@ -862,7 +917,7 @@ export default function App() {
 
     setTransactions((prev) => [newTx, ...prev]);
 
-    if (user && userAccess.hasApexAccess) {
+    if (user) {
       await saveTransactionItemToCloud(user.uid, newTx);
     }
   };
@@ -870,7 +925,7 @@ export default function App() {
   const handleUpdateTransaction = async (updated: TransactionItem) => {
     setTransactions((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
 
-    if (user && userAccess.hasApexAccess) {
+    if (user) {
       await saveTransactionItemToCloud(user.uid, updated);
     }
   };
@@ -878,7 +933,7 @@ export default function App() {
   const handleDeleteTransaction = async (txId: string) => {
     setTransactions((prev) => prev.filter((t) => t.id !== txId));
 
-    if (user && userAccess.hasApexAccess) {
+    if (user) {
       await deleteTransactionItemFromCloud(user.uid, txId);
     }
   };
@@ -890,16 +945,25 @@ export default function App() {
       id: `rec-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
     };
     setRecurringExpenses((prev) => [newItem, ...prev]);
+    if (user) {
+      saveRecurringExpenseToCloud(user.uid, newItem).catch(console.error);
+    }
   };
 
   const handleUpdateRecurringExpense = (updated: RecurringExpenseItem) => {
     setRecurringExpenses((prev) =>
       prev.map((item) => (item.id === updated.id ? updated : item))
     );
+    if (user) {
+      saveRecurringExpenseToCloud(user.uid, updated).catch(console.error);
+    }
   };
 
   const handleDeleteRecurringExpense = (id: string) => {
     setRecurringExpenses((prev) => prev.filter((item) => item.id !== id));
+    if (user) {
+      deleteRecurringExpenseFromCloud(user.uid, id).catch(console.error);
+    }
   };
 
   const handlePayRecurringExpense = async (
@@ -983,6 +1047,7 @@ export default function App() {
       const existing = idx >= 0 ? prev[idx] : { category, monthlyBudget: amount, periodBudgets: {} };
       const periodBudgets = { ...(existing.periodBudgets || {}) };
 
+      let nextBudgets: CategoryBudget[];
       if (!options || !options.scope || options.scope === 'year') {
         const yr = options?.year || (options?.monthKey ? parseInt(options.monthKey.split('-')[0]) : 2024);
         for (let m = 1; m <= 12; m++) {
@@ -997,9 +1062,10 @@ export default function App() {
         if (idx >= 0) {
           const copy = [...prev];
           copy[idx] = updatedItem;
-          return copy;
+          nextBudgets = copy;
+        } else {
+          nextBudgets = [...prev, updatedItem];
         }
-        return [...prev, updatedItem];
       } else {
         const k = options.monthKey || '2024-03';
         periodBudgets[k] = amount;
@@ -1011,10 +1077,16 @@ export default function App() {
         if (idx >= 0) {
           const copy = [...prev];
           copy[idx] = updatedItem;
-          return copy;
+          nextBudgets = copy;
+        } else {
+          nextBudgets = [...prev, updatedItem];
         }
-        return [...prev, updatedItem];
       }
+
+      if (user) {
+        saveBudgetsToCloud(user.uid, nextBudgets).catch(console.error);
+      }
+      return nextBudgets;
     });
   };
 
@@ -1112,7 +1184,17 @@ export default function App() {
 
   // Wipe All Data handler: completely clears all logged assets, liabilities, transactions,
   // and recurring expenses from local storage and Firebase, zeroing out beginning balance so the app resets to a pure zero state.
-  const handleWipeAllTransactions = async () => {
+  const handleSetPeriod = (newPeriod: React.SetStateAction<PeriodSettings>) => {
+    setPeriod((prev) => {
+      const next = typeof newPeriod === 'function' ? newPeriod(prev) : newPeriod;
+      if (user) {
+        savePeriodToCloud(user.uid, next).catch(console.error);
+      }
+      return next;
+    });
+  };
+
+    const handleWipeAllTransactions = async () => {
     const { newPeriod } = await wipeAllDataToPureZero(user ? user.uid : null, period, assets);
     setTransactions([]);
     setAssets([]);
@@ -1347,7 +1429,7 @@ export default function App() {
         {activeTab === 'dashboard' && (
           <Dashboard
             period={period}
-            setPeriod={setPeriod}
+            setPeriod={handleSetPeriod}
             assets={assets}
             liabilities={liabilities}
             transactions={transactions}
@@ -1443,6 +1525,10 @@ export default function App() {
               } else {
                 setIsExportModalOpen(true);
               }
+            }}
+            onOpenBackupRestore={(tab) => {
+              setBackupRestoreTab(tab || 'export');
+              setIsBackupRestoreModalOpen(true);
             }}
             onWipeAllData={handleWipeAllTransactions}
             onOpenPaywall={() => handleOpenGrowthCheckpoint('general')}
@@ -1626,6 +1712,34 @@ export default function App() {
           />
         )}
       </main>
+
+      {/* Unified Account Backup & Restore Modal (Google Sheets / CSV / JSON) */}
+      <BackupRestoreModal
+        isOpen={isBackupRestoreModalOpen}
+        onClose={() => setIsBackupRestoreModalOpen(false)}
+        userId={user?.uid}
+        initialTab={backupRestoreTab}
+        data={{
+          period,
+          assets,
+          liabilities,
+          transactions,
+          budgets,
+          assetTransactions,
+          liabilityPayments,
+          recurringExpenses,
+        }}
+        onRestoreToCloud={async (backup, mode) => {
+          if (!user) {
+            throw new Error('Please sign in to restore your cloud ledger.');
+          }
+          return await restoreAccountDataToFirestore(user.uid, backup, mode);
+        }}
+        onOpenGoogleSheetsExport={() => {
+          setIsBackupRestoreModalOpen(false);
+          setIsExportModalOpen(true);
+        }}
+      />
 
       {/* Export to Google Sheets Modal */}
       <ExportSheetsModal

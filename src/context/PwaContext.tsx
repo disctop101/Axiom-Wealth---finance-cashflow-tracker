@@ -87,10 +87,10 @@ export const PwaProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           console.log('[PWA] Application assets cached and ready to work offline.');
           setOfflineReady(true);
         },
-        onRegisteredSW(swScriptUrl, registration) {
+        onRegisteredSW(swScriptUrl: string, registration?: ServiceWorkerRegistration) {
           console.log('[PWA] Service Worker registered at:', swScriptUrl, registration);
         },
-        onRegisterError(error) {
+        onRegisterError(error: any) {
           console.warn('[PWA] Service Worker registration failed:', error);
         },
       });
