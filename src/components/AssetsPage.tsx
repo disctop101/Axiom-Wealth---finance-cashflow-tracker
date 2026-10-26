@@ -1068,6 +1068,7 @@ export const AssetsPage: React.FC<AssetsPageProps> = ({
               ) : (
                 filteredAssets.map((asset, idx) => {
                   const isStockHolding = asset.category === 'Stocks';
+                  const isCashAsset = asset.category === 'Cash and cash equivalents' || asset.category === 'Liquid Cash';
                   const computedVal = computeAssetValue(asset);
                   const txCount = assetTransactions.filter((t) => t.assetId === asset.id).length;
 

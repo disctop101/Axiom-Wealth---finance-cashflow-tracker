@@ -348,8 +348,7 @@ export function runOneTimeTestDataPurge(): boolean {
     // Filter out ANY mock or dummy items unconditionally
     const isMockTx = (t: TransactionItem) =>
       t.id?.startsWith('mock-tx-') ||
-      t.id?.startsWith('tx-') ||
-      t.id?.startsWith('t-') ||
+      
       t.name?.includes('Executive Salary') ||
       t.name?.includes('Quarterly Salary & Consulting Payout') ||
       t.name?.includes('Hybrid') ||
@@ -357,7 +356,7 @@ export function runOneTimeTestDataPurge(): boolean {
 
     const isMockAsset = (a: AssetItem) =>
       a.id?.startsWith('mock-asset-') ||
-      a.id?.startsWith('ast-') ||
+      
       a.name?.includes('BPI / GCash') ||
       a.name?.includes('High-Yield Checking') ||
       a.name?.includes('COL Financial Trading Account') ||
@@ -372,7 +371,7 @@ export function runOneTimeTestDataPurge(): boolean {
 
     const isMockLiab = (l: LiabilityItem) =>
       l.id?.startsWith('mock-liab-') ||
-      l.id?.startsWith('liab-') ||
+      
       l.name?.includes('Home Mortgage') ||
       l.name?.includes('Promissory Note') ||
       l.name?.includes('Auto Hybrid Financing Loan') ||
@@ -386,7 +385,7 @@ export function runOneTimeTestDataPurge(): boolean {
 
     const isMockRec = (r: RecurringExpenseItem) =>
       r.id?.startsWith('mock-rec-') ||
-      r.id?.startsWith('rec-') ||
+      
       r.name?.includes('Residential Apartment Rent') ||
       r.name?.includes('Fiber Broadband');
 
@@ -649,7 +648,7 @@ export function subscribeToUserAssets(
         // Exclude any stale mock assets that might have leaked into remote database
         const isMock =
           item.id?.startsWith('mock-asset-') ||
-          item.id?.startsWith('ast-') ||
+          
           item.name?.includes('High-Yield Checking') ||
           item.name?.includes('Hybrid Executive SUV') ||
           item.name?.includes('BGC High Street') ||
@@ -685,7 +684,7 @@ export function subscribeToUserLiabilities(
         // Exclude any stale mock liabilities that might have leaked into remote database
         const isMock =
           item.id?.startsWith('mock-liab-') ||
-          item.id?.startsWith('liab-') ||
+          
           item.name?.includes('Home Mortgage') ||
           item.name?.includes('Promissory Note') ||
           item.name?.includes('Auto Hybrid Financing Loan') ||

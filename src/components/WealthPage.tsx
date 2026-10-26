@@ -502,9 +502,10 @@ export const WealthPage: React.FC<WealthPageProps> = ({
         subDetail: isBorrow ? `Initial principal borrowed for ${parentName}` : `Principal payment on ${parentName}`,
         notes: p.notes,
         amount: p.amount,
-        netWorthImpact: isBorrow ? 'neutral' : 'positive',
+        netWorthImpact: (p.isRecordOnly || parentLiab?.isRecordOnly) ? 'neutral' : 'positive',
         impactAmount: p.amount,
         extraMeta: lender,
+        isRecordOnly: p.isRecordOnly || parentLiab?.isRecordOnly,
       });
     });
 
