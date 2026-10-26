@@ -32,9 +32,90 @@ import {
   ArrowDown,
   HelpCircle,
   BookOpen,
+  Calculator,
 } from 'lucide-react';
 import { ConfirmModal } from './ConfirmModal';
 import { Tooltip } from './Tooltip';
+
+/**
+ * Automated Payoff Calculator for Liabilities
+ * Calculates payments remaining and projected completion date based on frequency
+ */
+export function calculateLiabilityPayoff(
+  currentBalance: number,
+  recurringAmount?: number,
+  frequency: LiabilityPaymentFrequency = 'monthly',
+  nextDueDate?: string
+): {
+  paymentsRemaining: number;
+  periodsText: string;
+  estimatedPayoffDate: string | null;
+} {
+  if (currentBalance <= 0) {
+    return {
+      paymentsRemaining: 0,
+      periodsText: 'Settled / Paid Off',
+      estimatedPayoffDate: null,
+    };
+  }
+  const payment = recurringAmount && recurringAmount > 0 ? recurringAmount : 0;
+  if (payment <= 0) {
+    return {
+      paymentsRemaining: 0,
+      periodsText: 'No recurring payment set',
+      estimatedPayoffDate: null,
+    };
+  }
+
+  const paymentsRemaining = Math.ceil(currentBalance / payment);
+  const baseDate = nextDueDate && !isNaN(new Date(nextDueDate).getTime())
+    ? new Date(nextDueDate)
+    : new Date();
+
+  const targetDate = new Date(baseDate);
+
+  switch (frequency) {
+    case 'daily':
+      targetDate.setDate(targetDate.getDate() + paymentsRemaining);
+      break;
+    case 'weekly':
+      targetDate.setDate(targetDate.getDate() + paymentsRemaining * 7);
+      break;
+    case 'biweekly':
+      targetDate.setDate(targetDate.getDate() + paymentsRemaining * 14);
+      break;
+    case 'monthly':
+      targetDate.setMonth(targetDate.getMonth() + paymentsRemaining);
+      break;
+    case 'yearly':
+      targetDate.setFullYear(targetDate.getFullYear() + paymentsRemaining);
+      break;
+    default:
+      targetDate.setMonth(targetDate.getMonth() + paymentsRemaining);
+  }
+
+  const y = targetDate.getFullYear();
+  const m = String(targetDate.getMonth() + 1).padStart(2, '0');
+  const d = String(targetDate.getDate()).padStart(2, '0');
+  const estimatedPayoffDate = `${y}-${m}-${d}`;
+
+  const freqText =
+    frequency === 'daily'
+      ? `${paymentsRemaining} days`
+      : frequency === 'weekly'
+      ? `${paymentsRemaining} wks`
+      : frequency === 'biweekly'
+      ? `${paymentsRemaining} bi-wks`
+      : frequency === 'monthly'
+      ? `${paymentsRemaining} mos`
+      : `${paymentsRemaining} yrs`;
+
+  return {
+    paymentsRemaining,
+    periodsText: freqText,
+    estimatedPayoffDate,
+  };
+}
 
 interface LiabilitiesPageProps {
   liabilities: LiabilityItem[];
@@ -103,6 +184,7 @@ export const LiabilitiesPage: React.FC<LiabilitiesPageProps> = ({
   const [purpose, setPurpose] = useState<LiabilityPurpose>('financed_purchase');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [notes, setNotes] = useState('');
+  const [isRecordOnly, setIsRecordOnly] = useState(false);
 
   // Scheduled Payment Option States (Permanent on main form)
   const [paymentFrequency, setPaymentFrequency] = useState<LiabilityPaymentFrequency>('monthly');
@@ -153,6 +235,7 @@ export const LiabilitiesPage: React.FC<LiabilitiesPageProps> = ({
     setPurpose('financed_purchase');
     setDate(new Date().toISOString().split('T')[0]);
     setNotes('');
+    setIsRecordOnly(false);
     setPaymentFrequency('monthly');
     const defaultNextDue = new Date();
     defaultNextDue.setMonth(defaultNextDue.getMonth() + 1);
@@ -171,6 +254,7 @@ export const LiabilitiesPage: React.FC<LiabilitiesPageProps> = ({
     setPurpose(item.purpose || 'financed_purchase');
     setDate(item.date || new Date().toISOString().split('T')[0]);
     setNotes(item.notes || '');
+    setIsRecordOnly(Boolean(item.isRecordOnly));
     // Prepopulate payment frequency and due date
     setPaymentFrequency(item.paymentFrequency || 'monthly');
     setNextDueDate(item.nextDueDate || '');
@@ -201,6 +285,7 @@ export const LiabilitiesPage: React.FC<LiabilitiesPageProps> = ({
         purpose,
         date,
         notes: notes.trim() || undefined,
+        isRecordOnly,
         // Scheduled payment fields
         scheduledPaymentEnabled: scheduledActive,
         paymentFrequency,
@@ -235,13 +320,14 @@ export const LiabilitiesPage: React.FC<LiabilitiesPageProps> = ({
           purpose,
           date,
           notes: notes.trim() || undefined,
+          isRecordOnly,
           // Scheduled payment fields
           scheduledPaymentEnabled: scheduledActive,
           paymentFrequency,
           nextDueDate: scheduledActive ? nextDueDate : undefined,
         },
         {
-          enabled: true, // Mandatory background cross-linking
+          enabled: !isRecordOnly, // Bypasses cross-linking when record only
           type: ledgerType,
           category: ledgerCategory,
         }
@@ -267,9 +353,10 @@ export const LiabilitiesPage: React.FC<LiabilitiesPageProps> = ({
         amount: numAmount,
         date: payDate,
         notes: payNotes.trim() || undefined,
+        isRecordOnly: selectedLiabilityForHistory.isRecordOnly,
       },
       {
-        enabled: payAutoLedger,
+        enabled: !selectedLiabilityForHistory.isRecordOnly && payAutoLedger,
         category: paymentCategory,
       }
     );
@@ -622,6 +709,11 @@ export const LiabilitiesPage: React.FC<LiabilitiesPageProps> = ({
                           </span>
                         )}
                         <History className="w-3.5 h-3.5 text-red-600 dark:text-red-400 shrink-0" />
+                        {item.isRecordOnly && (
+                          <span className="text-[10px] font-mono px-1.5 py-0.2 bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 rounded font-bold border border-amber-300 dark:border-amber-700" title="Record only: bypasses Income & Expense cashflow statement">
+                            Record Only
+                          </span>
+                        )}
                       </div>
                       {item.notes && (
                         <div className="text-[11px] text-neutral-500 dark:text-neutral-400 italic truncate max-w-xs">
@@ -659,6 +751,30 @@ export const LiabilitiesPage: React.FC<LiabilitiesPageProps> = ({
                               <span>Due: {item.nextDueDate}</span>
                             </div>
                           )}
+                          {/* Automated Payoff Calculator Pill */}
+                          {(() => {
+                            const payoff = calculateLiabilityPayoff(
+                              currentBalance,
+                              item.monthlyPayment || item.scheduledAmount,
+                              item.paymentFrequency,
+                              item.nextDueDate
+                            );
+                            if (currentBalance > 0 && payoff.paymentsRemaining > 0) {
+                              return (
+                                <div className="mt-1 flex flex-col items-end gap-0.5">
+                                  <span className="text-[9px] px-1.5 py-0.2 bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 rounded font-bold border border-emerald-300 dark:border-emerald-700 font-mono">
+                                    {payoff.paymentsRemaining} {payoff.paymentsRemaining === 1 ? 'pmt' : 'pmts'} left ({payoff.periodsText})
+                                  </span>
+                                  {payoff.estimatedPayoffDate && (
+                                    <span className="text-[9px] text-neutral-500 dark:text-neutral-400 font-mono">
+                                      Payoff: {payoff.estimatedPayoffDate}
+                                    </span>
+                                  )}
+                                </div>
+                              );
+                            }
+                            return null;
+                          })()}
                         </div>
                       ) : item.nextDueDate ? (
                         <div className="text-[10px] text-red-600 dark:text-red-400 font-sans font-medium flex items-center justify-end gap-1">
@@ -746,6 +862,57 @@ export const LiabilitiesPage: React.FC<LiabilitiesPageProps> = ({
                 <X className="w-4 h-4" />
               </button>
             </div>
+
+            {/* Automated Debt Payoff Calculator Banner */}
+            {(() => {
+              const currentBal = computeCurrentBalance(selectedLiabilityForHistory);
+              const payoff = calculateLiabilityPayoff(
+                currentBal,
+                selectedLiabilityForHistory.monthlyPayment || selectedLiabilityForHistory.scheduledAmount,
+                selectedLiabilityForHistory.paymentFrequency,
+                selectedLiabilityForHistory.nextDueDate
+              );
+              return (
+                <div className="px-5 py-3 bg-gradient-to-r from-neutral-900 via-neutral-950 to-neutral-900 text-white border-b border-neutral-700/80 flex flex-wrap items-center justify-between gap-3 text-xs">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-1.5 rounded-lg bg-emerald-950/80 border border-emerald-500/50 text-emerald-400">
+                      <Calculator className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-xs uppercase tracking-wider text-emerald-300">
+                          Automated Payoff Calculator
+                        </span>
+                        {selectedLiabilityForHistory.isRecordOnly && (
+                          <span className="text-[9px] px-1.5 py-0.2 rounded font-bold bg-amber-950/80 text-amber-300 border border-amber-600 font-mono">
+                            OFF-LEDGER RECORD
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-neutral-400 font-mono">
+                        {selectedLiabilityForHistory.monthlyPayment
+                          ? `${formatCurrency(selectedLiabilityForHistory.monthlyPayment, currencySymbol)} / ${selectedLiabilityForHistory.paymentFrequency || 'monthly'} recurring payment`
+                          : 'No scheduled recurring payment defined'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4 text-right">
+                    <div>
+                      <span className="text-[10px] text-neutral-400 uppercase tracking-wide block">Payments Left</span>
+                      <span className="font-mono font-bold text-emerald-400 text-xs">
+                        {currentBal <= 0 ? 'Settled (0)' : payoff.paymentsRemaining > 0 ? `${payoff.paymentsRemaining} (${payoff.periodsText})` : 'Set payment'}
+                      </span>
+                    </div>
+                    {payoff.estimatedPayoffDate && currentBal > 0 && (
+                      <div>
+                        <span className="text-[10px] text-neutral-400 uppercase tracking-wide block">Est. Completion Date</span>
+                        <span className="font-mono font-bold text-cyan-400 text-xs">{payoff.estimatedPayoffDate}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Balances Banner */}
             <div className="px-5 py-3 bg-neutral-100 border-b border-neutral-200 grid grid-cols-3 gap-2 text-xs">
@@ -1120,8 +1287,9 @@ export const LiabilitiesPage: React.FC<LiabilitiesPageProps> = ({
                   >
                     <option value="daily">Daily</option>
                     <option value="weekly">Weekly</option>
+                    <option value="biweekly">Bi-weekly (Every 2 weeks)</option>
                     <option value="monthly">Monthly</option>
-                    <option value="yearly">Yearly</option>
+                    <option value="yearly">Yearly (Annual)</option>
                   </select>
                 </div>
 
@@ -1138,6 +1306,54 @@ export const LiabilitiesPage: React.FC<LiabilitiesPageProps> = ({
                   />
                 </div>
               </div>
+
+              {/* Record Only (Off-Ledger) Toggle */}
+              <div className="p-3 bg-neutral-50 rounded-lg border border-neutral-200">
+                <label className="flex items-start gap-2.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={isRecordOnly}
+                    onChange={(e) => setIsRecordOnly(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-neutral-300 cursor-pointer"
+                  />
+                  <div>
+                    <div className="font-semibold text-xs text-neutral-900 flex items-center gap-1.5">
+                      <span>Record only (Do not reflect on Income/Expense ledger)</span>
+                      <span className="text-[10px] px-1.5 py-0.2 bg-amber-100 text-amber-800 rounded font-bold border border-amber-300">
+                        OFF-LEDGER
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-neutral-500 mt-0.5 leading-relaxed">
+                      When enabled, tracking or paying down this liability updates the debt balance and logs to debt history, but bypasses the cashflow/expense statement so operating cash is not altered.
+                    </p>
+                  </div>
+                </label>
+              </div>
+
+              {/* Live Automated Payoff Projection Preview in Modal */}
+              {(() => {
+                const bal = parseFloat(initialAmount) || 0;
+                const pmt = parseFloat(monthlyPayment) || 0;
+                if (bal > 0 && pmt > 0) {
+                  const preview = calculateLiabilityPayoff(bal, pmt, paymentFrequency, nextDueDate);
+                  return (
+                    <div className="p-2.5 bg-emerald-950/80 border border-emerald-600/70 text-emerald-200 rounded-lg text-xs flex items-center justify-between gap-2 shadow-xs">
+                      <div className="flex items-center gap-1.5">
+                        <Calculator className="w-4 h-4 text-emerald-400 shrink-0" />
+                        <span className="font-medium">
+                          Payoff Projection: <span className="font-mono font-bold text-white">{preview.paymentsRemaining} payments</span> (~{preview.periodsText})
+                        </span>
+                      </div>
+                      {preview.estimatedPayoffDate && (
+                        <span className="font-mono text-[11px] text-cyan-300 font-bold shrink-0">
+                          Est. Payoff: {preview.estimatedPayoffDate}
+                        </span>
+                      )}
+                    </div>
+                  );
+                }
+                return null;
+              })()}
 
               <div>
                 <label className="block font-medium text-neutral-700 mb-1">Notes</label>

@@ -86,6 +86,15 @@ import {
 } from './services/storage';
 import { BackupRestoreModal } from './components/BackupRestoreModal';
 import { BackupPayload } from './services/backupRestore';
+import {
+  enqueueOfflineAction,
+  getOfflineQueue,
+  processOfflineQueue,
+  pushLocalLedgerToCloud,
+  pullCloudLedgerToLocal,
+  getLastSyncedTime,
+  setLastSyncedTime,
+} from './services/offlineSyncQueue';
 import { generate90DayMockData } from './services/mockData';
 import { Navbar, AppNavTab } from './components/Navbar';
 import { Dashboard } from './components/Dashboard';
@@ -177,6 +186,190 @@ export default function App() {
   const [authInitialized, setAuthInitialized] = useState(false);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isOnline, setIsOnline] = useState<boolean>(
+    typeof navigator !== 'undefined' ? navigator.onLine : true
+  );
+  const [queuedActionsCount, setQueuedActionsCount] = useState<number>(0);
+  const [lastSyncedTime, setLastSyncedTimeState] = useState<string | null>(null);
+
+  // Connectivity and offline queue auto-processing
+  useEffect(() => {
+    const handleOnline = async () => {
+      setIsOnline(true);
+      if (user) {
+        try {
+          const res = await processOfflineQueue(user.uid);
+          if (res.processed > 0) {
+            setLastSyncedTime(user.uid);
+            setLastSyncedTimeState(new Date().toISOString());
+          }
+        } catch (err) {
+          console.error('Auto-sync offline queue on reconnect failed:', err);
+        }
+      }
+    };
+    const handleOffline = () => {
+      setIsOnline(false);
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [user]);
+
+  // Offline queue event listener
+  useEffect(() => {
+    if (!user) {
+      setQueuedActionsCount(0);
+      setLastSyncedTimeState(null);
+      return;
+    }
+
+    const refreshQueue = () => {
+      const q = getOfflineQueue(user.uid);
+      setQueuedActionsCount(q.length);
+      setLastSyncedTimeState(getLastSyncedTime(user.uid));
+    };
+
+    refreshQueue();
+
+    const handleQueueChanged = (e: Event) => {
+      const customEvent = e as CustomEvent<{ userId: string; count: number }>;
+      if (!customEvent.detail || customEvent.detail.userId === user.uid) {
+        refreshQueue();
+      }
+    };
+
+    window.addEventListener('axiom_offline_queue_changed', handleQueueChanged);
+    window.addEventListener('storage', refreshQueue);
+
+    return () => {
+      window.removeEventListener('axiom_offline_queue_changed', handleQueueChanged);
+      window.removeEventListener('storage', refreshQueue);
+    };
+  }, [user]);
+
+  // Safe Cloud Save and Delete with automatic offline queueing
+  const safeCloudSave = async (
+    entity: 'transaction' | 'asset' | 'liability' | 'budget' | 'period' | 'asset_tx' | 'liability_payment' | 'recurring',
+    saveFn: () => Promise<void>,
+    payload: any
+  ) => {
+    if (!user) return;
+    if (navigator.onLine) {
+      try {
+        await saveFn();
+        setLastSyncedTime(user.uid);
+        setLastSyncedTimeState(new Date().toISOString());
+        return;
+      } catch (err) {
+        console.warn(`[Cloud] Save error online, queuing offline action for ${entity}:`, err);
+      }
+    }
+    enqueueOfflineAction({
+      userId: user.uid,
+      entity,
+      actionType: 'save',
+      payload,
+    });
+  };
+
+  const safeCloudDelete = async (
+    entity: 'transaction' | 'asset' | 'liability' | 'budget' | 'period' | 'asset_tx' | 'liability_payment' | 'recurring',
+    deleteFn: () => Promise<void>,
+    entityId: string
+  ) => {
+    if (!user) return;
+    if (navigator.onLine) {
+      try {
+        await deleteFn();
+        setLastSyncedTime(user.uid);
+        setLastSyncedTimeState(new Date().toISOString());
+        return;
+      } catch (err) {
+        console.warn(`[Cloud] Delete error online, queuing offline action for ${entity}:`, err);
+      }
+    }
+    enqueueOfflineAction({
+      userId: user.uid,
+      entity,
+      actionType: 'delete',
+      entityId,
+    });
+  };
+
+  // Two-way sync controls
+  const handlePushLocalToCloud = async (): Promise<{ success: boolean; message: string }> => {
+    if (!user) {
+      throw new Error('Please sign in to push changes to cloud.');
+    }
+    if (!navigator.onLine) {
+      throw new Error('Device is offline. Connect to the internet to push changes to cloud.');
+    }
+
+    setIsSyncing(true);
+    try {
+      const result = await pushLocalLedgerToCloud(user.uid, {
+        transactions,
+        assets,
+        liabilities,
+        budgets,
+        period,
+        assetTransactions,
+        liabilityPayments,
+        recurringExpenses,
+      });
+
+      setLastSyncedTime(user.uid);
+      setLastSyncedTimeState(new Date().toISOString());
+      setQueuedActionsCount(0);
+
+      return {
+        success: true,
+        message: result.message,
+      };
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handlePullCloudToLocal = async (): Promise<{ success: boolean; message: string }> => {
+    if (!user) {
+      throw new Error('Please sign in to pull changes from cloud.');
+    }
+    if (!navigator.onLine) {
+      throw new Error('Device is offline. Connect to the internet to pull cloud data.');
+    }
+
+    setIsSyncing(true);
+    try {
+      const result = await pullCloudLedgerToLocal(user.uid);
+      if (result.success && result.data) {
+        setTransactions(result.data.transactions);
+        setAssets(result.data.assets);
+        setLiabilities(result.data.liabilities);
+        setBudgets(result.data.budgets);
+        setPeriod(result.data.period);
+        setAssetTransactions(result.data.assetTransactions);
+        setLiabilityPayments(result.data.liabilityPayments);
+        setRecurringExpenses(result.data.recurringExpenses);
+
+        setLastSyncedTime(user.uid);
+        setLastSyncedTimeState(new Date().toISOString());
+      }
+
+      return {
+        success: result.success,
+        message: result.message,
+      };
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   // User Access & Subscription Status computation
   const userAccess = useMemo(
@@ -357,6 +550,8 @@ export default function App() {
       loadedCount++;
       if (loadedCount >= 8) {
         setIsSyncing(false);
+        setLastSyncedTime(user.uid);
+        setLastSyncedTimeState(new Date().toISOString());
       }
     };
 
@@ -699,12 +894,12 @@ export default function App() {
 
       setTransactions((prev) => [crossTx, ...prev]);
       if (user) {
-        await saveTransactionItemToCloud(user.uid, crossTx);
+        await safeCloudSave('transaction', () => saveTransactionItemToCloud(user.uid, crossTx), crossTx);
       }
     }
 
     if (user) {
-      await saveAssetItemToCloud(user.uid, item);
+      await safeCloudSave('asset', () => saveAssetItemToCloud(user.uid, item), item);
     }
   };
 
@@ -712,7 +907,7 @@ export default function App() {
     setAssets((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
 
     if (user) {
-      await saveAssetItemToCloud(user.uid, updated);
+      await safeCloudSave('asset', () => saveAssetItemToCloud(user.uid, updated), updated);
     }
   };
 
@@ -722,7 +917,7 @@ export default function App() {
     setTransactions((prev) => prev.filter((t) => t.linkedAssetId !== assetId));
 
     if (user) {
-      await deleteAssetItemFromCloud(user.uid, assetId);
+      await safeCloudDelete('asset', () => deleteAssetItemFromCloud(user.uid, assetId), assetId);
     }
   };
 
@@ -771,8 +966,8 @@ export default function App() {
     setTransactions((prev) => [newTx, ...prev]);
 
     if (user) {
-      await saveAssetItemToCloud(user.uid, newAsset);
-      await saveTransactionItemToCloud(user.uid, newTx);
+      await safeCloudSave('asset', () => saveAssetItemToCloud(user.uid, newAsset), newAsset);
+      await safeCloudSave('transaction', () => saveTransactionItemToCloud(user.uid, newTx), newTx);
     }
 
     return { asset: newAsset, transaction: newTx };
@@ -793,7 +988,7 @@ export default function App() {
     };
     setAssetTransactions((prev) => [newTx, ...prev]);
     if (user) {
-      await saveAssetTransactionToCloud(user.uid, newTx);
+      await safeCloudSave('asset_tx', () => saveAssetTransactionToCloud(user.uid, newTx), newTx);
     }
 
     // Cross-linked ledger automation:
@@ -830,7 +1025,7 @@ export default function App() {
 
       setTransactions((prev) => [crossTx, ...prev]);
       if (user) {
-        await saveTransactionItemToCloud(user.uid, crossTx);
+        await safeCloudSave('transaction', () => saveTransactionItemToCloud(user.uid, crossTx), crossTx);
       }
     }
   };
@@ -838,7 +1033,7 @@ export default function App() {
   const handleDeleteAssetTransaction = (txId: string) => {
     setAssetTransactions((prev) => prev.filter((t) => t.id !== txId));
     if (user) {
-      deleteAssetTransactionFromCloud(user.uid, txId).catch(console.error);
+      safeCloudDelete('asset_tx', () => deleteAssetTransactionFromCloud(user.uid, txId), txId).catch(console.error);
     }
   };
 
@@ -858,7 +1053,8 @@ export default function App() {
     // Cross-linked ledger automation:
     // Taking on a new liability, like a cash loan -> register as Income since it is a cash inflow
     // Using a liability to buy something, like purchasing a car via financing -> log purchase as an Expense
-    if (autoLedger?.enabled !== false && item.initialAmount > 0) {
+    // Respects isRecordOnly: bypasses cashflow / income-expense statement when enabled
+    if (!item.isRecordOnly && autoLedger?.enabled !== false && item.initialAmount > 0) {
       const isCashLoan = item.purpose === 'cash_loan' || autoLedger?.type === 'income';
 
       let defaultCat = 'Account Payables';
@@ -891,12 +1087,12 @@ export default function App() {
 
       setTransactions((prev) => [crossTx, ...prev]);
       if (user) {
-        await saveTransactionItemToCloud(user.uid, crossTx);
+        await safeCloudSave('transaction', () => saveTransactionItemToCloud(user.uid, crossTx), crossTx);
       }
     }
 
     if (user) {
-      await saveLiabilityItemToCloud(user.uid, item);
+      await safeCloudSave('liability', () => saveLiabilityItemToCloud(user.uid, item), item);
     }
   };
 
@@ -904,7 +1100,7 @@ export default function App() {
     setLiabilities((prev) => prev.map((l) => (l.id === updated.id ? updated : l)));
 
     if (user) {
-      await saveLiabilityItemToCloud(user.uid, updated);
+      await safeCloudSave('liability', () => saveLiabilityItemToCloud(user.uid, updated), updated);
     }
   };
 
@@ -914,7 +1110,7 @@ export default function App() {
     setTransactions((prev) => prev.filter((t) => t.linkedLiabilityId !== liabilityId));
 
     if (user) {
-      await deleteLiabilityItemFromCloud(user.uid, liabilityId);
+      await safeCloudDelete('liability', () => deleteLiabilityItemFromCloud(user.uid, liabilityId), liabilityId);
     }
   };
 
@@ -931,12 +1127,15 @@ export default function App() {
     };
     setLiabilityPayments((prev) => [newPayment, ...prev]);
     if (user) {
-      await saveLiabilityPaymentToCloud(user.uid, newPayment);
+      await safeCloudSave('liability_payment', () => saveLiabilityPaymentToCloud(user.uid, newPayment), newPayment);
     }
 
     // Cross-linked ledger: paying liability automatically logs as an Expense
-    if (autoLedger?.enabled !== false && newPayment.amount > 0) {
-      const parentLiability = liabilities.find((l) => l.id === newPayment.liabilityId);
+    // Respects isRecordOnly: bypasses cashflow / income-expense statement when enabled
+    const parentLiability = liabilities.find((l) => l.id === newPayment.liabilityId);
+    const isRecordOnly = Boolean(parentLiability?.isRecordOnly || (data as any)?.isRecordOnly);
+
+    if (!isRecordOnly && autoLedger?.enabled !== false && newPayment.amount > 0) {
       const liabName = parentLiability?.name || 'Debt';
       const liabCat = parentLiability?.category;
 
@@ -964,8 +1163,8 @@ export default function App() {
       };
 
       setTransactions((prev) => [crossTx, ...prev]);
-      if (user && userAccess.hasApexAccess) {
-        await saveTransactionItemToCloud(user.uid, crossTx);
+      if (user) {
+        await safeCloudSave('transaction', () => saveTransactionItemToCloud(user.uid, crossTx), crossTx);
       }
     }
   };
@@ -973,7 +1172,7 @@ export default function App() {
   const handleDeleteLiabilityPayment = (paymentId: string) => {
     setLiabilityPayments((prev) => prev.filter((p) => p.id !== paymentId));
     if (user) {
-      deleteLiabilityPaymentFromCloud(user.uid, paymentId).catch(console.error);
+      safeCloudDelete('liability_payment', () => deleteLiabilityPaymentFromCloud(user.uid, paymentId), paymentId).catch(console.error);
     }
   };
 
@@ -1012,7 +1211,7 @@ export default function App() {
     setTransactions((prev) => [newTx, ...prev]);
 
     if (user) {
-      await saveTransactionItemToCloud(user.uid, newTx);
+      await safeCloudSave('transaction', () => saveTransactionItemToCloud(user.uid, newTx), newTx);
     }
   };
 
@@ -1020,7 +1219,7 @@ export default function App() {
     setTransactions((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
 
     if (user) {
-      await saveTransactionItemToCloud(user.uid, updated);
+      await safeCloudSave('transaction', () => saveTransactionItemToCloud(user.uid, updated), updated);
     }
   };
 

@@ -87,7 +87,7 @@ export type LiabilityCategory =
 
 export type LiabilityPurpose = 'cash_loan' | 'financed_purchase' | 'refinance' | 'other';
 
-export type LiabilityPaymentFrequency = 'daily' | 'weekly' | 'monthly' | 'yearly';
+export type LiabilityPaymentFrequency = 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'yearly';
 
 export interface LiabilityItem {
   id: string;
@@ -101,6 +101,8 @@ export interface LiabilityItem {
   purpose?: LiabilityPurpose;
   date: string; // Origination date
   notes?: string;
+  // Record-only option: bypasses cashflow / income-expense ledger
+  isRecordOnly?: boolean;
   // Scheduled payment options
   scheduledPaymentEnabled?: boolean;
   paymentFrequency?: LiabilityPaymentFrequency;
@@ -120,6 +122,7 @@ export interface LiabilityPayment {
   amount: number;
   date: string;
   notes?: string;
+  isRecordOnly?: boolean;
   createdAt: string;
 }
 

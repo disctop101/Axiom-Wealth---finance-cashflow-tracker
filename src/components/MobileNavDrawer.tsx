@@ -41,6 +41,8 @@ interface MobileNavDrawerProps {
   onOpenHelp?: () => void;
   hasApexAccess?: boolean;
   onOpenGrowthCheckpoint?: () => void;
+  isOnline?: boolean;
+  syncSource?: 'cloud' | 'offline_cache';
 }
 
 export const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({
@@ -56,6 +58,8 @@ export const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({
   onOpenHelp,
   hasApexAccess = true,
   onOpenGrowthCheckpoint,
+  isOnline = true,
+  syncSource = 'cloud',
 }) => {
   const { tooltipsEnabled, toggleTooltips } = useTooltips();
   const { isDark, toggleTheme } = useTheme();
@@ -554,6 +558,18 @@ export const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({
               <div className="text-[9px] text-neutral-400 truncate">
                 {user?.email || 'Local Offline Mode'}
               </div>
+              {user && (
+                <div className="flex items-center gap-1 mt-0.5">
+                  <span className={`w-1.5 h-1.5 rounded-full ${
+                    isOnline && syncSource === 'cloud' ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'
+                  }`} />
+                  <span className={`text-[9px] font-semibold ${
+                    isOnline && syncSource === 'cloud' ? 'text-emerald-400' : 'text-amber-400'
+                  }`}>
+                    {isOnline && syncSource === 'cloud' ? 'Live Cloud' : 'Offline Storage'}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 

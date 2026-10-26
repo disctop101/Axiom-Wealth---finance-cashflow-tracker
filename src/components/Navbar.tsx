@@ -80,6 +80,9 @@ interface NavbarProps {
   onOpenHelp?: () => void;
   hasApexAccess?: boolean;
   onOpenGrowthCheckpoint?: () => void;
+  isOnline?: boolean;
+  syncSource?: 'cloud' | 'offline_cache';
+  queuedActionsCount?: number;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -101,6 +104,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenHelp,
   hasApexAccess = true,
   onOpenGrowthCheckpoint,
+  isOnline = true,
+  syncSource = 'cloud',
+  queuedActionsCount = 0,
 }) => {
   // Dropdown states for Desktop & Header
   const [isToolsOpen, setIsToolsOpen] = useState(false);
@@ -670,6 +676,36 @@ export const Navbar: React.FC<NavbarProps> = ({
                 )}
               </div>
 
+              {/* Live Cloud / Offline Status Indicator Pill */}
+              {user && (
+                <div
+                  className={`hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold border transition ${
+                    isOnline && syncSource === 'cloud'
+                      ? 'bg-emerald-950/70 border-emerald-700/80 text-emerald-300'
+                      : 'bg-amber-950/70 border-amber-700/80 text-amber-300'
+                  }`}
+                  title={
+                    isOnline && syncSource === 'cloud'
+                      ? 'Live Cloud (Firestore) Connected'
+                      : `Offline Storage (${queuedActionsCount} pending changes)`
+                  }
+                >
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full ${
+                      isOnline && syncSource === 'cloud'
+                        ? 'bg-emerald-400 animate-pulse'
+                        : 'bg-amber-400'
+                    }`}
+                  />
+                  <span>{isOnline && syncSource === 'cloud' ? 'Live Cloud' : 'Offline'}</span>
+                  {queuedActionsCount > 0 && (
+                    <span className="px-1 py-0.2 bg-amber-500/20 text-amber-300 rounded font-mono font-bold text-[9px]">
+                      {queuedActionsCount}
+                    </span>
+                  )}
+                </div>
+              )}
+
               {/* User Profile Avatar with Dropdown Menu (Home for Settings & Utilities) */}
               <div className="relative">
                 <button
@@ -720,7 +756,18 @@ export const Navbar: React.FC<NavbarProps> = ({
                           {hasApexAccess ? 'Apex Tier' : 'Essential Tier'}
                         </span>
                         <span className="text-[10px] text-neutral-400">
-                          {hasApexAccess ? '• Cloud Synced' : '• Local Storage Only'}
+                          hasApexAccess ? (
+                            <span className={`inline-flex items-center gap-1 ${
+                              user && isOnline && syncSource === 'cloud' ? 'text-emerald-400' : 'text-amber-400'
+                            }`}>
+                              <span className={`w-1.5 h-1.5 rounded-full ${
+                                user && isOnline && syncSource === 'cloud' ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'
+                              }`} />
+                              {user ? (isOnline && syncSource === 'cloud' ? 'Live Cloud' : 'Offline Cache') : 'Local Only'}
+                            </span>
+                          ) : (
+                            '• Local Storage Only'
+                          )
                         </span>
                       </div>
                     </div>

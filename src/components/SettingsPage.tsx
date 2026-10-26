@@ -30,6 +30,8 @@ import {
   Smartphone,
   Download,
   Clock,
+  Upload,
+  Loader2,
 } from 'lucide-react';
 import { useTooltips } from '../context/TooltipContext';
 import { usePwa } from '../context/PwaContext';
@@ -78,6 +80,12 @@ interface SettingsPageProps {
   onChangeCurrency: (curr: CurrencyConfig) => void;
   onOpenExportSheets: () => void;
   onOpenBackupRestore?: (tab?: 'export' | 'restore') => void;
+  isOnline?: boolean;
+  syncSource?: 'cloud' | 'offline_cache';
+  queuedActionsCount?: number;
+  lastSyncedTime?: string | null;
+  onPushLocalToCloud?: () => Promise<{ success: boolean; message: string }>;
+  onPullCloudToLocal?: () => Promise<{ success: boolean; message: string }>;
   onWipeAllData: () => Promise<void> | void;
   onOpenPaywall: () => void;
   previewAsCustomer: boolean;
@@ -101,6 +109,12 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
   onChangeCurrency,
   onOpenExportSheets,
   onOpenBackupRestore,
+  isOnline = true,
+  syncSource = 'cloud',
+  queuedActionsCount = 0,
+  lastSyncedTime = null,
+  onPushLocalToCloud,
+  onPullCloudToLocal,
   onWipeAllData,
   onOpenPaywall,
   previewAsCustomer,
@@ -111,6 +125,39 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
   onInjectMockData,
   onOpenHelp,
 }) => {
+  // Two-way Sync action state
+  const [isPushing, setIsPushing] = useState(false);
+  const [isPulling, setIsPulling] = useState(false);
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
+
+  const handlePushClick = async () => {
+    if (!onPushLocalToCloud) return;
+    try {
+      setIsPushing(true);
+      setSyncMessage(null);
+      const res = await onPushLocalToCloud();
+      setSyncMessage(res.message);
+    } catch (err: any) {
+      setSyncMessage(err.message || 'Failed to push changes to cloud.');
+    } finally {
+      setIsPushing(false);
+    }
+  };
+
+  const handlePullClick = async () => {
+    if (!onPullCloudToLocal) return;
+    try {
+      setIsPulling(true);
+      setSyncMessage(null);
+      const res = await onPullCloudToLocal();
+      setSyncMessage(res.message);
+    } catch (err: any) {
+      setSyncMessage(err.message || 'Failed to pull cloud snapshot.');
+    } finally {
+      setIsPulling(false);
+    }
+  };
+
   // Master Tooltip Toggle State
   const { tooltipsEnabled, toggleTooltips } = useTooltips();
 
@@ -671,6 +718,128 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                   <HelpCircle className="w-3.5 h-3.5" />
                   <span>{tooltipsEnabled ? 'Disable All Tooltips' : 'Enable Tooltips'}</span>
                 </button>
+              </div>
+
+              {/* Manual Offline / Online Two-Way Sync Controls */}
+              <div className="p-4 bg-neutral-50 dark:bg-neutral-850 rounded-lg border border-neutral-200 dark:border-neutral-700/80 space-y-3.5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-3 border-b border-neutral-200 dark:border-neutral-700/60">
+                  <div className="space-y-0.5">
+                    <div className="font-bold text-neutral-900 dark:text-white flex flex-wrap items-center gap-2">
+                      <Cloud className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                      <span>Two-Way Cloud &amp; Offline Sync</span>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                        syncSource === 'cloud' && isOnline
+                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700'
+                          : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-300 dark:border-amber-700'
+                      }`}>
+                        {syncSource === 'cloud' && isOnline ? 'Live Cloud (Firestore)' : 'Cached Offline Storage'}
+                      </span>
+                      <span className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                        isOnline
+                          ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
+                          : 'bg-red-50 text-red-700 dark:bg-red-950/60 dark:text-red-400 border border-red-200 dark:border-red-800'
+                      }`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                        {isOnline ? 'Online' : 'Offline'}
+                      </span>
+                    </div>
+                    <p className="text-neutral-500 dark:text-neutral-400 text-[11px] leading-relaxed max-w-xl">
+                      Synchronize local changes with Cloud Firestore. Upload offline edits directly to cloud or pull the latest snapshot to keep your device updated.
+                    </p>
+                  </div>
+
+                  <div className="text-left sm:text-right text-[11px] text-neutral-500 dark:text-neutral-400 font-mono shrink-0">
+                    <div>Last Synced: <span className="font-bold text-neutral-700 dark:text-neutral-200">{lastSyncedTime ? new Date(lastSyncedTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' }) : 'Pending initial sync'}</span></div>
+                    <div>Queue: <span className={`font-bold ${queuedActionsCount > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}`}>{queuedActionsCount > 0 ? `${queuedActionsCount} pending changes` : 'All synced'}</span></div>
+                  </div>
+                </div>
+
+                {queuedActionsCount > 0 && (
+                  <div className="p-2.5 bg-amber-950/80 border border-amber-600/70 text-amber-200 rounded-md text-xs flex items-center justify-between gap-2 shadow-xs">
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                      <span>You have <strong>{queuedActionsCount}</strong> offline change(s) queued. Click &quot;Push Local to Cloud&quot; to upload them now.</span>
+                    </div>
+                  </div>
+                )}
+
+                {syncMessage && (
+                  <div className="p-2.5 bg-emerald-950/80 border border-emerald-600/70 text-emerald-200 rounded-md text-xs flex items-center justify-between gap-2 shadow-xs">
+                    <div className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                      <span>{syncMessage}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setSyncMessage(null)}
+                      className="text-emerald-300 hover:text-white text-[10px] font-bold cursor-pointer"
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  <div className="p-3 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg flex flex-col justify-between gap-2.5">
+                    <div>
+                      <div className="font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-1.5 text-xs">
+                        <Upload className="w-3.5 h-3.5 text-emerald-500" />
+                        <span>Push Local to Cloud</span>
+                      </div>
+                      <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-1 leading-snug">
+                        Uploads any cached or offline local ledger changes directly to Firestore, updating the cloud state.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={isPushing || isSyncing}
+                      onClick={handlePushClick}
+                      className="w-full flex items-center justify-center gap-1.5 py-2 px-3 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded font-bold text-xs shadow-xs transition cursor-pointer"
+                    >
+                      {isPushing ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <span>Pushing to Cloud...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-3.5 h-3.5" />
+                          <span>Push Local to Cloud</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  <div className="p-3 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg flex flex-col justify-between gap-2.5">
+                    <div>
+                      <div className="font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-1.5 text-xs">
+                        <Download className="w-3.5 h-3.5 text-sky-500" />
+                        <span>Pull Cloud to Local</span>
+                      </div>
+                      <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-1 leading-snug">
+                        Fetches the latest snapshot from Firestore and overwrites local cache, ensuring the device matches the cloud.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={isPulling || isSyncing}
+                      onClick={handlePullClick}
+                      className="w-full flex items-center justify-center gap-1.5 py-2 px-3 bg-neutral-800 hover:bg-neutral-700 disabled:opacity-50 text-neutral-100 rounded font-bold text-xs border border-neutral-700 shadow-xs transition cursor-pointer"
+                    >
+                      {isPulling ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <span>Pulling from Cloud...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Download className="w-3.5 h-3.5" />
+                          <span>Pull Cloud to Local</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
               </div>
 
               {/* Account Backup & Restore (Google Sheets / CSV / JSON) */}
