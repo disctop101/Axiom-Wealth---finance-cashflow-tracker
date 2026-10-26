@@ -24,9 +24,11 @@ export const DEFAULT_CURRENCY: CurrencyConfig = AVAILABLE_CURRENCIES[0];
 
 export type AssetCategory =
   | 'Cash and cash equivalents'
+  | 'Liquid Cash'
   | 'Stocks'
-  | 'Retirement accounts'
+  | 'Crypto'
   | 'Investment accounts'
+  | 'Retirement accounts'
   | 'Real estate'
   | 'Vehicles'
   | 'Other assets';
@@ -51,6 +53,10 @@ export interface AssetItem {
   unrealizedGainLoss?: number; // Unrealised Gain/Loss ($)
   unrealizedGainLossPercent?: number; // Unrealised Gain/Loss (%)
   totalDividendsCollected?: number; // Total Dividends Collected ($)
+  // Record-only option: bypasses cashflow / income-expense ledger
+  isRecordOnly?: boolean;
+  // Record-only option: bypasses cashflow / income-expense ledger
+  isRecordOnly?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -75,14 +81,16 @@ export interface AssetTransaction {
   notes?: string;
   stockCode?: string;
   broker?: string;
+  isRecordOnly?: boolean;
   createdAt: string;
 }
 
 export type LiabilityCategory =
   | 'Mortgage balance'
   | 'Car loan'
-  | 'Student loan'
   | 'Credit card balances'
+  | 'Personal loan'
+  | 'Student loan'
   | 'Other debts';
 
 export type LiabilityPurpose = 'cash_loan' | 'financed_purchase' | 'refinance' | 'other';
@@ -122,6 +130,7 @@ export interface LiabilityPayment {
   amount: number;
   date: string;
   notes?: string;
+  type?: 'payment' | 'borrow';
   isRecordOnly?: boolean;
   createdAt: string;
 }

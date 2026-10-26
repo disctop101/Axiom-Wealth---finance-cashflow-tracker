@@ -28,6 +28,8 @@ import {
   Calendar,
   Scale,
   CheckCircle2,
+  Coins,
+  Wallet,
   AlertCircle,
   Loader2,
   ArrowUpDown,
@@ -68,12 +70,14 @@ interface AssetsPageProps {
 }
 
 const CATEGORIES: AssetCategory[] = [
-  'Cash and cash equivalents',
   'Stocks',
-  'Investment accounts',
-  'Retirement accounts',
   'Real estate',
   'Vehicles',
+  'Crypto',
+  'Liquid Cash',
+  'Investment accounts',
+  'Retirement accounts',
+  'Cash and cash equivalents',
   'Other assets',
 ];
 
@@ -134,6 +138,7 @@ export const AssetsPage: React.FC<AssetsPageProps> = ({
   const [institution, setInstitution] = useState('');
   const [notes, setNotes] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [isRecordOnly, setIsRecordOnly] = useState(false);
 
   // Specific Stock Inputs & Portfolio Tracking Fields
   const [stockCode, setStockCode] = useState('');
@@ -253,6 +258,7 @@ export const AssetsPage: React.FC<AssetsPageProps> = ({
     setTotalFeesPaid('');
     setCurrentPrice('');
     setTotalDividendsCollected('');
+    setIsRecordOnly(false);
     setAutoLedgerAcquisition(true);
     setIsAssetModalOpen(true);
   };
@@ -273,6 +279,7 @@ export const AssetsPage: React.FC<AssetsPageProps> = ({
     setTotalFeesPaid(asset.totalFeesPaid !== undefined ? asset.totalFeesPaid.toString() : '');
     setCurrentPrice(asset.currentPrice !== undefined ? asset.currentPrice.toString() : '');
     setTotalDividendsCollected(asset.totalDividendsCollected !== undefined ? asset.totalDividendsCollected.toString() : '');
+    setIsRecordOnly(Boolean(asset.isRecordOnly));
     setAutoLedgerAcquisition(false);
     setIsAssetModalOpen(true);
   };
@@ -304,6 +311,7 @@ export const AssetsPage: React.FC<AssetsPageProps> = ({
         initialValue: computedBaseValue,
         institution: institution.trim() || undefined,
         notes: notes.trim() || undefined,
+        isRecordOnly,
         date,
         stockCode: isInvestmentCategory ? stockCode.trim() || undefined : undefined,
         stockName: isInvestmentCategory ? stockName.trim() || undefined : undefined,
@@ -334,6 +342,7 @@ export const AssetsPage: React.FC<AssetsPageProps> = ({
           institution: institution.trim() || undefined,
           notes: notes.trim() || undefined,
           date,
+          isRecordOnly,
           stockCode: isInvestmentCategory ? stockCode.trim() || undefined : undefined,
           stockName: isInvestmentCategory ? stockName.trim() || undefined : undefined,
           broker: isInvestmentCategory ? broker.trim() || undefined : undefined,
@@ -346,7 +355,7 @@ export const AssetsPage: React.FC<AssetsPageProps> = ({
           totalDividendsCollected: isStockCategory ? divCollectedNum : undefined,
         },
         {
-          enabled: true, // Mandatory background cross-linking
+          enabled: !isRecordOnly, // Bypasses cross-linking when record only
           type: 'expense',
           category: ledgerCategory,
         }
@@ -384,9 +393,10 @@ export const AssetsPage: React.FC<AssetsPageProps> = ({
         notes: txNotes.trim() || undefined,
         stockCode: txStockCode.trim() || selectedAssetForHistory.stockCode,
         broker: txBroker.trim() || selectedAssetForHistory.broker,
+        isRecordOnly: selectedAssetForHistory.isRecordOnly,
       },
       {
-        enabled: txAutoLedger,
+        enabled: !selectedAssetForHistory.isRecordOnly && txAutoLedger,
         type: ledgerType,
         category: ledgerCategory,
       }
@@ -509,6 +519,10 @@ export const AssetsPage: React.FC<AssetsPageProps> = ({
     switch (cat) {
       case 'Cash and cash equivalents':
         return <CircleDollarSign className="w-4 h-4 text-emerald-600" />;
+      case 'Liquid Cash':
+        return <Wallet className="w-4 h-4 text-teal-600" />;
+      case 'Crypto':
+        return <Coins className="w-4 h-4 text-amber-500" />;
       case 'Stocks':
         return <TrendingUp className="w-4 h-4 text-emerald-600" />;
       case 'Investment accounts':
@@ -853,6 +867,11 @@ export const AssetsPage: React.FC<AssetsPageProps> = ({
                             </span>
                           )}
                           <span className="font-bold">{asset.name}</span>
+                          {asset.isRecordOnly && (
+                            <span className="text-[10px] font-mono px-1.5 py-0.2 bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 rounded font-bold border border-amber-300 dark:border-amber-700" title="Record only: bypasses Income & Expense cashflow statement">
+                              Record Only
+                            </span>
+                          )}
                           <History className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
                         </div>
                         {asset.notes && (
@@ -1088,6 +1107,11 @@ export const AssetsPage: React.FC<AssetsPageProps> = ({
                       <td className="py-2.5 px-3">
                         <div className="font-semibold text-neutral-900 dark:text-white flex items-center gap-1.5 flex-wrap">
                           <span>{asset.name}</span>
+                          {asset.isRecordOnly && (
+                            <span className="text-[10px] font-mono px-1.5 py-0.2 bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 rounded font-bold border border-amber-300 dark:border-amber-700" title="Record only: bypasses Income & Expense cashflow statement">
+                              Record Only
+                            </span>
+                          )}
                           {asset.stockCode && (
                             <span className="text-[10px] font-mono px-1.5 py-0.2 bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 rounded font-bold border border-blue-200 dark:border-blue-800">
                               {asset.stockCode}
@@ -1893,6 +1917,29 @@ export const AssetsPage: React.FC<AssetsPageProps> = ({
                   </div>
                 </>
               )}
+
+              {/* Record Only (Off-Ledger) Toggle */}
+              <div className="p-3 bg-neutral-50 rounded-lg border border-neutral-200">
+                <label className="flex items-start gap-2.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={isRecordOnly}
+                    onChange={(e) => setIsRecordOnly(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-neutral-300 cursor-pointer"
+                  />
+                  <div>
+                    <div className="font-semibold text-xs text-neutral-900 flex items-center gap-1.5">
+                      <span>Record only (Do not reflect on Income/Expense ledger)</span>
+                      <span className="text-[10px] px-1.5 py-0.2 bg-amber-100 text-amber-800 rounded font-bold border border-amber-300">
+                        OFF-LEDGER
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-neutral-500 mt-0.5 leading-relaxed">
+                      When enabled, this asset is saved to your wealth inventory and portfolio history, but bypasses the cashflow ledger so operating cash is not altered.
+                    </p>
+                  </div>
+                </label>
+              </div>
 
               <div>
                 <label className="block font-medium text-neutral-700 mb-1">Notes</label>

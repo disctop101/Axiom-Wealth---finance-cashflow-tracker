@@ -136,11 +136,31 @@ interface LiabilitiesPageProps {
   onDeleteLiabilityPayment: (paymentId: string) => void;
 }
 
+export function getCategoryLabel(cat: LiabilityCategory): string {
+  switch (cat) {
+    case 'Mortgage balance':
+      return 'Mortgage (Housing Loan)';
+    case 'Car loan':
+      return 'Auto Loan / Car Loan';
+    case 'Credit card balances':
+      return 'Credit Card';
+    case 'Personal loan':
+      return 'Personal Loan';
+    case 'Student loan':
+      return 'Student Loan';
+    case 'Other debts':
+      return 'Other Debts';
+    default:
+      return cat;
+  }
+}
+
 const CATEGORIES: LiabilityCategory[] = [
   'Mortgage balance',
   'Car loan',
-  'Student loan',
   'Credit card balances',
+  'Personal loan',
+  'Student loan',
   'Other debts',
 ];
 
@@ -196,7 +216,7 @@ export const LiabilitiesPage: React.FC<LiabilitiesPageProps> = ({
 
   // Compute current outstanding balance: initialAmount - sum(payments for this liability)
   const computeCurrentBalance = (item: LiabilityItem): number => {
-    const payments = liabilityPayments.filter((p) => p.liabilityId === item.id);
+    const payments = liabilityPayments.filter((p) => p.liabilityId === item.id && p.type !== 'borrow');
     const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
     return Math.max(0, item.initialAmount - totalPaid);
   };
@@ -353,6 +373,7 @@ export const LiabilitiesPage: React.FC<LiabilitiesPageProps> = ({
         amount: numAmount,
         date: payDate,
         notes: payNotes.trim() || undefined,
+        type: 'payment',
         isRecordOnly: selectedLiabilityForHistory.isRecordOnly,
       },
       {
@@ -421,7 +442,7 @@ export const LiabilitiesPage: React.FC<LiabilitiesPageProps> = ({
   }, [liabilities, liabilityPayments]);
 
   const totalPaymentsMade = useMemo(() => {
-    return liabilityPayments.reduce((sum, p) => sum + p.amount, 0);
+    return liabilityPayments.filter((p) => p.type !== 'borrow').reduce((sum, p) => sum + p.amount, 0);
   }, [liabilityPayments]);
 
   const totalMonthlyAmortization = liabilities.reduce((sum, l) => sum + (l.monthlyPayment || 0), 0);
@@ -685,7 +706,7 @@ export const LiabilitiesPage: React.FC<LiabilitiesPageProps> = ({
             ) : (
               filteredLiabilities.map((item, idx) => {
                 const currentBalance = computeCurrentBalance(item);
-                const paymentsCount = liabilityPayments.filter((p) => p.liabilityId === item.id).length;
+                const paymentsCount = liabilityPayments.filter((p) => p.liabilityId === item.id && p.type !== 'borrow').length;
 
                 return (
                   <tr
@@ -1051,43 +1072,57 @@ export const LiabilitiesPage: React.FC<LiabilitiesPageProps> = ({
                   liabilityPayments
                     .filter((p) => p.liabilityId === selectedLiabilityForHistory.id)
                     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                    .map((p) => (
-                      <div
-                        key={p.id}
-                        className="py-2.5 flex items-center justify-between hover:bg-neutral-50 px-2 rounded"
-                      >
-                        <div className="space-y-0.5">
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold text-neutral-900">
-                              Payment of {formatCurrency(p.amount, currencySymbol)}
-                            </span>
-                            <span className="text-[10px] uppercase font-mono px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 font-bold">
-                              Paid
-                            </span>
+                    .map((p) => {
+                      const isBorrow = p.type === 'borrow';
+                      return (
+                        <div
+                          key={p.id}
+                          className="py-2.5 flex items-center justify-between hover:bg-neutral-50 px-2 rounded"
+                        >
+                          <div className="space-y-0.5">
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-neutral-900">
+                                {isBorrow ? `Loan Origination / Borrowed` : `Payment of ${formatCurrency(p.amount, currencySymbol)}`}
+                              </span>
+                              <span className={`text-[10px] uppercase font-mono px-1.5 py-0.2 rounded font-bold ${
+                                isBorrow
+                                  ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                                  : 'bg-emerald-100 text-emerald-800'
+                              }`}>
+                                {isBorrow ? 'Borrowed' : 'Paid'}
+                              </span>
+                              {p.isRecordOnly && (
+                                <span className="text-[9px] font-mono px-1.5 py-0.2 bg-neutral-200 text-neutral-700 rounded font-bold">
+                                  Off-Ledger
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 text-[11px] text-neutral-500">
+                              <span className="flex items-center gap-1 font-mono">
+                                <Calendar className="w-3 h-3 text-neutral-400" />
+                                {p.date}
+                              </span>
+                              {p.notes && <span>· {p.notes}</span>}
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2 text-[11px] text-neutral-500">
-                            <span className="flex items-center gap-1 font-mono">
-                              <Calendar className="w-3 h-3 text-neutral-400" />
-                              {p.date}
-                            </span>
-                            {p.notes && <span>· {p.notes}</span>}
-                          </div>
-                        </div>
 
-                        <div className="flex items-center gap-3">
-                          <span className="font-mono font-bold text-emerald-700 text-sm">
-                            -{formatCurrency(p.amount, currencySymbol)}
-                          </span>
-                          <button
-                            onClick={() => onDeleteLiabilityPayment(p.id)}
-                            className="text-neutral-400 hover:text-red-600 p-1"
-                            title="Delete payment entry"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          <div className="flex items-center gap-3">
+                            <span className={`font-mono font-bold text-sm ${
+                              isBorrow ? 'text-amber-700' : 'text-emerald-700'
+                            }`}>
+                              {isBorrow ? `+${formatCurrency(p.amount, currencySymbol)}` : `-${formatCurrency(p.amount, currencySymbol)}`}
+                            </span>
+                            <button
+                              onClick={() => onDeleteLiabilityPayment(p.id)}
+                              className="text-neutral-400 hover:text-red-600 p-1"
+                              title="Delete entry"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    ))
+                      );
+                    })
                 )}
               </div>
             </div>
@@ -1149,7 +1184,7 @@ export const LiabilitiesPage: React.FC<LiabilitiesPageProps> = ({
                   >
                     {CATEGORIES.map((c) => (
                       <option key={c} value={c}>
-                        {c}
+                        {getCategoryLabel(c)}
                       </option>
                     ))}
                   </select>

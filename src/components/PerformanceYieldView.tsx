@@ -24,6 +24,7 @@ import {
   Layers,
   Landmark,
   Wallet,
+  Coins,
   Car,
   FileText,
   BarChart3,
@@ -62,6 +63,8 @@ interface CategoryPerformance {
 
 const CATEGORY_ICONS: Record<AssetCategory, React.ComponentType<{ className?: string }>> = {
   'Stocks': TrendingUp,
+  'Crypto': Coins,
+  'Liquid Cash': Wallet,
   'Investment accounts': Briefcase,
   'Real estate': Building,
   'Cash and cash equivalents': Wallet,
@@ -141,12 +144,14 @@ export const PerformanceYieldView: React.FC<PerformanceYieldViewProps> = ({
   const rawCategoryPerformances = useMemo<CategoryPerformance[]>(() => {
     const categories: AssetCategory[] = [
       'Stocks',
-      'Investment accounts',
       'Real estate',
-      'Other assets',
-      'Cash and cash equivalents',
-      'Retirement accounts',
       'Vehicles',
+      'Crypto',
+      'Liquid Cash',
+      'Investment accounts',
+      'Retirement accounts',
+      'Cash and cash equivalents',
+      'Other assets',
     ];
 
     return categories

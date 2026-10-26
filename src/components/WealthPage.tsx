@@ -242,7 +242,7 @@ export const WealthPage: React.FC<WealthPageProps> = ({
   // Helper to check if a liability has been settled prior to or by the window
   const getLiabilitySettlementInfo = (l: LiabilityItem) => {
     const pays = liabilityPayments
-      .filter((p) => p.liabilityId === l.id)
+      .filter((p) => p.liabilityId === l.id && p.type !== 'borrow')
       .sort((a, b) => a.date.localeCompare(b.date));
     let accumulated = 0;
     let settlementDate: string | null = null;
@@ -486,20 +486,23 @@ export const WealthPage: React.FC<WealthPageProps> = ({
       const parentName = parentLiab?.name || 'Loan Obligation';
       const parentCategory = parentLiab?.category || 'Debt';
       const lender = parentLiab?.lender ? `Lender: ${parentLiab.lender}` : '';
+      const isBorrow = p.type === 'borrow';
 
       list.push({
         id: `liab-${p.id}`,
         sourceType: 'liability_payment',
         originalId: p.id,
         date: p.date,
-        typeBadge: 'DEBT AMORTIZATION',
-        badgeColor: 'bg-indigo-100 text-indigo-800 border-indigo-300 dark:bg-indigo-950/80 dark:text-indigo-300 dark:border-indigo-700',
+        typeBadge: isBorrow ? 'NEW LOAN / BORROWING' : 'DEBT AMORTIZATION',
+        badgeColor: isBorrow
+          ? 'bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950/80 dark:text-amber-300 dark:border-amber-700'
+          : 'bg-indigo-100 text-indigo-800 border-indigo-300 dark:bg-indigo-950/80 dark:text-indigo-300 dark:border-indigo-700',
         parentName,
         parentCategory,
-        subDetail: `Principal payment on ${parentName}`,
+        subDetail: isBorrow ? `Initial principal borrowed for ${parentName}` : `Principal payment on ${parentName}`,
         notes: p.notes,
         amount: p.amount,
-        netWorthImpact: 'positive', // Reducing debt increases net worth!
+        netWorthImpact: isBorrow ? 'neutral' : 'positive',
         impactAmount: p.amount,
         extraMeta: lender,
       });
@@ -565,7 +568,7 @@ export const WealthPage: React.FC<WealthPageProps> = ({
   }, [assetTransactions]);
 
   const totalDebtPaidOff = useMemo(() => {
-    return liabilityPayments.reduce((sum, p) => sum + p.amount, 0);
+    return liabilityPayments.filter((p) => p.type !== 'borrow').reduce((sum, p) => sum + p.amount, 0);
   }, [liabilityPayments]);
 
   const confirmDelete = () => {

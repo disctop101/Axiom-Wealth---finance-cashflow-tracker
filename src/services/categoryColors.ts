@@ -30,7 +30,9 @@ export const DEFAULT_CATEGORY_COLORS: Record<string, string> = {
 
   // Asset Categories
   'Cash and cash equivalents': '#10b981', // Emerald
+  'Liquid Cash': '#14b8a6', // Teal
   'Stocks': '#059669', // Emerald dark
+  'Crypto': '#f59e0b', // Amber
   'Investment accounts': '#0284c7', // Sky
   'Retirement accounts': '#6366f1', // Indigo
   'Real estate': '#0d9488', // Teal
@@ -40,8 +42,9 @@ export const DEFAULT_CATEGORY_COLORS: Record<string, string> = {
   // Liability Categories
   'Mortgage balance': '#ef4444', // Red
   'Car loan': '#f97316', // Orange
-  'Student loan': '#eab308', // Yellow
   'Credit card balances': '#f43f5e', // Rose
+  'Personal loan': '#e11d48', // Red Rose
+  'Student loan': '#eab308', // Yellow
   'Other debts': '#ec4899', // Pink
 };
 

@@ -105,12 +105,16 @@ export const PurchaseCheckerPage: React.FC<PurchaseCheckerPageProps> = ({
       const today = new Date().toISOString().split('T')[0];
       const catLower = category.toLowerCase();
       const assetCat: AssetCategory =
-        catLower.includes('vehicle') || catLower.includes('car')
+        catLower.includes('vehicle') || catLower.includes('car') || catLower.includes('auto')
           ? 'Vehicles'
-          : catLower.includes('real estate') || catLower.includes('condo') || catLower.includes('house')
+          : catLower.includes('real estate') || catLower.includes('condo') || catLower.includes('house') || catLower.includes('property')
           ? 'Real estate'
-          : catLower.includes('stock') || catLower.includes('equity')
+          : catLower.includes('stock') || catLower.includes('equity') || catLower.includes('share')
           ? 'Stocks'
+          : catLower.includes('crypto') || catLower.includes('bitcoin') || catLower.includes('eth')
+          ? 'Crypto'
+          : catLower.includes('cash') || catLower.includes('liquid') || catLower.includes('savings')
+          ? 'Liquid Cash'
           : 'Other assets';
 
       await onLogTransactionAndAsset({

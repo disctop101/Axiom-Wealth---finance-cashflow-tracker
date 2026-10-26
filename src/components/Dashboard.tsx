@@ -177,20 +177,23 @@ export const Dashboard: React.FC<DashboardProps> = ({
           endingBalance: cashFlowEndingBalance,
           assetItems: [
             { name: 'Cash and cash equivalents', amount: cashEquivalents },
-            { name: 'Retirement accounts', amount: retirementAccounts },
-            { name: 'Investment accounts', amount: investmentAccounts },
+            { name: 'Stocks / Equities', amount: stockAssets },
+            { name: 'Crypto', amount: cryptoAssets },
             { name: 'Real estate', amount: realEstateAssets },
             { name: 'Vehicles', amount: vehicleAssets },
+            { name: 'Investment accounts', amount: investmentAccounts },
+            { name: 'Retirement accounts', amount: retirementAccounts },
             { name: 'Other assets', amount: otherAssets },
-          ],
+          ].filter((item) => item.amount > 0 || item.name === 'Cash and cash equivalents'),
           totalAssets,
           liabilityItems: [
             { name: 'Mortgage balance', amount: mortgageBalance },
-            { name: 'Car loan', amount: carLoan },
-            { name: 'Student loan', amount: studentLoan },
+            { name: 'Auto loan (Car loan)', amount: carLoan },
             { name: 'Credit card balances', amount: creditCardBalances },
+            { name: 'Personal loan', amount: personalLoan },
+            { name: 'Student loan', amount: studentLoan },
             { name: 'Other debts', amount: otherDebts },
-          ],
+          ].filter((item) => item.amount > 0),
           totalLiabilities,
           netWorth,
           expenseVisualizerItems: expenseChartData,
@@ -460,20 +463,25 @@ export const Dashboard: React.FC<DashboardProps> = ({
     assetMap[a.category] = (assetMap[a.category] || 0) + a.initialValue;
   });
 
-  // Synchronized rolling cash and cash equivalents
-  const cashEquivalents = endingBalance;
-  const retirementAccounts = assetMap['Retirement accounts'] || 0;
-  const investmentAccounts = assetMap['Investment accounts'] || 0;
+  // Synchronized rolling cash and specific asset category holdings
+  const liquidCashAssets = (assetMap['Liquid Cash'] || 0) + (assetMap['Cash and cash equivalents'] || 0);
+  const cashEquivalents = endingBalance + liquidCashAssets;
+  const stockAssets = assetMap['Stocks'] || 0;
+  const cryptoAssets = assetMap['Crypto'] || 0;
   const realEstateAssets = assetMap['Real estate'] || 0;
   const vehicleAssets = assetMap['Vehicles'] || 0;
+  const investmentAccounts = assetMap['Investment accounts'] || 0;
+  const retirementAccounts = assetMap['Retirement accounts'] || 0;
   const otherAssets = assetMap['Other assets'] || 0;
 
   const totalAssets =
     cashEquivalents +
-    retirementAccounts +
-    investmentAccounts +
+    stockAssets +
+    cryptoAssets +
     realEstateAssets +
     vehicleAssets +
+    investmentAccounts +
+    retirementAccounts +
     otherAssets;
 
   // Liabilities from Liabilities Page (respecting origination date AND settlement date)
@@ -499,12 +507,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   const mortgageBalance = liabilityMap['Mortgage balance'] || 0;
   const carLoan = liabilityMap['Car loan'] || 0;
-  const studentLoan = liabilityMap['Student loan'] || 0;
   const creditCardBalances = liabilityMap['Credit card balances'] || 0;
+  const personalLoan = liabilityMap['Personal loan'] || 0;
+  const studentLoan = liabilityMap['Student loan'] || 0;
   const otherDebts = liabilityMap['Other debts'] || 0;
 
   const totalLiabilities =
-    mortgageBalance + carLoan + studentLoan + creditCardBalances + otherDebts;
+    mortgageBalance + carLoan + creditCardBalances + personalLoan + studentLoan + otherDebts;
 
   const netWorth = totalAssets - totalLiabilities;
 
@@ -1135,19 +1144,22 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 expenses={expenseChartData}
                 assets={[
                   { category: 'Cash and cash equivalents', value: cashEquivalents },
-                  { category: 'Retirement accounts', value: retirementAccounts },
-                  { category: 'Investment accounts', value: investmentAccounts },
+                  { category: 'Stocks', value: stockAssets },
+                  { category: 'Crypto', value: cryptoAssets },
                   { category: 'Real estate', value: realEstateAssets },
                   { category: 'Vehicles', value: vehicleAssets },
+                  { category: 'Investment accounts', value: investmentAccounts },
+                  { category: 'Retirement accounts', value: retirementAccounts },
                   { category: 'Other assets', value: otherAssets },
-                ]}
+                ].filter((a) => a.value > 0 || a.category === 'Cash and cash equivalents')}
                 liabilities={[
                   { category: 'Mortgage balance', amount: mortgageBalance },
                   { category: 'Car loan', amount: carLoan },
-                  { category: 'Student loan', amount: studentLoan },
                   { category: 'Credit card balances', amount: creditCardBalances },
+                  { category: 'Personal loan', amount: personalLoan },
+                  { category: 'Student loan', amount: studentLoan },
                   { category: 'Other debts', amount: otherDebts },
-                ]}
+                ].filter((l) => l.amount > 0)}
                 currencySymbol={currencySymbol}
                 onSelectCategory={(cat, type) => onSelectCategory(cat, type)}
               />
@@ -1231,7 +1243,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 <div className="col-span-8 text-neutral-800">
                   Cash and cash equivalents
                   <span className="text-[10px] text-neutral-400 block">
-                    (Synchronized with ending balance)
+                    (Synchronized with ending balance &amp; liquid cash)
                   </span>
                 </div>
                 <div className="col-span-4 text-right font-mono font-semibold text-neutral-900">
@@ -1240,16 +1252,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </div>
 
               <div className="grid grid-cols-12 py-1 px-3 bg-[#f8f9fa] items-center">
-                <div className="col-span-8 text-neutral-700">Retirement accounts</div>
+                <div className="col-span-8 text-neutral-700">Stocks / Equities</div>
                 <div className="col-span-4 text-right font-mono text-neutral-800">
-                  {formatCurrency(retirementAccounts, currencySymbol)}
+                  {formatCurrency(stockAssets, currencySymbol)}
                 </div>
               </div>
 
               <div className="grid grid-cols-12 py-1 px-3 bg-white items-center">
-                <div className="col-span-8 text-neutral-700">Investment accounts</div>
+                <div className="col-span-8 text-neutral-700">Crypto</div>
                 <div className="col-span-4 text-right font-mono text-neutral-800">
-                  {formatCurrency(investmentAccounts, currencySymbol)}
+                  {formatCurrency(cryptoAssets, currencySymbol)}
                 </div>
               </div>
 
@@ -1264,6 +1276,20 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 <div className="col-span-8 text-neutral-700">Vehicles</div>
                 <div className="col-span-4 text-right font-mono text-neutral-800">
                   {formatCurrency(vehicleAssets, currencySymbol)}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-12 py-1 px-3 bg-[#f8f9fa] items-center">
+                <div className="col-span-8 text-neutral-700">Investment accounts</div>
+                <div className="col-span-4 text-right font-mono text-neutral-800">
+                  {formatCurrency(investmentAccounts, currencySymbol)}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-12 py-1 px-3 bg-white items-center">
+                <div className="col-span-8 text-neutral-700">Retirement accounts</div>
+                <div className="col-span-4 text-right font-mono text-neutral-800">
+                  {formatCurrency(retirementAccounts, currencySymbol)}
                 </div>
               </div>
 
@@ -1310,9 +1336,23 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </div>
 
               <div className="grid grid-cols-12 py-1 px-3 bg-[#f8f9fa] items-center">
-                <div className="col-span-8 text-neutral-700">Car loan</div>
+                <div className="col-span-8 text-neutral-700">Auto loan (Car loan)</div>
                 <div className="col-span-4 text-right font-mono text-neutral-800">
                   {formatCurrency(carLoan, currencySymbol)}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-12 py-1 px-3 bg-white items-center">
+                <div className="col-span-8 text-neutral-700">Credit card balances</div>
+                <div className="col-span-4 text-right font-mono text-neutral-800">
+                  {formatCurrency(creditCardBalances, currencySymbol)}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-12 py-1 px-3 bg-[#f8f9fa] items-center">
+                <div className="col-span-8 text-neutral-700">Personal loan</div>
+                <div className="col-span-4 text-right font-mono text-neutral-800">
+                  {formatCurrency(personalLoan, currencySymbol)}
                 </div>
               </div>
 
@@ -1324,13 +1364,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </div>
 
               <div className="grid grid-cols-12 py-1 px-3 bg-[#f8f9fa] items-center">
-                <div className="col-span-8 text-neutral-700">Credit card balances</div>
-                <div className="col-span-4 text-right font-mono text-neutral-800">
-                  {formatCurrency(creditCardBalances, currencySymbol)}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-12 py-1 px-3 bg-white items-center">
                 <div className="col-span-8 text-neutral-700">Other debts</div>
                 <div className="col-span-4 text-right font-mono text-neutral-800">
                   {formatCurrency(otherDebts, currencySymbol)}
