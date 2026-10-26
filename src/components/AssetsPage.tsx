@@ -180,10 +180,10 @@ export const AssetsPage: React.FC<AssetsPageProps> = ({
   };
 
   const effectiveLiquidCash = useMemo(() => {
-    if (currentCashBalance !== undefined) return currentCashBalance;
-    return assets
-      .filter((a) => a.category === 'Cash and cash equivalents')
+    const liquidAssetsSum = assets
+      .filter((a) => a.category === 'Cash and cash equivalents' || a.category === 'Liquid Cash')
       .reduce((s, a) => s + computeAssetValue(a), 0);
+    return (currentCashBalance || 0) + liquidAssetsSum;
   }, [currentCashBalance, assets, assetTransactions]);
 
   const openAdjustModal = (asset?: AssetItem) => {
@@ -334,32 +334,25 @@ export const AssetsPage: React.FC<AssetsPageProps> = ({
           ? 'Transportation'
           : 'Investments';
 
-      onAddAsset(
-        {
-          name: name.trim(),
-          category,
-          initialValue: computedBaseValue,
-          institution: institution.trim() || undefined,
-          notes: notes.trim() || undefined,
-          date,
-          isRecordOnly,
-          stockCode: isInvestmentCategory ? stockCode.trim() || undefined : undefined,
-          stockName: isInvestmentCategory ? stockName.trim() || undefined : undefined,
-          broker: isInvestmentCategory ? broker.trim() || undefined : undefined,
-          totalShares: isStockCategory ? sharesNum : undefined,
-          avgCostPerShare: isStockCategory ? avgCostNum : undefined,
-          totalFeesPaid: isStockCategory ? feesNum : undefined,
-          currentPrice: isStockCategory ? currentPriceNum : undefined,
-          unrealizedGainLoss: unrealizedGain,
-          unrealizedGainLossPercent: unrealizedGainPct,
-          totalDividendsCollected: isStockCategory ? divCollectedNum : undefined,
-        },
-        {
-          enabled: !isRecordOnly, // Bypasses cross-linking when record only
-          type: 'expense',
-          category: ledgerCategory,
-        }
-      );
+      onAddAsset({
+        name: name.trim(),
+        category,
+        initialValue: computedBaseValue,
+        institution: institution.trim() || undefined,
+        notes: notes.trim() || undefined,
+        date,
+        isRecordOnly,
+        stockCode: isInvestmentCategory ? stockCode.trim() || undefined : undefined,
+        stockName: isInvestmentCategory ? stockName.trim() || undefined : undefined,
+        broker: isInvestmentCategory ? broker.trim() || undefined : undefined,
+        totalShares: isStockCategory ? sharesNum : undefined,
+        avgCostPerShare: isStockCategory ? avgCostNum : undefined,
+        totalFeesPaid: isStockCategory ? feesNum : undefined,
+        currentPrice: isStockCategory ? currentPriceNum : undefined,
+        unrealizedGainLoss: unrealizedGain,
+        unrealizedGainLossPercent: unrealizedGainPct,
+        totalDividendsCollected: isStockCategory ? divCollectedNum : undefined,
+      });
     }
 
     setIsAssetModalOpen(false);
@@ -476,10 +469,8 @@ export const AssetsPage: React.FC<AssetsPageProps> = ({
           const countB = assetTransactions.filter((t) => t.assetId === b.id).length;
           diff = countA - countB;
         } else if (sortField === 'value') {
-          const isCashA = a.category === 'Cash and cash equivalents';
-          const valA = isCashA && currentCashBalance !== undefined ? currentCashBalance : computeAssetValue(a);
-          const isCashB = b.category === 'Cash and cash equivalents';
-          const valB = isCashB && currentCashBalance !== undefined ? currentCashBalance : computeAssetValue(b);
+          const valA = computeAssetValue(a);
+          const valB = computeAssetValue(b);
           diff = valA - valB;
         } else if (sortField === 'shares') {
           diff = (a.totalShares || 0) - (b.totalShares || 0);
@@ -508,12 +499,9 @@ export const AssetsPage: React.FC<AssetsPageProps> = ({
 
   const totalAssetValue = useMemo(() => {
     return assets.reduce((sum, a) => {
-      if (a.category === 'Cash and cash equivalents' && currentCashBalance !== undefined) {
-        return sum + currentCashBalance;
-      }
       return sum + computeAssetValue(a);
     }, 0);
-  }, [assets, assetTransactions, currentCashBalance]);
+  }, [assets, assetTransactions]);
 
   const getCategoryIcon = (cat: AssetCategory) => {
     switch (cat) {
@@ -1079,11 +1067,8 @@ export const AssetsPage: React.FC<AssetsPageProps> = ({
                 </tr>
               ) : (
                 filteredAssets.map((asset, idx) => {
-                  const isCashAsset = asset.category === 'Cash and cash equivalents';
                   const isStockHolding = asset.category === 'Stocks';
-                  const computedVal = isCashAsset && currentCashBalance !== undefined
-                    ? currentCashBalance
-                    : computeAssetValue(asset);
+                  const computedVal = computeAssetValue(asset);
                   const txCount = assetTransactions.filter((t) => t.assetId === asset.id).length;
 
                   const shares = asset.totalShares || 0;

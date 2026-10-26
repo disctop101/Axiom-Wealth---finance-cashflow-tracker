@@ -313,45 +313,24 @@ export const LiabilitiesPage: React.FC<LiabilitiesPageProps> = ({
         updatedAt: new Date().toISOString(),
       });
     } else {
-      // Mandatory cross-linked ledger automation:
-      // Taking on a new liability like cash loan -> registers as Income (cash inflow)
-      // Financed purchase -> registers as Expense (purchase outflow)
-      const isCashLoan = purpose === 'cash_loan';
-      const ledgerType: 'income' | 'expense' = isCashLoan ? 'income' : 'expense';
-      let ledgerCategory = 'Account Payables';
-      if (isCashLoan) {
-        ledgerCategory = 'Bank Transaction';
-      } else {
-        if (category === 'Car loan') ledgerCategory = 'Transportation';
-        else if (category === 'Mortgage balance') ledgerCategory = 'Housing';
-        else ledgerCategory = 'Account Payables';
-      }
-
       const scheduledActive = Boolean(nextDueDate);
 
-      onAddLiability(
-        {
-          name: name.trim(),
-          category,
-          initialAmount: numericAmount,
-          interestRate: interestRate ? parseFloat(interestRate) : undefined,
-          monthlyPayment: parsedMonthlyPayment,
-          lender: lender.trim() || undefined,
-          purpose,
-          date,
-          notes: notes.trim() || undefined,
-          isRecordOnly,
-          // Scheduled payment fields
-          scheduledPaymentEnabled: scheduledActive,
-          paymentFrequency,
-          nextDueDate: scheduledActive ? nextDueDate : undefined,
-        },
-        {
-          enabled: !isRecordOnly, // Bypasses cross-linking when record only
-          type: ledgerType,
-          category: ledgerCategory,
-        }
-      );
+      onAddLiability({
+        name: name.trim(),
+        category,
+        initialAmount: numericAmount,
+        interestRate: interestRate ? parseFloat(interestRate) : undefined,
+        monthlyPayment: parsedMonthlyPayment,
+        lender: lender.trim() || undefined,
+        purpose,
+        date,
+        notes: notes.trim() || undefined,
+        isRecordOnly,
+        // Scheduled payment fields
+        scheduledPaymentEnabled: scheduledActive,
+        paymentFrequency,
+        nextDueDate: scheduledActive ? nextDueDate : undefined,
+      });
     }
 
     setIsModalOpen(false);

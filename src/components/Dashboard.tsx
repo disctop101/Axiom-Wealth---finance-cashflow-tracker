@@ -1580,19 +1580,22 @@ export const Dashboard: React.FC<DashboardProps> = ({
           expenses={expenseChartData}
           assets={[
             { category: 'Cash and cash equivalents', value: cashEquivalents },
-            { category: 'Retirement accounts', value: retirementAccounts },
-            { category: 'Investment accounts', value: investmentAccounts },
+            { category: 'Stocks', value: stockAssets },
+            { category: 'Crypto', value: cryptoAssets },
             { category: 'Real estate', value: realEstateAssets },
             { category: 'Vehicles', value: vehicleAssets },
+            { category: 'Investment accounts', value: investmentAccounts },
+            { category: 'Retirement accounts', value: retirementAccounts },
             { category: 'Other assets', value: otherAssets },
-          ]}
+          ].filter((a) => a.value > 0 || a.category === 'Cash and cash equivalents')}
           liabilities={[
             { category: 'Mortgage balance', amount: mortgageBalance },
             { category: 'Car loan', amount: carLoan },
-            { category: 'Student loan', amount: studentLoan },
             { category: 'Credit card balances', amount: creditCardBalances },
+            { category: 'Personal loan', amount: personalLoan },
+            { category: 'Student loan', amount: studentLoan },
             { category: 'Other debts', amount: otherDebts },
-          ]}
+          ].filter((l) => l.amount > 0)}
           currencySymbol={currencySymbol}
           onSelectCategory={(cat, type) => onSelectCategory(cat, type)}
         />
