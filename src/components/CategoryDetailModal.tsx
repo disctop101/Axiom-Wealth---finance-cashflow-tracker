@@ -1,6 +1,6 @@
 import React from 'react';
-import { X, Calendar, Tag, ArrowUpRight, ArrowDownRight, Layers } from 'lucide-react';
-import { TransactionItem, formatCurrency } from '../types/finance';
+import { X, Calendar, ArrowUpRight, ArrowDownRight, Layers, AlertTriangle, CheckCircle } from 'lucide-react';
+import { TransactionItem, CategoryBudget, formatCurrency } from '../types/finance';
 
 interface CategoryDetailModalProps {
   isOpen: boolean;
@@ -10,6 +10,8 @@ interface CategoryDetailModalProps {
   transactions: TransactionItem[];
   currencySymbol: string;
   onNavigateToEntries: () => void;
+  budgets?: CategoryBudget[];
+  currentMonthKey?: string;
 }
 
 export const CategoryDetailModal: React.FC<CategoryDetailModalProps> = ({
@@ -20,6 +22,8 @@ export const CategoryDetailModal: React.FC<CategoryDetailModalProps> = ({
   transactions,
   currencySymbol,
   onNavigateToEntries,
+  budgets = [],
+  currentMonthKey,
 }) => {
   if (!isOpen) return null;
 
@@ -29,6 +33,21 @@ export const CategoryDetailModal: React.FC<CategoryDetailModalProps> = ({
   );
 
   const totalAmount = matchingTransactions.reduce((sum, t) => sum + t.amount, 0);
+
+  // If type is expense, lookup corresponding budget allocation
+  const budgetItem =
+    type === 'expense'
+      ? budgets.find(
+          (b) =>
+            b.category.toLowerCase() === category.toLowerCase() &&
+            (!currentMonthKey || !b.monthKey || b.monthKey === currentMonthKey)
+        )
+      : null;
+
+  const allocatedBudget = budgetItem ? budgetItem.allocatedAmount : null;
+  const budgetRemaining = allocatedBudget !== null ? allocatedBudget - totalAmount : null;
+  const percentUsed =
+    allocatedBudget && allocatedBudget > 0 ? (totalAmount / allocatedBudget) * 100 : null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-150">
@@ -74,23 +93,70 @@ export const CategoryDetailModal: React.FC<CategoryDetailModalProps> = ({
         </div>
 
         {/* Summary Metric */}
-        <div className="px-5 py-3 bg-neutral-100 border-b border-neutral-200 flex items-center justify-between">
-          <div>
-            <span className="text-xs text-neutral-500 font-medium">Category Sum Total:</span>
-            <div
-              className={`text-lg font-bold font-mono ${
-                type === 'income' ? 'text-emerald-700' : 'text-red-700'
-              }`}
-            >
-              {formatCurrency(type === 'expense' ? -totalAmount : totalAmount, currencySymbol)}
+        <div className="px-5 py-3 bg-neutral-100 border-b border-neutral-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="text-xs text-neutral-500 font-medium">Category Sum Total:</span>
+              <div
+                className={`text-lg font-bold font-mono ${
+                  type === 'income' ? 'text-emerald-700' : 'text-red-700'
+                }`}
+              >
+                {formatCurrency(type === 'expense' ? -totalAmount : totalAmount, currencySymbol)}
+              </div>
+            </div>
+            <div className="text-right">
+              <span className="text-[11px] text-neutral-500 block">Entries count</span>
+              <span className="text-xs font-bold font-mono text-neutral-800">
+                {matchingTransactions.length} transaction{matchingTransactions.length === 1 ? '' : 's'}
+              </span>
             </div>
           </div>
-          <div className="text-right">
-            <span className="text-[11px] text-neutral-500 block">Entries count</span>
-            <span className="text-xs font-bold font-mono text-neutral-800">
-              {matchingTransactions.length} transaction{matchingTransactions.length === 1 ? '' : 's'}
-            </span>
-          </div>
+
+          {/* Budget Awareness Bar for Expense Categories */}
+          {type === 'expense' && allocatedBudget !== null && (
+            <div className="mt-3 pt-2.5 border-t border-neutral-200">
+              <div className="flex items-center justify-between text-[11px] mb-1">
+                <span className="font-medium text-neutral-700 flex items-center gap-1">
+                  Budget Allocation:
+                  <span className="font-mono font-semibold text-neutral-900">
+                    {formatCurrency(allocatedBudget, currencySymbol)}
+                  </span>
+                </span>
+                <span className={`font-mono font-bold flex items-center gap-1 ${
+                  (budgetRemaining || 0) < 0 ? 'text-red-600' : 'text-emerald-700'
+                }`}>
+                  {(budgetRemaining || 0) < 0 ? (
+                    <>
+                      <AlertTriangle className="w-3.5 h-3.5" /> Over budget by {formatCurrency(Math.abs(budgetRemaining || 0), currencySymbol)}
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="w-3.5 h-3.5" /> Margin: {formatCurrency(budgetRemaining || 0, currencySymbol)} left
+                    </>
+                  )}
+                </span>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="w-full bg-neutral-200 rounded-full h-2 overflow-hidden flex">
+                <div
+                  className={`h-full transition-all duration-300 ${
+                    (percentUsed || 0) > 100
+                      ? 'bg-red-500'
+                      : (percentUsed || 0) > 85
+                      ? 'bg-amber-500'
+                      : 'bg-emerald-500'
+                  }`}
+                  style={{ width: `${Math.min(percentUsed || 0, 100)}%` }}
+                />
+              </div>
+              <div className="flex justify-between text-[10px] text-neutral-500 mt-1 font-mono">
+                <span>{percentUsed !== null ? `${percentUsed.toFixed(1)}% consumed` : ''}</span>
+                <span>Max: {formatCurrency(allocatedBudget, currencySymbol)}</span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Transaction Items List */}

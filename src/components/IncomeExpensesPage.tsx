@@ -59,6 +59,8 @@ import { CashFlowTrendChart } from './CashFlowTrendChart';
 import { getCategoryColor } from '../services/categoryColors';
 import { ReceiptCaptureModal } from './ReceiptCaptureModal';
 import { Tooltip } from './Tooltip';
+import { EditTransactionModal } from './EditTransactionModal';
+import { QuickLogModal } from './QuickLogModal';
 
 interface IncomeExpensesPageProps {
   transactions: TransactionItem[];
@@ -293,6 +295,11 @@ export const IncomeExpensesPage: React.FC<IncomeExpensesPageProps> = ({
     setExpandedCards((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
+  // Budget sorting and Quick Log modal states
+  const [budgetSortBy, setBudgetSortBy] = useState<'allocated_desc' | 'percent_desc' | 'margin_asc' | 'alpha'>('allocated_desc');
+  const [isQuickLogOpen, setIsQuickLogOpen] = useState(false);
+  const [editingModalTx, setEditingModalTx] = useState<TransactionItem | null>(null);
+
   // Time-Based Budgeting Assignment State (Defaults to current year and current month)
   const [budgetYear, setBudgetYear] = useState<number>(currentYear);
   const [budgetMonth, setBudgetMonth] = useState<number>(currentMonthNum);
@@ -506,6 +513,143 @@ export const IncomeExpensesPage: React.FC<IncomeExpensesPageProps> = ({
       color: getCategoryColor(category),
     }));
   }, [windowTransactions]);
+
+  // Budget Calculations, Sorting, and Contextual Analysis
+  const currentMonthKey = `${budgetYear}-${String(budgetMonth).padStart(2, '0')}`;
+
+  const budgetAnalysis = useMemo(() => {
+    const daysInSelectedMonth = new Date(budgetYear, budgetMonth, 0).getDate();
+
+    let totalAllocated = 0;
+    let totalSpent = 0;
+
+    const list = EXPENSE_CATEGORIES.map((cat) => {
+      const budgetItem = budgets.find((b) => b.category === cat.name);
+      const rawMonthBudget =
+        budgetItem?.periodBudgets?.[currentMonthKey] ?? budgetItem?.monthlyBudget ?? 0;
+
+      // Actual spending in this month
+      const actualMonthSpent = transactions
+        .filter(
+          (t) =>
+            t.type === 'expense' &&
+            t.category === cat.name &&
+            t.date &&
+            t.date.startsWith(currentMonthKey)
+        )
+        .reduce((sum, t) => sum + t.amount, 0);
+
+      // Actual spending in year
+      const actualYearSpent = transactions
+        .filter(
+          (t) =>
+            t.type === 'expense' &&
+            t.category === cat.name &&
+            t.date &&
+            t.date.startsWith(`${budgetYear}-`)
+        )
+        .reduce((sum, t) => sum + t.amount, 0);
+
+      let fullYearBudget = 0;
+      for (let m = 1; m <= 12; m++) {
+        const mk = `${budgetYear}-${String(m).padStart(2, '0')}`;
+        fullYearBudget +=
+          budgetItem?.periodBudgets?.[mk] ?? budgetItem?.monthlyBudget ?? 0;
+      }
+
+      totalAllocated += rawMonthBudget;
+      totalSpent += actualMonthSpent;
+
+      // Pacing calculation
+      let pacedTarget = rawMonthBudget;
+      let pacedSpent = actualMonthSpent;
+      let pacingSuffix = '';
+
+      if (budgetPacing === 'daily') {
+        pacedTarget = rawMonthBudget / daysInSelectedMonth;
+        pacedSpent = actualMonthSpent / daysInSelectedMonth;
+        pacingSuffix = ' / day';
+      } else if (budgetPacing === 'weekly') {
+        pacedTarget = (rawMonthBudget * 12) / 52;
+        pacedSpent = (actualMonthSpent * 12) / 52;
+        pacingSuffix = ' / wk';
+      } else if (budgetPacing === 'year') {
+        pacedTarget = fullYearBudget;
+        pacedSpent = actualYearSpent;
+        pacingSuffix = ' / yr';
+      }
+
+      const percent = pacedTarget > 0 ? (pacedSpent / pacedTarget) * 100 : 0;
+      const remaining = pacedTarget - pacedSpent;
+      const isOver = pacedSpent > pacedTarget && pacedTarget > 0;
+      const isNear = !isOver && percent >= 75 && pacedTarget > 0;
+
+      return {
+        cat,
+        rawMonthBudget,
+        actualMonthSpent,
+        fullYearBudget,
+        actualYearSpent,
+        pacedTarget,
+        pacedSpent,
+        pacingSuffix,
+        percent,
+        remaining,
+        isOver,
+        isNear,
+      };
+    });
+
+    // Month income for benchmark
+    const monthIncome = transactions
+      .filter((t) => t.type === 'income' && t.date && t.date.startsWith(currentMonthKey))
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    // Sort list according to budgetSortBy
+    list.sort((a, b) => {
+      if (budgetSortBy === 'allocated_desc') {
+        return b.pacedTarget - a.pacedTarget;
+      } else if (budgetSortBy === 'percent_desc') {
+        return b.percent - a.percent;
+      } else if (budgetSortBy === 'margin_asc') {
+        return a.remaining - b.remaining;
+      } else {
+        return a.cat.name.localeCompare(b.cat.name);
+      }
+    });
+
+    return {
+      items: list,
+      totalAllocated,
+      totalSpent,
+      monthIncome,
+      budgetOverrun: totalAllocated > monthIncome && monthIncome > 0,
+      overrunAmount: Math.max(0, totalAllocated - monthIncome),
+    };
+  }, [EXPENSE_CATEGORIES, budgets, transactions, currentMonthKey, budgetYear, budgetMonth, budgetPacing, budgetSortBy]);
+
+  // Income Averages & Run-Rate Benchmarks
+  const incomeRunRate = useMemo(() => {
+    // Collect all income in the active time window or active month
+    const incomeTotal = budgetAnalysis.monthIncome;
+    const daysInSelectedMonth = new Date(budgetYear, budgetMonth, 0).getDate();
+    const daily = incomeTotal / daysInSelectedMonth;
+    const weekly = (incomeTotal * 12) / 52;
+    const monthly = incomeTotal;
+    const annualized = incomeTotal * 12;
+
+    const totalBudget = budgetAnalysis.totalAllocated;
+    const coverageRatio = totalBudget > 0 ? (monthly / totalBudget) * 100 : 100;
+
+    return {
+      daily,
+      weekly,
+      monthly,
+      annualized,
+      totalBudget,
+      coverageRatio,
+    };
+  }, [budgetAnalysis, budgetYear, budgetMonth]);
 
   // Period-over-Period Analytical Comparison Calculations
   const comparisonData = useMemo(() => {
@@ -1242,195 +1386,206 @@ export const IncomeExpensesPage: React.FC<IncomeExpensesPageProps> = ({
         />
       </div>
 
-      {/* Grid: Left Column (New Entry Form) & Right Column (Budget Tracking) */}
+      {/* Grid: Left Column (Budget & Pacing Analytics) & Right Column (Category Budget Limits) */}
       <div
         className={`grid grid-cols-1 lg:grid-cols-12 gap-5 ${
           currentTab !== 'entry' && currentTab !== 'budgets' ? 'hidden lg:grid' : ''
         }`}
       >
-        {/* ================= 3. TRANSACTION LOGGING FORM ================= */}
+        {/* ================= 3. BUDGET VISUALIZER & RUN-RATE BENCHMARKS (Reclaimed Space) ================= */}
         <div
-          className={`lg:col-span-5 bg-white border border-neutral-300 shadow-xs ${
-            currentTab !== 'entry' ? 'hidden lg:block' : ''
+          className={`lg:col-span-5 bg-white dark:bg-[#1e2324] border border-neutral-300 dark:border-neutral-700 shadow-xs flex flex-col justify-between ${
+            currentTab !== 'entry' ? 'hidden lg:flex' : ''
           }`}
         >
-          <div className="bg-[#2d3134] text-white p-3 flex items-center justify-between border-b border-neutral-700">
-            <div className="flex items-center gap-2">
-              <PlusCircle className="w-4 h-4 text-emerald-400" />
-              <h2 className="font-bold text-sm tracking-wide">
-                {editingTx ? 'Edit Transaction Entry' : 'Log New Transaction'}
-              </h2>
-            </div>
-            <div className="flex items-center gap-2">
-              {!editingTx && (
+          <div>
+            <div className="bg-[#2d3134] text-white p-3 flex items-center justify-between border-b border-neutral-700">
+              <div className="flex items-center gap-2">
+                <BarChart2 className="w-4 h-4 text-emerald-400" />
+                <h2 className="font-bold text-sm tracking-wide">Budget Visualizer &amp; Pacing</h2>
+              </div>
+              <div className="flex items-center gap-1.5">
                 <button
                   type="button"
                   onClick={() => setIsReceiptModalOpen(true)}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-bold transition shadow-xs cursor-pointer"
-                  title="Upload or snap a receipt/bank transaction to auto-fill"
+                  className="inline-flex items-center gap-1 px-2 py-1 bg-neutral-700 hover:bg-neutral-600 text-white rounded text-[11px] font-bold transition shadow-xs cursor-pointer"
+                  title="Scan Receipt slip"
                 >
-                  <Camera className="w-3.5 h-3.5" />
-                  <span>Scan Receipt / Slip</span>
+                  <Camera className="w-3 h-3 text-emerald-400" />
+                  <span>Scan</span>
                 </button>
-              )}
-              {editingTx && (
                 <button
-                  onClick={cancelEdit}
-                  className="text-xs text-neutral-300 hover:text-white underline cursor-pointer"
+                  type="button"
+                  onClick={() => setIsQuickLogOpen(true)}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[11px] font-bold transition shadow-xs cursor-pointer"
+                  title="Open Quick Log Modal"
                 >
-                  Cancel Edit
+                  <PlusCircle className="w-3.5 h-3.5" />
+                  <span>Log Entry</span>
                 </button>
-              )}
+              </div>
+            </div>
+
+            <div className="p-4 space-y-4">
+              {/* Overall Budget vs Actual Spending Card */}
+              <div className="p-3 bg-neutral-50 dark:bg-[#16191b] rounded-lg border border-neutral-200 dark:border-neutral-700/80 space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-neutral-800 dark:text-neutral-200">
+                    Monthly Budget vs. Actual Spent
+                  </span>
+                  <span className="font-mono text-[11px] text-neutral-500 dark:text-neutral-400">
+                    {MONTH_NAMES[budgetMonth - 1]} {budgetYear}
+                  </span>
+                </div>
+
+                <div className="flex items-baseline justify-between">
+                  <div className="text-lg font-black font-mono text-neutral-900 dark:text-white">
+                    {formatCurrency(budgetAnalysis.totalSpent, currencySymbol)}
+                    <span className="text-xs font-normal text-neutral-500 dark:text-neutral-400 ml-1">
+                      spent of {formatCurrency(budgetAnalysis.totalAllocated, currencySymbol)}
+                    </span>
+                  </div>
+                  <span
+                    className={`text-xs font-mono font-bold px-2 py-0.5 rounded ${
+                      budgetAnalysis.totalAllocated > 0 &&
+                      budgetAnalysis.totalSpent > budgetAnalysis.totalAllocated
+                        ? 'bg-red-100 text-red-700 dark:bg-red-950/80 dark:text-red-300'
+                        : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300'
+                    }`}
+                  >
+                    {budgetAnalysis.totalAllocated > 0
+                      ? `${((budgetAnalysis.totalSpent / budgetAnalysis.totalAllocated) * 100).toFixed(0)}% Consumed`
+                      : '0% Consumed'}
+                  </span>
+                </div>
+
+                {/* Progress Bar */}
+                <div className="w-full bg-neutral-200 dark:bg-neutral-700 rounded-full h-2.5 overflow-hidden flex">
+                  <div
+                    className={`h-full transition-all duration-300 ${
+                      budgetAnalysis.totalAllocated > 0 &&
+                      budgetAnalysis.totalSpent > budgetAnalysis.totalAllocated
+                        ? 'bg-red-600'
+                        : (budgetAnalysis.totalSpent / (budgetAnalysis.totalAllocated || 1)) > 0.8
+                        ? 'bg-amber-500'
+                        : 'bg-emerald-500'
+                    }`}
+                    style={{
+                      width: `${Math.min(
+                        100,
+                        budgetAnalysis.totalAllocated > 0
+                          ? (budgetAnalysis.totalSpent / budgetAnalysis.totalAllocated) * 100
+                          : 0
+                      )}%`,
+                    }}
+                  />
+                </div>
+
+                <div className="flex justify-between items-center text-[11px] text-neutral-600 dark:text-neutral-400 pt-1">
+                  <span>
+                    Net Margin:{' '}
+                    <b
+                      className={
+                        budgetAnalysis.totalAllocated - budgetAnalysis.totalSpent < 0
+                          ? 'text-red-600'
+                          : 'text-emerald-600'
+                      }
+                    >
+                      {formatCurrency(
+                        budgetAnalysis.totalAllocated - budgetAnalysis.totalSpent,
+                        currencySymbol
+                      )}
+                    </b>
+                  </span>
+                  <span>
+                    Income Coverage:{' '}
+                    <b className="font-mono text-neutral-800 dark:text-neutral-200">
+                      {incomeRunRate.coverageRatio.toFixed(0)}%
+                    </b>
+                  </span>
+                </div>
+              </div>
+
+              {/* Run-Rate Benchmarks */}
+              <div className="p-3 bg-neutral-50 dark:bg-[#16191b] rounded-lg border border-neutral-200 dark:border-neutral-700/80 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-xs text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5">
+                    <Activity className="w-3.5 h-3.5 text-blue-500" />
+                    <span>Income Run-Rate &amp; Expense Benchmarks</span>
+                  </span>
+                  <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-semibold">
+                    Target Pace
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="bg-white dark:bg-[#1a1e20] p-2.5 rounded border border-neutral-200 dark:border-neutral-700">
+                    <span className="text-[10px] text-neutral-500 dark:text-neutral-400 block">Daily Average</span>
+                    <span className="font-mono font-bold text-neutral-900 dark:text-white">
+                      {formatCurrency(incomeRunRate.daily, currencySymbol)}
+                    </span>
+                    <span className="text-[9px] text-neutral-400 block mt-0.5">
+                      / {formatCurrency(budgetAnalysis.totalAllocated / 30, currencySymbol)} budgeted
+                    </span>
+                  </div>
+
+                  <div className="bg-white dark:bg-[#1a1e20] p-2.5 rounded border border-neutral-200 dark:border-neutral-700">
+                    <span className="text-[10px] text-neutral-500 dark:text-neutral-400 block">Weekly Average</span>
+                    <span className="font-mono font-bold text-neutral-900 dark:text-white">
+                      {formatCurrency(incomeRunRate.weekly, currencySymbol)}
+                    </span>
+                    <span className="text-[9px] text-neutral-400 block mt-0.5">
+                      / {formatCurrency((budgetAnalysis.totalAllocated * 12) / 52, currencySymbol)} budgeted
+                    </span>
+                  </div>
+
+                  <div className="bg-white dark:bg-[#1a1e20] p-2.5 rounded border border-neutral-200 dark:border-neutral-700">
+                    <span className="text-[10px] text-neutral-500 dark:text-neutral-400 block">Monthly Rate</span>
+                    <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                      {formatCurrency(incomeRunRate.monthly, currencySymbol)}
+                    </span>
+                    <span className="text-[9px] text-neutral-400 block mt-0.5">
+                      Target: {formatCurrency(budgetAnalysis.totalAllocated, currencySymbol)}
+                    </span>
+                  </div>
+
+                  <div className="bg-white dark:bg-[#1a1e20] p-2.5 rounded border border-neutral-200 dark:border-neutral-700">
+                    <span className="text-[10px] text-neutral-500 dark:text-neutral-400 block">Annualized Run-Rate</span>
+                    <span className="font-mono font-bold text-neutral-900 dark:text-white">
+                      {formatCurrency(incomeRunRate.annualized, currencySymbol)}
+                    </span>
+                    <span className="text-[9px] text-neutral-400 block mt-0.5">
+                      / yr projected
+                    </span>
+                  </div>
+                </div>
+
+                {budgetAnalysis.budgetOverrun && (
+                  <div className="p-2 bg-amber-50 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-700 rounded text-[11px] text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+                    <AlertTriangle className="w-4 h-4 shrink-0 text-amber-600" />
+                    <span>
+                      Total budgets exceed income by {formatCurrency(budgetAnalysis.overrunAmount, currencySymbol)}. Review category limits.
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
-          <form id="transaction-entry-form" onSubmit={handleSubmitEntry} className="p-4 space-y-3.5 text-xs">
-            {formSuccess && (
-              <div className="p-2.5 bg-emerald-50 border border-emerald-300 text-emerald-800 rounded flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>{formSuccess}</span>
-              </div>
-            )}
-
-            {/* Type Toggle */}
-            <div>
-              <label className="block font-semibold text-neutral-700 mb-1">Transaction Type *</label>
-              <div className="grid grid-cols-2 gap-1 rounded bg-neutral-100 p-1 border border-neutral-200">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEntryType('income');
-                    setEntryCategory('Salary/Wages');
-                  }}
-                  className={`py-1.5 rounded font-bold text-xs transition flex items-center justify-center gap-1.5 ${
-                    entryType === 'income'
-                      ? 'bg-emerald-600 text-white shadow-xs'
-                      : 'text-neutral-600 hover:text-neutral-900'
-                  }`}
-                >
-                  <TrendingUp className="w-3.5 h-3.5" />
-                  <span>Income / Inflow</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEntryType('expense');
-                    setEntryCategory('Food');
-                  }}
-                  className={`py-1.5 rounded font-bold text-xs transition flex items-center justify-center gap-1.5 ${
-                    entryType === 'expense'
-                      ? 'bg-red-700 text-white shadow-xs'
-                      : 'text-neutral-600 hover:text-neutral-900'
-                  }`}
-                >
-                  <TrendingDown className="w-3.5 h-3.5" />
-                  <span>Expense / Outflow</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Category */}
-            <div>
-              <label className="block font-semibold text-neutral-700 mb-1">Category *</label>
-              <select
-                value={entryCategory}
-                onChange={(e) => setEntryCategory(e.target.value)}
-                className="w-full px-2.5 py-1.5 border border-neutral-300 rounded focus:outline-hidden bg-white cursor-pointer font-medium"
-              >
-                {activeCategories.map((c) => (
-                  <option key={c.name} value={c.name}>
-                    {c.name} ({c.sub})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Name */}
-            <div>
-              <label className="block font-semibold text-neutral-700 mb-1">
-                Name of {entryType === 'income' ? 'Income' : 'Expense'} *
-              </label>
-              <input
-                id="entryNameInput"
-                type="text"
-                required
-                placeholder={
-                  entryType === 'income'
-                    ? 'e.g. Monthly Salary, Freelance Milestone, Stock Dividend'
-                    : 'e.g. Landers Grocery, Meralco Electricity, Doctor Checkup'
-                }
-                value={entryName}
-                onChange={(e) => setEntryName(e.target.value)}
-                className="w-full px-2.5 py-1.5 border border-neutral-300 rounded focus:outline-hidden focus:border-neutral-800"
-              />
-            </div>
-
-            {/* Amount & Date in 2 columns */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              <div>
-                <label className="block font-semibold text-neutral-700 mb-1">
-                  Amount ({currencySymbol}) *
-                </label>
-                <input
-                  type="number"
-                  step="any"
-                  min="0"
-                  required
-                  placeholder="0.00"
-                  value={entryAmount}
-                  onChange={(e) => setEntryAmount(e.target.value)}
-                  className="w-full px-2.5 py-1.5 border border-neutral-300 rounded font-mono text-sm focus:outline-hidden focus:border-neutral-800 font-bold"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-neutral-700 mb-1">
-                  Transaction Date *
-                </label>
-                <input
-                  type="date"
-                  required
-                  value={entryDate}
-                  onChange={(e) => setEntryDate(e.target.value)}
-                  className="w-full px-2.5 py-1.5 border border-neutral-300 rounded focus:outline-hidden font-mono"
-                />
-              </div>
-            </div>
-
-            {/* Payment Method / Deposit To Dropdown */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 items-end">
-              <div>
-                <label className="block font-semibold text-neutral-700 mb-1 flex items-center gap-1.5">
-                  <CreditCard className="w-3.5 h-3.5 text-neutral-500" />
-                  <span>{entryType === 'income' ? 'Deposit To *' : 'Payment Method *'}</span>
-                </label>
-                <select
-                  value={entryPaymentMethod}
-                  onChange={(e) => setEntryPaymentMethod(e.target.value as PaymentMethodType)}
-                  className="w-full px-2.5 py-1.5 border border-neutral-300 rounded focus:outline-hidden bg-white cursor-pointer font-medium"
-                >
-                  <option value="Cash">Cash</option>
-                  <option value="Card">Card</option>
-                  <option value="Bank Transfer">Bank Transfer</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="pt-2 border-t border-neutral-200 flex justify-end">
-              <button
-                type="submit"
-                className={`px-4 py-2 text-white font-bold rounded shadow-xs transition flex items-center gap-1.5 text-xs ${
-                  entryType === 'income'
-                    ? 'bg-emerald-600 hover:bg-emerald-700'
-                    : 'bg-red-700 hover:bg-red-800'
-                }`}
-              >
-                <PlusCircle className="w-4 h-4" />
-                <span>{editingTx ? 'Update Entry' : 'Log Transaction'}</span>
-              </button>
-            </div>
-          </form>
+          {/* Quick Actions Footer */}
+          <div className="p-3 bg-neutral-100 dark:bg-[#16191b] border-t border-neutral-200 dark:border-neutral-700 flex items-center justify-between">
+            <span className="text-[11px] text-neutral-500 dark:text-neutral-400">
+              Fast transaction &amp; transfer logging
+            </span>
+            <button
+              type="button"
+              onClick={() => setIsQuickLogOpen(true)}
+              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded font-bold text-xs flex items-center gap-1 shadow-xs cursor-pointer"
+            >
+              <PlusCircle className="w-3.5 h-3.5" />
+              <span>Log Transaction</span>
+            </button>
+          </div>
         </div>
 
         {/* ================= 4. TIME-BASED CATEGORY BUDGET LIMITS ================= */}
@@ -1441,21 +1596,55 @@ export const IncomeExpensesPage: React.FC<IncomeExpensesPageProps> = ({
         >
           <div>
             {/* Header matching reference image */}
-            <div className="bg-[#2d3134] text-white p-3 flex items-center justify-between border-b border-neutral-700">
+            <div className="bg-[#2d3134] text-white p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-neutral-700">
               <div className="flex items-center gap-2">
                 <Target className="w-4 h-4 text-amber-400" />
                 <h2 className="font-bold text-sm tracking-wide">Category Budget Limits</h2>
               </div>
-              <span className="text-[11px] text-neutral-300 font-mono">
-                Tracking expenses against max targets
-              </span>
+
+              {/* Sorting and Benchmarking Header Pill */}
+              <div className="flex items-center gap-2 text-xs">
+                <span className="text-[10px] text-neutral-400 uppercase font-mono hidden sm:inline">
+                  Sort By:
+                </span>
+                <select
+                  value={budgetSortBy}
+                  onChange={(e) => setBudgetSortBy(e.target.value as any)}
+                  className="px-2 py-1 rounded bg-neutral-800 text-white border border-neutral-600 text-xs cursor-pointer focus:outline-hidden"
+                >
+                  <option value="allocated_desc">Highest Allocated</option>
+                  <option value="percent_desc">Highest % Consumed</option>
+                  <option value="margin_asc">Lowest Margin Remaining</option>
+                  <option value="alpha">Alphabetical</option>
+                </select>
+              </div>
             </div>
 
             <div className="p-4 space-y-3">
-              {/* Sub-bar with tracked count and instructions */}
-              <div className="text-[11px] text-neutral-600 dark:text-neutral-300 bg-neutral-50 dark:bg-[#16191b] p-2 rounded border border-neutral-200 dark:border-neutral-700/80 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                <span>Set maximum spending targets per category. Progress bars update in real time.</span>
-                <span className="font-bold text-neutral-800 dark:text-neutral-200 shrink-0">11 tracked categories</span>
+              {/* Benchmark Header Pill: Total Budget Allocated vs Total Period Income */}
+              <div className="text-[11px] bg-neutral-50 dark:bg-[#16191b] p-2.5 rounded border border-neutral-200 dark:border-neutral-700/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-neutral-600 dark:text-neutral-400">Total Allocated:</span>
+                  <span className="font-mono font-bold text-neutral-900 dark:text-neutral-100">
+                    {formatCurrency(budgetAnalysis.totalAllocated, currencySymbol)}
+                  </span>
+                  <span className="text-neutral-400">vs. Income:</span>
+                  <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                    {formatCurrency(budgetAnalysis.monthIncome, currencySymbol)}
+                  </span>
+                </div>
+
+                {budgetAnalysis.budgetOverrun ? (
+                  <span className="px-2 py-0.5 rounded bg-red-100 dark:bg-red-950/80 text-red-700 dark:text-red-300 font-bold font-mono text-[10px] flex items-center gap-1 border border-red-300 dark:border-red-800">
+                    <AlertTriangle className="w-3 h-3" />
+                    Overrun by {formatCurrency(budgetAnalysis.overrunAmount, currencySymbol)}
+                  </span>
+                ) : (
+                  <span className="px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 font-bold font-mono text-[10px] flex items-center gap-1 border border-emerald-300 dark:border-emerald-800">
+                    <CheckCircle2 className="w-3 h-3" />
+                    Safe Budget Margin
+                  </span>
+                )}
               </div>
 
               {/* Month Selection Tool & Pacing Toggle Bar */}
@@ -1664,65 +1853,18 @@ export const IncomeExpensesPage: React.FC<IncomeExpensesPageProps> = ({
 
               {/* Category Budgets Grid */}
               <div className="space-y-2 max-h-[340px] overflow-y-auto pr-1">
-                {EXPENSE_CATEGORIES.map((cat) => {
-                  const currentMonthKey = `${budgetYear}-${String(budgetMonth).padStart(2, '0')}`;
-                  const budgetItem = budgets.find((b) => b.category === cat.name);
-                  const rawMonthBudget =
-                    budgetItem?.periodBudgets?.[currentMonthKey] ?? budgetItem?.monthlyBudget ?? 0;
-
-                  // Compute actual spending in this selected month
-                  const actualMonthSpent = transactions
-                    .filter(
-                      (t) =>
-                        t.type === 'expense' &&
-                        t.category === cat.name &&
-                        t.date.startsWith(currentMonthKey)
-                    )
-                    .reduce((sum, t) => sum + t.amount, 0);
-
-                  // Compute actual spending in this whole year
-                  const actualYearSpent = transactions
-                    .filter(
-                      (t) =>
-                        t.type === 'expense' &&
-                        t.category === cat.name &&
-                        t.date.startsWith(`${budgetYear}-`)
-                    )
-                    .reduce((sum, t) => sum + t.amount, 0);
-
-                  // Sum full year budget
-                  let fullYearBudget = 0;
-                  for (let m = 1; m <= 12; m++) {
-                    const mk = `${budgetYear}-${String(m).padStart(2, '0')}`;
-                    fullYearBudget +=
-                      budgetItem?.periodBudgets?.[mk] ?? budgetItem?.monthlyBudget ?? 0;
-                  }
-
-                  const daysInSelectedMonth = new Date(budgetYear, budgetMonth, 0).getDate();
-
-                  // Compute scaled target & spent based on active pacing
-                  let pacedTarget = rawMonthBudget;
-                  let pacedSpent = actualMonthSpent;
-                  let pacingSuffix = '';
-
-                  if (budgetPacing === 'daily') {
-                    pacedTarget = rawMonthBudget / daysInSelectedMonth;
-                    pacedSpent = actualMonthSpent / daysInSelectedMonth;
-                    pacingSuffix = ' / day';
-                  } else if (budgetPacing === 'weekly') {
-                    pacedTarget = (rawMonthBudget * 12) / 52;
-                    pacedSpent = (actualMonthSpent * 12) / 52;
-                    pacingSuffix = ' / wk';
-                  } else if (budgetPacing === 'year') {
-                    pacedTarget = fullYearBudget;
-                    pacedSpent = actualYearSpent;
-                    pacingSuffix = ' / yr';
-                  }
-
-                  const percent = pacedTarget > 0 ? (pacedSpent / pacedTarget) * 100 : 0;
-                  const remaining = pacedTarget - pacedSpent;
-                  const isOver = pacedSpent > pacedTarget && pacedTarget > 0;
-                  const isNear = !isOver && percent >= 75 && pacedTarget > 0;
+                {budgetAnalysis.items.map((item) => {
+                  const {
+                    cat,
+                    rawMonthBudget,
+                    pacedTarget,
+                    pacedSpent,
+                    pacingSuffix,
+                    percent,
+                    remaining,
+                    isOver,
+                    isNear,
+                  } = item;
 
                   return (
                     <div
@@ -2321,35 +2463,54 @@ export const IncomeExpensesPage: React.FC<IncomeExpensesPageProps> = ({
                       {tx.category}
                     </td>
                     <td className="py-2 px-3">
-                      <span
-                        className={`text-[10px] uppercase font-mono px-1.5 py-0.5 rounded font-bold ${
-                          tx.type === 'income'
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : 'bg-red-100 text-red-800'
-                        }`}
-                      >
-                        {tx.type}
-                      </span>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {tx.type === 'transfer' ? (
+                          <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded font-bold bg-blue-100 text-blue-800 border border-blue-200">
+                            Transfer
+                          </span>
+                        ) : (
+                          <span
+                            className={`text-[10px] uppercase font-mono px-1.5 py-0.5 rounded font-bold ${
+                              tx.type === 'income'
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : 'bg-red-100 text-red-800'
+                            }`}
+                          >
+                            {tx.type}
+                          </span>
+                        )}
+                        {tx.isRecordOnly && (
+                          <span className="text-[9px] px-1 py-0.2 rounded bg-neutral-200 text-neutral-700 font-mono font-semibold">
+                            Record Only
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td
                       className={`py-2 px-3 text-right font-mono font-bold text-sm ${
-                        tx.type === 'income' ? 'text-emerald-700' : 'text-red-700'
+                        tx.type === 'transfer'
+                          ? 'text-blue-700'
+                          : tx.type === 'income'
+                          ? 'text-emerald-700'
+                          : 'text-red-700'
                       }`}
                     >
-                      {formatCurrency(tx.type === 'expense' ? -tx.amount : tx.amount, currencySymbol)}
+                      {tx.type === 'transfer'
+                        ? formatCurrency(tx.amount, currencySymbol)
+                        : formatCurrency(tx.type === 'expense' ? -tx.amount : tx.amount, currencySymbol)}
                     </td>
                     <td className="py-2 px-3 text-center">
                       <div className="flex items-center justify-center gap-1">
                         <button
-                          onClick={() => startEditTx(tx)}
-                          className="p-1 text-neutral-500 hover:text-blue-600 hover:bg-neutral-100 rounded"
+                          onClick={() => setEditingModalTx(tx)}
+                          className="p-1 text-neutral-500 hover:text-blue-600 hover:bg-neutral-100 rounded cursor-pointer"
                           title="Edit transaction"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => setTxToDelete(tx)}
-                          className="p-1 text-neutral-500 hover:text-red-600 hover:bg-neutral-100 rounded"
+                          className="p-1 text-neutral-500 hover:text-red-600 hover:bg-neutral-100 rounded cursor-pointer"
                           title="Delete transaction"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -2527,6 +2688,34 @@ export const IncomeExpensesPage: React.FC<IncomeExpensesPageProps> = ({
           </div>
         </div>
       )}
+
+      {/* Edit Transaction Modal Popup */}
+      <EditTransactionModal
+        isOpen={!!editingModalTx}
+        onClose={() => setEditingModalTx(null)}
+        transaction={editingModalTx}
+        currencySymbol={currencySymbol}
+        budgets={budgets}
+        onSave={(updated) => {
+          onUpdateTransaction(updated);
+          setEditingModalTx(null);
+        }}
+        onDelete={(id) => {
+          onDeleteTransaction(id);
+          setEditingModalTx(null);
+        }}
+      />
+
+      {/* Quick Log Modal Popup */}
+      <QuickLogModal
+        isOpen={isQuickLogOpen}
+        onClose={() => setIsQuickLogOpen(false)}
+        currencySymbol={currencySymbol}
+        budgets={budgets}
+        onAddTransaction={(data) => {
+          onAddTransaction(data as any);
+        }}
+      />
 
       {/* OCR Receipt / Bank Slip Capture Modal */}
       <ReceiptCaptureModal

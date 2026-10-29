@@ -367,6 +367,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   const totalIncome = earnedIncome + passiveIncome + otherIncome;
 
+  // Cash Flow Inflow Section Breakdown
+  // Cash from Investing = Investments income + Interest/Dividends + Real Estate investments income
+  const investingInflow = investmentsIncome + interestDividends + realEstatePassive;
+  // Cash from Financing = Account Payables income + any borrowed funds/loan receipts
+  const financingInflow = payablesIncome;
+
   // Fixed Expense items
   const housingExpense = getExpenseAmount('Housing');
   const invExpense = getExpenseAmount('Investments');
@@ -1002,22 +1008,29 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     <span className="text-neutral-700">Cash from Investments</span>
                     <span className="font-mono text-neutral-900">{formatCurrency(investmentsIncome, currencySymbol)}</span>
                   </div>
-                  <div className="flex justify-between py-1 px-2.5 bg-[#e8f5e9] text-[#137333] font-bold">
-                    <span>Cash from investing</span>
-                    <span className="font-mono">{formatCurrency(receivablesIncome, currencySymbol)}</span>
-                  </div>
                   <div
                     onClick={() => onSelectCategory('Interest/Dividends', 'income')}
-                    className="flex justify-between py-1 px-2.5 bg-white hover:bg-emerald-50 cursor-pointer"
+                    className="flex justify-between py-1 px-2.5 bg-[#f8f9fa] hover:bg-emerald-50 cursor-pointer"
                   >
                     <span className="text-neutral-700">Interest/Dividends received</span>
                     <span className="font-mono text-neutral-900">{formatCurrency(interestDividends, currencySymbol)}</span>
+                  </div>
+                  <div className="flex justify-between py-1 px-2.5 bg-[#e8f5e9] text-[#137333] font-bold">
+                    <span>Cash from investing</span>
+                    <span className="font-mono">{formatCurrency(investingInflow, currencySymbol)}</span>
+                  </div>
+                  <div
+                    onClick={() => onSelectCategory('Bank Transaction', 'income')}
+                    className="flex justify-between py-1 px-2.5 bg-white hover:bg-emerald-50 cursor-pointer"
+                  >
+                    <span className="text-neutral-700">Bank Transactions / Inflows</span>
+                    <span className="font-mono text-neutral-900">{formatCurrency(bankIncome, currencySymbol)}</span>
                   </div>
                   <div
                     onClick={() => onSelectCategory('Account Payables', 'income')}
                     className="flex justify-between py-1 px-2.5 bg-[#f8f9fa] hover:bg-emerald-50 cursor-pointer"
                   >
-                    <span className="text-neutral-700">Cash from Account Payables</span>
+                    <span className="text-neutral-700">Cash from Account Payables (Borrowing)</span>
                     <span className="font-mono text-neutral-900">{formatCurrency(payablesIncome, currencySymbol)}</span>
                   </div>
                   <div
@@ -1029,7 +1042,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   </div>
                   <div className="flex justify-between py-1 px-2.5 bg-[#e8f5e9] text-[#137333] font-bold">
                     <span>Cash from financing</span>
-                    <span className="font-mono">{formatCurrency(payablesIncome, currencySymbol)}</span>
+                    <span className="font-mono">{formatCurrency(financingInflow, currencySymbol)}</span>
                   </div>
                 </div>
               </div>
@@ -1137,8 +1150,50 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </div>
             </div>
 
+            {/* Cash Flow Summary Blocks directly below the table */}
+            <div className="p-3 bg-neutral-100 border-t border-neutral-300">
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="bg-white p-2 border border-neutral-300 flex justify-between items-center">
+                  <span className="font-bold text-neutral-800">Total Cash Inflows</span>
+                  <span className="font-mono font-bold text-neutral-900">{formatCurrency(cashInflows, currencySymbol)}</span>
+                </div>
+                <div className="bg-white p-2 border border-neutral-300 flex justify-between items-center">
+                  <span className="font-bold text-neutral-800">Total Cash Outflows</span>
+                  <span className="font-mono font-bold text-[#c5221f]">
+                    {formatCurrency(cashOutflows > 0 ? -cashOutflows : 0, currencySymbol)}
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-xs mt-2">
+                <div className="bg-[#e8f5e9] p-2 border border-emerald-300">
+                  <div className="flex justify-between items-center">
+                    <span className="font-extrabold text-[#137333] dark:text-emerald-400">Net Cash Flow</span>
+                    <span className="font-mono font-bold text-[#137333] dark:text-emerald-300 text-sm">
+                      {formatCurrency(netCashFlow, currencySymbol)}
+                    </span>
+                  </div>
+                  <div className="text-[10px] text-neutral-600 dark:text-emerald-200/90 font-mono mt-0.5">
+                    [Total Cash Inflows] - [Total Cash Outflows]
+                  </div>
+                </div>
+
+                <div className="statement-light-row bg-[#fef9c3] p-2 border border-yellow-300">
+                  <div className="flex justify-between items-center">
+                    <span className="font-extrabold text-amber-950 dark:!text-amber-950">Ending Balance</span>
+                    <span className="font-mono font-bold text-amber-950 dark:!text-amber-950 text-sm">
+                      {formatCurrency(cashFlowEndingBalance, currencySymbol)}
+                    </span>
+                  </div>
+                  <div className="text-[10px] text-neutral-800 dark:!text-neutral-900 font-mono font-semibold mt-0.5">
+                    [Beginning Balance] + [Net Cash Flow]
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Horizontal Bar Chart for Visualizing Period Expenses & Wealth */}
-            <div className="px-2">
+            <div className="px-2 pt-2 pb-3">
               <PeriodExpenseChart
                 incomes={incomeChartData}
                 expenses={expenseChartData}
@@ -1163,48 +1218,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 currencySymbol={currencySymbol}
                 onSelectCategory={(cat, type) => onSelectCategory(cat, type)}
               />
-            </div>
-          </div>
-
-          {/* Bottom Cash Flow Summary Blocks */}
-          <div className="p-3 bg-neutral-100 border-t border-neutral-300">
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <div className="bg-white p-2 border border-neutral-300 flex justify-between items-center">
-                <span className="font-bold text-neutral-800">Total Cash Inflows</span>
-                <span className="font-mono font-bold text-neutral-900">{formatCurrency(cashInflows, currencySymbol)}</span>
-              </div>
-              <div className="bg-white p-2 border border-neutral-300 flex justify-between items-center">
-                <span className="font-bold text-neutral-800">Total Cash Outflows</span>
-                <span className="font-mono font-bold text-[#c5221f]">
-                  {formatCurrency(cashOutflows > 0 ? -cashOutflows : 0, currencySymbol)}
-                </span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 text-xs mt-2">
-              <div className="bg-[#e8f5e9] p-2 border border-emerald-300">
-                <div className="flex justify-between items-center">
-                  <span className="font-extrabold text-[#137333] dark:text-emerald-400">Net Cash Flow</span>
-                  <span className="font-mono font-bold text-[#137333] dark:text-emerald-300 text-sm">
-                    {formatCurrency(netCashFlow, currencySymbol)}
-                  </span>
-                </div>
-                <div className="text-[10px] text-neutral-600 dark:text-emerald-200/90 font-mono mt-0.5">
-                  [Total Cash Inflows] - [Total Cash Outflows]
-                </div>
-              </div>
-
-              <div className="statement-light-row bg-[#fef9c3] p-2 border border-yellow-300">
-                <div className="flex justify-between items-center">
-                  <span className="font-extrabold text-amber-950 dark:!text-amber-950">Ending Balance</span>
-                  <span className="font-mono font-bold text-amber-950 dark:!text-amber-950 text-sm">
-                    {formatCurrency(cashFlowEndingBalance, currencySymbol)}
-                  </span>
-                </div>
-                <div className="text-[10px] text-neutral-800 dark:!text-neutral-900 font-mono font-semibold mt-0.5">
-                  [Beginning Balance] + [Net Cash Flow]
-                </div>
-              </div>
             </div>
           </div>
         </div>

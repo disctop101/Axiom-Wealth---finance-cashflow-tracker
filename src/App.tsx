@@ -1239,7 +1239,7 @@ export default function App() {
     }
   };
 
-  // Transaction Actions (Logged via Income & Expenses page)
+  // Transaction Actions (Logged via Income & Expenses page or Quick Log modal)
   const handleAddTransaction = async (data: {
     name: string;
     type: TransactionType;
@@ -1249,6 +1249,8 @@ export default function App() {
     amount: number;
     date: string;
     paymentMethod?: PaymentMethodType;
+    transferDirection?: TransferDirection;
+    isRecordOnly?: boolean;
   }) => {
     // Generate unique sequential entry identifier (e.g. TXN-0001, TXN-0002)
     const nextSeq = transactions.length + 1;
@@ -1267,11 +1269,31 @@ export default function App() {
       month: parseInt(data.date.split('-')[1]) || 1,
       year: parseInt(data.date.split('-')[0]) || 2024,
       paymentMethod: data.paymentMethod || 'Cash',
+      transferDirection: data.transferDirection,
+      isRecordOnly: data.isRecordOnly,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
 
     setTransactions((prev) => [newTx, ...prev]);
+
+    // If this is an internal transfer, adjust liquid cash / bank account balances cleanly
+    if (data.type === 'transfer' && data.transferDirection) {
+      const isCashToBank = data.transferDirection === 'cash_to_bank';
+      // Find or adjust cash on hand and bank asset items if they exist
+      const cashAsset = assets.find(
+        (a) => a.category === 'Liquid Cash' || a.category === 'Cash and cash equivalents'
+      );
+      if (cashAsset) {
+        const delta = isCashToBank ? -data.amount : data.amount;
+        const updatedCash = {
+          ...cashAsset,
+          initialValue: Math.max(0, cashAsset.initialValue + delta),
+          updatedAt: new Date().toISOString(),
+        };
+        handleUpdateAsset(updatedCash as AssetItem);
+      }
+    }
 
     if (user) {
       await safeCloudSave('transaction', () => saveTransactionItemToCloud(user.uid, newTx), newTx);
@@ -2138,6 +2160,8 @@ export default function App() {
         type={categoryDetailModal.type}
         transactions={transactions}
         currencySymbol={currency.symbol}
+        budgets={budgets}
+        currentMonthKey={`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`}
         onNavigateToEntries={() => setActiveTab('income-expenses')}
       />
 

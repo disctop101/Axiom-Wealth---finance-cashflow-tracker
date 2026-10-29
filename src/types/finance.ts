@@ -135,7 +135,8 @@ export interface LiabilityPayment {
   createdAt: string;
 }
 
-export type TransactionType = 'income' | 'expense';
+export type TransactionType = 'income' | 'expense' | 'transfer';
+export type TransferDirection = 'cash_to_bank' | 'bank_to_cash';
 export type IncomeClassification = 'earned' | 'passive' | 'other';
 export type ExpenseClassification = 'fixed' | 'variable' | 'other';
 export type PaymentMethodType = 'Cash' | 'Card' | 'Bank Transfer';
@@ -155,6 +156,9 @@ export interface TransactionItem {
   month: number; // 1-12
   year: number;
   paymentMethod?: PaymentMethodType;
+  // Internal transfer & record-only fields
+  transferDirection?: TransferDirection;
+  isRecordOnly?: boolean;
   // Cross-linked ledger references
   linkedAssetId?: string;
   linkedLiabilityId?: string;
